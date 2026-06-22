@@ -111,6 +111,23 @@ class AuthController extends Notifier<AuthState> {
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
+  /// Update editable profile fields and refresh the user.
+  Future<void> updateProfile({
+    String? firstName,
+    String? middleName,
+    String? lastName,
+    String? phoneNumber,
+  }) async {
+    final fields = <String, dynamic>{};
+    if (firstName != null) fields['first_name'] = firstName;
+    if (middleName != null) fields['middle_name'] = middleName;
+    if (lastName != null) fields['last_name'] = lastName;
+    if (phoneNumber != null) fields['phone_number'] = phoneNumber;
+
+    final user = await _repo.updateProfile(fields);
+    state = AuthState(status: AuthStatus.authenticated, user: user);
+  }
+
   Future<void> signOut() async {
     try {
       await _repo.logout();

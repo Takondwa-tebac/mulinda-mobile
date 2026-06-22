@@ -12,8 +12,10 @@ abstract class Routes {
   static const activity = '/activity';
   static const plan = '/plan';
   static const profile = '/profile';
+  static const editProfile = '/edit-profile';
 
   static const coach = '/coach';
+  static const insights = '/insights';
 
   // Capture / activity
   static const addTransaction = '/add-transaction';

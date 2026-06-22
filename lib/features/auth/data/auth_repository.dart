@@ -50,9 +50,11 @@ class AuthRepository {
     return _authRequest('/v1/auth/google/token', {'access_token': accessToken});
   }
 
-  Future<User> updateIncomeBracket(String bracket) async {
+  Future<User> updateIncomeBracket(String bracket) => updateProfile({'income_bracket': bracket});
+
+  Future<User> updateProfile(Map<String, dynamic> fields) async {
     try {
-      final res = await _dio.patch('/v1/auth/profile', data: {'income_bracket': bracket});
+      final res = await _dio.patch('/v1/auth/profile', data: fields);
       return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
     } on DioException catch (e) {
       throw ApiException.fromDio(e);

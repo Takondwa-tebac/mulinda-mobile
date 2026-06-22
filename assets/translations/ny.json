@@ -161,6 +161,12 @@
     "loadError": "Sitinathe kutsegula dashboard.",
     "retry": "Yesaninso"
   },
+  "insights": {
+    "title": "Zindikiritso",
+    "empty": "Palibe zindikiritso. Bweraninso pamene Mulinda ikuphunzira ndalama zanu.",
+    "loadError": "Sitinathe kutsegula zindikiritso.",
+    "retry": "Yesaninso"
+  },
   "coach": {
     "title": "Funsani Mulinda",
     "hint": "Funsani za ndalama zanu…",
@@ -199,6 +205,18 @@
     }
   },
   "profile": {
+    "account": "Akaunti",
+    "preferences": "Zokonda",
+    "editProfile": "Sinthani mbiri",
+    "incomeBracket": "Gulu la ndalama",
+    "changeIncome": "Sinthani gulu la ndalama",
+    "firstName": "Dzina loyamba",
+    "middleName": "Dzina lapakati (sikofunika)",
+    "lastName": "Dzina la banja",
+    "phone": "Nambala ya foni",
+    "save": "Sungani zosintha",
+    "saved": "Mbiri yasinthidwa",
+    "notSet": "Sichinakhazikitsidwe",
     "language": "Chinenero",
     "appearance": "Maonekedwe",
     "themeSystem": "Monga pa foni",

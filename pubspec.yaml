@@ -55,6 +55,7 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.9.0
   flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.3
 
 flutter:
   uses-material-design: true
@@ -79,3 +80,15 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/logo.png"
     icon_size: 48
+
+# Native launch screen generated from the logo:
+#   dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/logo.png"
+  android_12:
+    color: "#ffffff"
+    image: "assets/logo.png"
+  android: true
+  ios: false
+  web: false

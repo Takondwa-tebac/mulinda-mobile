@@ -161,6 +161,12 @@
     "loadError": "Couldn't load your dashboard.",
     "retry": "Retry"
   },
+  "insights": {
+    "title": "Insights",
+    "empty": "No insights yet. Check back as Mulinda learns your money.",
+    "loadError": "Couldn't load insights.",
+    "retry": "Retry"
+  },
   "coach": {
     "title": "Ask Mulinda",
     "hint": "Ask about your money…",
@@ -199,6 +205,18 @@
     }
   },
   "profile": {
+    "account": "Account",
+    "preferences": "Preferences",
+    "editProfile": "Edit profile",
+    "incomeBracket": "Income bracket",
+    "changeIncome": "Change income bracket",
+    "firstName": "First name",
+    "middleName": "Middle name (optional)",
+    "lastName": "Last name",
+    "phone": "Phone number",
+    "save": "Save changes",
+    "saved": "Profile updated",
+    "notSet": "Not set",
     "language": "Language",
     "appearance": "Appearance",
     "themeSystem": "System",

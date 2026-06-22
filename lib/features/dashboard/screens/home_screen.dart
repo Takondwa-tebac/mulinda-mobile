@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../auth/providers/auth_controller.dart';
+import '../../insights/data/insights_repository.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 
@@ -15,11 +16,21 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(dashboardProvider);
     final firstName = ref.watch(currentUserProvider)?.firstName;
+    final unread = ref.watch(unreadInsightsCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('app.name'.tr()),
         actions: [
+          IconButton(
+            tooltip: 'insights.title'.tr(),
+            onPressed: () => context.push(Routes.insights),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.auto_awesome_outlined),
             tooltip: 'home.askCoach'.tr(),
