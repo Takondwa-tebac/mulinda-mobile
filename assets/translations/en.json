@@ -64,6 +64,45 @@
     "pasteSms": "Paste SMS",
     "manual": "Manual entry"
   },
+  "activity": {
+    "accounts": "Accounts",
+    "noTransactions": "No transactions yet. Tap ＋ to add one.",
+    "loadError": "Couldn't load your activity.",
+    "retry": "Retry"
+  },
+  "addTxn": {
+    "title": "Add transaction",
+    "account": "Account",
+    "type": "Type",
+    "income": "Income",
+    "expense": "Expense",
+    "amount": "Amount",
+    "category": "Category",
+    "none": "None",
+    "date": "Date",
+    "merchant": "Merchant / description",
+    "notes": "Notes (optional)",
+    "save": "Save transaction",
+    "needAccount": "Add an account first to record transactions.",
+    "saved": "Transaction saved"
+  },
+  "sms": {
+    "title": "Paste SMS",
+    "subtitle": "Paste a mobile-money message and Mulinda will turn it into a transaction.",
+    "body": "Message text",
+    "sender": "Sender (optional)",
+    "submit": "Read message",
+    "queued": "Got it — we're reading your message. It'll appear once you approve it."
+  },
+  "receipt": {
+    "title": "Scan receipt",
+    "subtitle": "Snap or pick a receipt and Mulinda will extract the transaction.",
+    "takePhoto": "Take photo",
+    "chooseImage": "Choose from gallery",
+    "submit": "Scan receipt",
+    "queued": "Got it — we're reading your receipt. It'll appear once you approve it.",
+    "cameraDenied": "Camera access is needed to take a photo."
+  },
   "income": {
     "title": "What's your monthly income?",
     "subtitle": "This stays private. It helps Mulinda set savings targets and advice that fit what you earn.",
@@ -73,7 +112,29 @@
     "upperMiddle": { "label": "Upper-middle income", "range": "MK 1,000,000 – 2,500,000" },
     "upper": { "label": "Upper income", "range": "MK 2,500,000+" }
   },
-  "home": { "greeting": "Welcome back", "askCoach": "Ask Mulinda" },
+  "home": {
+    "greeting": "Welcome back",
+    "askCoach": "Ask Mulinda",
+    "askCoachSub": "Your money questions, answered",
+    "netWorth": "Net worth",
+    "thisMonth": "This month",
+    "income": "Income",
+    "expenses": "Expenses",
+    "savingsRate": "Savings rate",
+    "health": "Health",
+    "credit": "Credit",
+    "savings": "Savings",
+    "onTrack": "On track",
+    "offTrack": "Behind",
+    "budgets": "Budgets",
+    "goals": "Goals",
+    "loans": "Loans",
+    "investments": "Investments",
+    "recentActivity": "Recent activity",
+    "noTransactions": "No transactions yet. Tap ＋ to add one.",
+    "loadError": "Couldn't load your dashboard.",
+    "retry": "Retry"
+  },
   "coach": { "title": "Ask Mulinda" },
   "profile": {
     "language": "Language",

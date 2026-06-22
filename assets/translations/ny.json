@@ -64,6 +64,45 @@
     "pasteSms": "Matani SMS",
     "manual": "Lembani nokha"
   },
+  "activity": {
+    "accounts": "Maakaunti",
+    "noTransactions": "Palibe zochitika. Dinani ＋ kuti muwonjezere.",
+    "loadError": "Sitinathe kutsegula zochitika.",
+    "retry": "Yesaninso"
+  },
+  "addTxn": {
+    "title": "Onjezani zochitika",
+    "account": "Akaunti",
+    "type": "Mtundu",
+    "income": "Zolowa",
+    "expense": "Zogula",
+    "amount": "Ndalama",
+    "category": "Gulu",
+    "none": "Palibe",
+    "date": "Tsiku",
+    "merchant": "Wogulitsa / kufotokoza",
+    "notes": "Zolemba (sikofunika)",
+    "save": "Sungani zochitika",
+    "needAccount": "Onjezani akaunti choyamba kuti mulembe zochitika.",
+    "saved": "Zochitika zasungidwa"
+  },
+  "sms": {
+    "title": "Matani SMS",
+    "subtitle": "Matani uthenga wa mobile money ndipo Mulinda idzausandutsa kukhala zochitika.",
+    "body": "Mawu a uthenga",
+    "sender": "Wotumiza (sikofunika)",
+    "submit": "Werengani uthenga",
+    "queued": "Talandira — tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
+  },
+  "receipt": {
+    "title": "Jambulani risiti",
+    "subtitle": "Jambulani kapena sankhani risiti ndipo Mulinda idzatenga zochitika.",
+    "takePhoto": "Jambulani",
+    "chooseImage": "Sankhani mu gallery",
+    "submit": "Jambulani risiti",
+    "queued": "Talandira — tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
+    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule."
+  },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",
     "subtitle": "Izi ndi zachinsinsi. Zimathandiza Mulinda kukhazikitsa zolinga zosungira ndi malangizo oyenera ndi zomwe mumapeza.",
@@ -73,7 +112,29 @@
     "upperMiddle": { "label": "Zapakatikati zapamwamba", "range": "MK 1,000,000 – 2,500,000" },
     "upper": { "label": "Zapamwamba", "range": "MK 2,500,000+" }
   },
-  "home": { "greeting": "Takulandiraninso", "askCoach": "Funsani Mulinda" },
+  "home": {
+    "greeting": "Takulandiraninso",
+    "askCoach": "Funsani Mulinda",
+    "askCoachSub": "Mafunso anu a ndalama, oyankhidwa",
+    "netWorth": "Chuma chonse",
+    "thisMonth": "Mwezi uno",
+    "income": "Zolowa",
+    "expenses": "Zogula",
+    "savingsRate": "Muyeso wosunga",
+    "health": "Thanzi",
+    "credit": "Krediti",
+    "savings": "Kusunga",
+    "onTrack": "Mukuyenda bwino",
+    "offTrack": "Mwatsalira",
+    "budgets": "Bajeti",
+    "goals": "Zolinga",
+    "loans": "Ngongole",
+    "investments": "Ndalama zoyikidwa",
+    "recentActivity": "Zochitika zaposachedwa",
+    "noTransactions": "Palibe zochitika. Dinani ＋ kuti muwonjezere.",
+    "loadError": "Sitinathe kutsegula dashboard.",
+    "retry": "Yesaninso"
+  },
   "coach": { "title": "Funsani Mulinda" },
   "profile": {
     "language": "Chinenero",

@@ -1,16 +1,165 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/placeholder_view.dart';
+import '../data/activity_models.dart';
+import '../data/activity_repository.dart';
 
-class ActivityScreen extends StatelessWidget {
+class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final txns = ref.watch(transactionsProvider);
+    final accounts = ref.watch(accountsProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text('nav.activity'.tr())),
-      body: const PlaceholderView(icon: Icons.receipt_long_outlined),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(accountsProvider);
+          await ref.refresh(transactionsProvider.future);
+        },
+        child: txns.when(
+          loading: () => const _Fill(child: CircularProgressIndicator()),
+          error: (_, _) => _Fill(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('activity.loadError'.tr(), textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  onPressed: () => ref.invalidate(transactionsProvider),
+                  child: Text('activity.retry'.tr()),
+                ),
+              ],
+            ),
+          ),
+          data: (list) => ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            children: [
+              accounts.maybeWhen(
+                data: (a) => _AccountsStrip(accounts: a),
+                orElse: () => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
+              if (list.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Text('activity.noTransactions'.tr(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                )
+              else
+                ...list.map((t) => _TxnTile(txn: t)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountsStrip extends StatelessWidget {
+  const _AccountsStrip({required this.accounts});
+  final List<Account> accounts;
+
+  @override
+  Widget build(BuildContext context) {
+    if (accounts.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('activity.accounts'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: accounts.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (_, i) {
+              final a = accounts[i];
+              return Container(
+                width: 180,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(a.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
+                    Text(a.currentBalance.formatted,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: scheme.onPrimaryContainer)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TxnTile extends StatelessWidget {
+  const _TxnTile({required this.txn});
+  final Txn txn;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final title = txn.merchant?.isNotEmpty == true
+        ? txn.merchant!
+        : (txn.categoryName ?? txn.type);
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor: txn.isIncome ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+        foregroundColor: txn.isIncome ? scheme.onPrimaryContainer : scheme.onSurface,
+        child: Icon(txn.isIncome ? Icons.south_west : Icons.north_east, size: 18),
+      ),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text([txn.categoryName, txn.date].where((e) => e != null && e.isNotEmpty).join(' · ')),
+      trailing: Text(
+        '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: txn.isIncome ? scheme.primary : scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _Fill extends StatelessWidget {
+  const _Fill({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(child: Padding(padding: const EdgeInsets.all(24), child: child)),
+        ),
+      ],
     );
   }
 }
