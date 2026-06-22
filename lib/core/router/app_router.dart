@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activity/screens/activity_screen.dart';
 import '../../features/activity/screens/add_account_screen.dart';
 import '../../features/activity/screens/add_transaction_screen.dart';
+import '../../features/capture/screens/inbox_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
 import '../../features/capture/screens/scan_receipt_screen.dart';
 import '../../features/auth/providers/auth_controller.dart';
@@ -14,6 +15,7 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
+import '../../features/plan/screens/plan_lists.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/plan/screens/plan_screen.dart';
@@ -79,6 +81,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.addAccount, builder: (_, _) => const AddAccountScreen()),
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
+      GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
+      GoRoute(path: Routes.goals, builder: (_, _) => const GoalsListScreen()),
+      GoRoute(path: Routes.budgets, builder: (_, _) => const BudgetsListScreen()),
+      GoRoute(path: Routes.loans, builder: (_, _) => const LoansListScreen()),
+      GoRoute(path: Routes.investments, builder: (_, _) => const InvestmentsListScreen()),
+      GoRoute(path: Routes.projects, builder: (_, _) => const ProjectsListScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [

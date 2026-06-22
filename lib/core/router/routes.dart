@@ -20,4 +20,12 @@ abstract class Routes {
   static const addAccount = '/add-account';
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
+  static const inbox = '/inbox';
+
+  // Plan domain lists
+  static const goals = '/goals';
+  static const budgets = '/budgets';
+  static const loans = '/loans';
+  static const investments = '/investments';
+  static const projects = '/projects';
 }

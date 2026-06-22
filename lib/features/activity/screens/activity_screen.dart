@@ -1,7 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/routes.dart';
+import '../../capture/data/inbox_repository.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
@@ -12,9 +15,23 @@ class ActivityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final txns = ref.watch(transactionsProvider);
     final accounts = ref.watch(accountsProvider);
+    final pending = ref.watch(pendingCountProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('nav.activity'.tr())),
+      appBar: AppBar(
+        title: Text('nav.activity'.tr()),
+        actions: [
+          IconButton(
+            tooltip: 'inbox.title'.tr(),
+            onPressed: () => context.push(Routes.inbox),
+            icon: Badge(
+              isLabelVisible: pending > 0,
+              label: Text('$pending'),
+              child: const Icon(Icons.inbox_outlined),
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(accountsProvider);

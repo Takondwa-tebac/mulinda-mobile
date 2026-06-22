@@ -70,6 +70,19 @@
     "loadError": "Couldn't load your activity.",
     "retry": "Retry"
   },
+  "inbox": {
+    "title": "Pending",
+    "messages": "Messages",
+    "receipts": "Receipts",
+    "approve": "Approve",
+    "reject": "Reject",
+    "empty": "Nothing to review. Forwarded SMS and scanned receipts show up here.",
+    "approved": "Added to your transactions",
+    "rejected": "Dismissed",
+    "processing": "Still reading…",
+    "loadError": "Couldn't load pending items.",
+    "retry": "Retry"
+  },
   "addTxn": {
     "title": "Add transaction",
     "account": "Account",
@@ -149,6 +162,33 @@
     "retry": "Retry"
   },
   "coach": { "title": "Ask Mulinda" },
+  "plan": {
+    "advisory": "Your guidance",
+    "notAdvice": "Guidance only — not financial advice.",
+    "savingsRule": "Savings rule",
+    "creditworthiness": "Creditworthiness",
+    "investing": "Investing",
+    "onTrack": "On track",
+    "offTrack": "Behind target",
+    "goals": "Goals",
+    "budgets": "Budgets",
+    "loans": "Loans",
+    "investments": "Investments",
+    "projects": "Projects",
+    "empty": "Nothing here yet.",
+    "loadError": "Couldn't load this.",
+    "retry": "Retry",
+    "reco": {
+      "ready_to_invest": "Ready to invest",
+      "build_emergency_fund_first": "Build your emergency fund first",
+      "limited_surplus": "Limited surplus to invest"
+    },
+    "posture": {
+      "conservative": "Conservative",
+      "balanced": "Balanced",
+      "growth": "Growth"
+    }
+  },
   "profile": {
     "language": "Language",
     "appearance": "Appearance",

@@ -70,6 +70,19 @@
     "loadError": "Sitinathe kutsegula zochitika.",
     "retry": "Yesaninso"
   },
+  "inbox": {
+    "title": "Zoyembekezera",
+    "messages": "Mauthenga",
+    "receipts": "Marisiti",
+    "approve": "Vomerezani",
+    "reject": "Kanani",
+    "empty": "Palibe zoyang'ana. SMS zotumizidwa ndi marisiti ojambulidwa zimaonekera pano.",
+    "approved": "Zawonjezedwa ku zochitika zanu",
+    "rejected": "Zachotsedwa",
+    "processing": "Tikuwerengabe…",
+    "loadError": "Sitinathe kutsegula zoyembekezera.",
+    "retry": "Yesaninso"
+  },
   "addTxn": {
     "title": "Onjezani zochitika",
     "account": "Akaunti",
@@ -149,6 +162,33 @@
     "retry": "Yesaninso"
   },
   "coach": { "title": "Funsani Mulinda" },
+  "plan": {
+    "advisory": "Malangizo anu",
+    "notAdvice": "Malangizo okha — osati uphungu wa zachuma.",
+    "savingsRule": "Lamulo losunga",
+    "creditworthiness": "Krediti",
+    "investing": "Kuyika ndalama",
+    "onTrack": "Mukuyenda bwino",
+    "offTrack": "Mwatsalira",
+    "goals": "Zolinga",
+    "budgets": "Bajeti",
+    "loans": "Ngongole",
+    "investments": "Ndalama zoyikidwa",
+    "projects": "Mapulojekiti",
+    "empty": "Palibe kanthu pano.",
+    "loadError": "Sitinathe kutsegula.",
+    "retry": "Yesaninso",
+    "reco": {
+      "ready_to_invest": "Mwakonzeka kuyika ndalama",
+      "build_emergency_fund_first": "Yambani kumanga ndalama zadzidzidzi",
+      "limited_surplus": "Pali ndalama zochepa zoti muyike"
+    },
+    "posture": {
+      "conservative": "Osamala",
+      "balanced": "Wolinganizidwa",
+      "growth": "Kukula"
+    }
+  },
   "profile": {
     "language": "Chinenero",
     "appearance": "Maonekedwe",
