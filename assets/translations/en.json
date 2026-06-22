@@ -161,7 +161,16 @@
     "loadError": "Couldn't load your dashboard.",
     "retry": "Retry"
   },
-  "coach": { "title": "Ask Mulinda" },
+  "coach": {
+    "title": "Ask Mulinda",
+    "hint": "Ask about your money…",
+    "emptyTitle": "Hi, I'm Mulinda",
+    "emptySubtitle": "Ask me anything about your spending, saving, loans, or investing.",
+    "s1": "How am I doing this month?",
+    "s2": "Where can I save more?",
+    "s3": "Can I afford a loan?",
+    "error": "Couldn't reach the coach. Please try again."
+  },
   "plan": {
     "advisory": "Your guidance",
     "notAdvice": "Guidance only — not financial advice.",

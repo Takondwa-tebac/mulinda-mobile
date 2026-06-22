@@ -161,7 +161,16 @@
     "loadError": "Sitinathe kutsegula dashboard.",
     "retry": "Yesaninso"
   },
-  "coach": { "title": "Funsani Mulinda" },
+  "coach": {
+    "title": "Funsani Mulinda",
+    "hint": "Funsani za ndalama zanu…",
+    "emptyTitle": "Moni, ndine Mulinda",
+    "emptySubtitle": "Mundifunse chilichonse chokhudza kugula, kusunga, ngongole, kapena kuyika ndalama.",
+    "s1": "Ndikuyenda bwanji mwezi uno?",
+    "s2": "Ndingasunge bwanji zochuluka?",
+    "s3": "Kodi ndingakwanitse ngongole?",
+    "error": "Sitinathe kufika kwa mlangizi. Yesaninso."
+  },
   "plan": {
     "advisory": "Malangizo anu",
     "notAdvice": "Malangizo okha — osati uphungu wa zachuma.",
