@@ -43,6 +43,21 @@ class ActivityRepository {
     }
   }
 
+  Future<void> createAccount({
+    required String name,
+    required String type,
+    double? openingBalance,
+  }) async {
+    final body = <String, dynamic>{'name': name, 'type': type};
+    if (openingBalance != null) body['opening_balance'] = openingBalance;
+
+    try {
+      await _dio.post('/v1/accounts', data: body);
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<void> ingestSms(String smsBody, {String? sender}) async {
     final body = <String, dynamic>{'body': smsBody};
     if (sender != null && sender.isNotEmpty) body['sender'] = sender;

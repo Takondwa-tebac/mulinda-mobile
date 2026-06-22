@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router/routes.dart';
+
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
 /// contextual links — keeping the bar uncluttered.
@@ -52,6 +54,14 @@ class AppShell extends StatelessWidget {
     );
   }
 
+  /// Close the capture sheet, then push the chosen capture route. The router is
+  /// captured before popping so the sheet context can be safely torn down.
+  void _open(BuildContext context, String route) {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.push(route);
+  }
+
   void _showCaptureSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -68,9 +78,21 @@ class AppShell extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge),
               ),
             ),
-            _CaptureTile(icon: Icons.document_scanner_outlined, label: 'capture.scanReceipt'.tr()),
-            _CaptureTile(icon: Icons.sms_outlined, label: 'capture.pasteSms'.tr()),
-            _CaptureTile(icon: Icons.edit_outlined, label: 'capture.manual'.tr()),
+            _CaptureTile(
+              icon: Icons.document_scanner_outlined,
+              label: 'capture.scanReceipt'.tr(),
+              onTap: () => _open(context, Routes.scanReceipt),
+            ),
+            _CaptureTile(
+              icon: Icons.sms_outlined,
+              label: 'capture.pasteSms'.tr(),
+              onTap: () => _open(context, Routes.pasteSms),
+            ),
+            _CaptureTile(
+              icon: Icons.edit_outlined,
+              label: 'capture.manual'.tr(),
+              onTap: () => _open(context, Routes.addTransaction),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -80,10 +102,11 @@ class AppShell extends StatelessWidget {
 }
 
 class _CaptureTile extends StatelessWidget {
-  const _CaptureTile({required this.icon, required this.label});
+  const _CaptureTile({required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +119,7 @@ class _CaptureTile extends StatelessWidget {
       ),
       title: Text(label),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => Navigator.of(context).pop(),
+      onTap: onTap,
     );
   }
 }

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activity/screens/activity_screen.dart';
+import '../../features/activity/screens/add_account_screen.dart';
+import '../../features/activity/screens/add_transaction_screen.dart';
+import '../../features/capture/screens/paste_sms_screen.dart';
+import '../../features/capture/screens/scan_receipt_screen.dart';
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -71,6 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.coach,
         builder: (_, _) => const CoachScreen(),
       ),
+      GoRoute(path: Routes.addTransaction, builder: (_, _) => const AddTransactionScreen()),
+      GoRoute(path: Routes.addAccount, builder: (_, _) => const AddAccountScreen()),
+      GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
+      GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [

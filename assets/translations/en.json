@@ -86,6 +86,19 @@
     "needAccount": "Add an account first to record transactions.",
     "saved": "Transaction saved"
   },
+  "account": {
+    "title": "Add account",
+    "add": "Add account",
+    "name": "Account name",
+    "type": "Type",
+    "openingBalance": "Opening balance (optional)",
+    "save": "Save account",
+    "mobile_money": "Mobile money",
+    "bank": "Bank",
+    "cash": "Cash",
+    "wallet": "Wallet",
+    "savings": "Savings"
+  },
   "sms": {
     "title": "Paste SMS",
     "subtitle": "Paste a mobile-money message and Mulinda will turn it into a transaction.",

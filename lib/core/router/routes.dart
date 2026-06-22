@@ -14,4 +14,10 @@ abstract class Routes {
   static const profile = '/profile';
 
   static const coach = '/coach';
+
+  // Capture / activity
+  static const addTransaction = '/add-transaction';
+  static const addAccount = '/add-account';
+  static const pasteSms = '/paste-sms';
+  static const scanReceipt = '/scan-receipt';
 }

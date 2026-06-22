@@ -18,7 +18,8 @@ class ActivityScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(accountsProvider);
-          await ref.refresh(transactionsProvider.future);
+          ref.invalidate(transactionsProvider);
+          await ref.read(transactionsProvider.future);
         },
         child: txns.when(
           loading: () => const _Fill(child: CircularProgressIndicator()),

@@ -86,6 +86,19 @@
     "needAccount": "Onjezani akaunti choyamba kuti mulembe zochitika.",
     "saved": "Zochitika zasungidwa"
   },
+  "account": {
+    "title": "Onjezani akaunti",
+    "add": "Onjezani akaunti",
+    "name": "Dzina la akaunti",
+    "type": "Mtundu",
+    "openingBalance": "Ndalama zoyamba (sikofunika)",
+    "save": "Sungani akaunti",
+    "mobile_money": "Mobile money",
+    "bank": "Banki",
+    "cash": "Ndalama",
+    "wallet": "Chikwama",
+    "savings": "Kusunga"
+  },
   "sms": {
     "title": "Matani SMS",
     "subtitle": "Matani uthenga wa mobile money ndipo Mulinda idzausandutsa kukhala zochitika.",
