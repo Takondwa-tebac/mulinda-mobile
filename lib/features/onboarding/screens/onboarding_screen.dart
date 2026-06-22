@@ -4,107 +4,177 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 
-/// Phase 0 onboarding placeholder: shows the welcome copy and a language
-/// chooser (Chichewa default), then routes to login. The full 3-slide
-/// onboarding is built in the onboarding phase.
-class OnboardingScreen extends StatelessWidget {
+/// Three branded intro slides with a persistent language toggle (Chichewa
+/// default, switchable here) and Skip / Next / Get started controls.
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
 
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final _controller = PageController();
+  int _index = 0;
+
+  static const _slides = <_SlideData>[
+    _SlideData(Icons.account_balance_wallet_rounded, 'onboarding.slide1.title', 'onboarding.slide1.body'),
+    _SlideData(Icons.bolt_rounded, 'onboarding.slide2.title', 'onboarding.slide2.body'),
+    _SlideData(Icons.trending_up_rounded, 'onboarding.slide3.title', 'onboarding.slide3.body'),
+  ];
+
+  bool get _isLast => _index == _slides.length - 1;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _next() {
+    if (_isLast) {
+      context.go(Routes.login);
+    } else {
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(Icons.savings_rounded, color: scheme.onPrimaryContainer, size: 32),
-              ),
-              const SizedBox(height: 28),
-              Text('onboarding.welcomeTitle'.tr(),
-                  style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 12),
-              Text('onboarding.welcomeSubtitle'.tr(),
-                  style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant)),
-              const SizedBox(height: 28),
-              Text('onboarding.chooseLanguage'.tr(),
-                  style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-              Row(
+        child: Column(
+          children: [
+            // Top bar: language toggle + Skip.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _LangChip(
-                    label: 'profile.chichewa'.tr(),
-                    selected: context.locale.languageCode == 'ny',
-                    onTap: () => context.setLocale(const Locale('ny')),
-                  ),
-                  const SizedBox(width: 12),
-                  _LangChip(
-                    label: 'profile.english'.tr(),
-                    selected: context.locale.languageCode == 'en',
-                    onTap: () => context.setLocale(const Locale('en')),
+                  const _LanguageToggle(),
+                  TextButton(
+                    onPressed: () => context.go(Routes.login),
+                    child: Text('onboarding.skip'.tr()),
                   ),
                 ],
               ),
-              const Spacer(),
-              FilledButton(
-                onPressed: () => context.go(Routes.login),
-                child: Text('onboarding.getStarted'.tr()),
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemCount: _slides.length,
+                itemBuilder: (_, i) => _Slide(data: _slides[i]),
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            ),
+            _Dots(count: _slides.length, index: _index),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: FilledButton(
+                onPressed: _next,
+                child: Text((_isLast ? 'onboarding.getStarted' : 'onboarding.next').tr()),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _LangChip extends StatelessWidget {
-  const _LangChip({required this.label, required this.selected, required this.onTap});
+class _SlideData {
+  const _SlideData(this.icon, this.titleKey, this.bodyKey);
+  final IconData icon;
+  final String titleKey;
+  final String bodyKey;
+}
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+class _Slide extends StatelessWidget {
+  const _Slide({required this.data});
+  final _SlideData data;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primaryContainer : scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-              width: selected ? 2 : 1,
+    final text = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 168,
+            height: 168,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(40),
             ),
+            child: Icon(data.icon, size: 76, color: scheme.onPrimaryContainer),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: selected ? scheme.onPrimaryContainer : scheme.onSurface,
-            ),
+          const SizedBox(height: 40),
+          Text(
+            data.titleKey.tr(),
+            textAlign: TextAlign.center,
+            style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
-        ),
+          const SizedBox(height: 14),
+          Text(
+            data.bodyKey.tr(),
+            textAlign: TextAlign.center,
+            style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _Dots extends StatelessWidget {
+  const _Dots({required this.count, required this.index});
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (i) {
+        final active = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: active ? 24 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: active ? scheme.primary : scheme.outlineVariant,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final code = context.locale.languageCode;
+    return SegmentedButton<String>(
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      showSelectedIcon: false,
+      segments: const [
+        ButtonSegment(value: 'ny', label: Text('NY')),
+        ButtonSegment(value: 'en', label: Text('EN')),
+      ],
+      selected: {code == 'en' ? 'en' : 'ny'},
+      onSelectionChanged: (s) => context.setLocale(Locale(s.first)),
     );
   }
 }

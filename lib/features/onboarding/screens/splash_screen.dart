@@ -30,13 +30,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 88,
-              height: 88,
+              width: 112,
+              height: 112,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: scheme.onPrimary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
               ),
-              child: Icon(Icons.savings_rounded, size: 44, color: scheme.onPrimary),
+              // child: Icon(Icons.savings_rounded, size: 44, color: scheme.onPrimary),
+              child: Image.asset('assets/logo.png'),
             ),
             const SizedBox(height: 20),
             Text(

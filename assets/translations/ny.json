@@ -7,16 +7,50 @@
   },
   "onboarding": {
     "chooseLanguage": "Sankhani chinenero chanu",
-    "welcomeTitle": "Lamulirani ndalama zanu",
-    "welcomeSubtitle": "Mulinda imasandutsa ndalama zanu za tsiku ndi tsiku kukhala chithunzi chomveka, ndipo imakulangizani momwe mungagwiritsire ntchito mwanzeru ndi kusunga molingana ndi zomwe mumapeza.",
-    "getStarted": "Yambani"
+    "skip": "Dumphani",
+    "next": "Tsatira",
+    "getStarted": "Yambani",
+    "slide1": {
+      "title": "Lamulirani ndalama zanu",
+      "body": "Onani zonse pamodzi — maakaunti, kugwiritsa ntchito, ndi kusunga — ndi chiwerengero cha thanzi la ndalama chomwe chili choyenera ndi zomwe mumapeza."
+    },
+    "slide2": {
+      "title": "Zochitika zanu, zojambulidwa mwakhama",
+      "body": "Tumizani SMS ya mobile money kapena jambulani risiti — Mulinda imazisandutsa kukhala zochitika. Inu mungovomereza basi."
+    },
+    "slide3": {
+      "title": "Sungani, bwerekani, ndi kuyika ndalama mwanzeru",
+      "body": "Khazikitsani zolinga, landirani zikumbutso, onani ngati mungakwanitse ngongole, ndipo dziwani nthawi yoti muyambe kuyika ndalama — ndi mlangizi amene akudziwa ndalama zanu."
+    }
   },
   "auth": {
     "signIn": "Lowani",
-    "emailOrUsername": "Imelo kapena dzina",
+    "signInSubtitle": "Takulandiraninso",
+    "username": "Dzina lanu (username)",
     "password": "Mawu achinsinsi",
-    "noAccount": "Mulibe akaunti? Lembetsani",
-    "continueWithGoogle": "Pitirizani ndi Google"
+    "forgotPassword": "Mwaiwala achinsinsi?",
+    "noAccount": "Mulibe akaunti?",
+    "register": "Lembetsani",
+    "createAccount": "Pangani akaunti",
+    "registerSubtitle": "Khazikitsani akaunti yanu ya Mulinda",
+    "firstName": "Dzina loyamba",
+    "middleName": "Dzina lapakati (sikofunika)",
+    "lastName": "Dzina la banja",
+    "phoneNumber": "Nambala ya foni",
+    "email": "Imelo",
+    "confirmPassword": "Tsimikizani achinsinsi",
+    "haveAccount": "Muli kale ndi akaunti?",
+    "continueWithGoogle": "Pitirizani ndi Google",
+    "or": "kapena",
+    "resetTitle": "Konzani achinsinsi",
+    "resetSubtitle": "Lowetsani imelo yanu ndipo tikutumizirani ulalo wokonzanso.",
+    "sendResetLink": "Tumizani ulalo",
+    "resetSent": "Ulalo wokonzanso watumizidwa ku imelo yanu.",
+    "required": "Zofunika",
+    "invalidEmail": "Lowetsani imelo yolondola",
+    "passwordsDontMatch": "Achinsinsi sagwirizana",
+    "passwordHint": "Osachepera zilembo 8, zokhala ndi zilembo ndi manambala",
+    "googleUnavailable": "Google sign-in sikupezeka pakali pano"
   },
   "nav": {
     "home": "Kunyumba",
@@ -29,6 +63,15 @@
     "scanReceipt": "Jambulani risiti",
     "pasteSms": "Matani SMS",
     "manual": "Lembani nokha"
+  },
+  "income": {
+    "title": "Mumapeza ndalama zingati pa mwezi?",
+    "subtitle": "Izi ndi zachinsinsi. Zimathandiza Mulinda kukhazikitsa zolinga zosungira ndi malangizo oyenera ndi zomwe mumapeza.",
+    "low": { "label": "Ndalama zochepa", "range": "MK 50,000 – 150,000" },
+    "lowerMiddle": { "label": "Zapakatikati zotsika", "range": "MK 150,000 – 400,000" },
+    "middle": { "label": "Zapakatikati", "range": "MK 400,000 – 1,000,000" },
+    "upperMiddle": { "label": "Zapakatikati zapamwamba", "range": "MK 1,000,000 – 2,500,000" },
+    "upper": { "label": "Zapamwamba", "range": "MK 2,500,000+" }
   },
   "home": { "greeting": "Takulandiraninso", "askCoach": "Funsani Mulinda" },
   "coach": { "title": "Funsani Mulinda" },

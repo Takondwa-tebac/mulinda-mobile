@@ -7,16 +7,50 @@
   },
   "onboarding": {
     "chooseLanguage": "Choose your language",
-    "welcomeTitle": "Take control of your money",
-    "welcomeSubtitle": "Mulinda turns your everyday transactions into a clear money picture, then coaches you to spend smarter and save to a target that fits you.",
-    "getStarted": "Get started"
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get started",
+    "slide1": {
+      "title": "Take control of your money",
+      "body": "See everything in one place — accounts, spending, and savings — with a health score that's fair to your income."
+    },
+    "slide2": {
+      "title": "Your transactions, captured for you",
+      "body": "Forward a mobile-money SMS or snap a receipt — Mulinda turns it into a transaction. You just approve."
+    },
+    "slide3": {
+      "title": "Save, borrow and invest wisely",
+      "body": "Set goals, get reminders, check if you can afford a loan, and learn when you're ready to invest — with a coach who knows your money."
+    }
   },
   "auth": {
     "signIn": "Sign in",
-    "emailOrUsername": "Email or username",
+    "signInSubtitle": "Welcome back",
+    "username": "Username",
     "password": "Password",
-    "noAccount": "Don't have an account? Register",
-    "continueWithGoogle": "Continue with Google"
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "register": "Register",
+    "createAccount": "Create account",
+    "registerSubtitle": "Set up your Mulinda account",
+    "firstName": "First name",
+    "middleName": "Middle name (optional)",
+    "lastName": "Last name",
+    "phoneNumber": "Phone number",
+    "email": "Email",
+    "confirmPassword": "Confirm password",
+    "haveAccount": "Already have an account?",
+    "continueWithGoogle": "Continue with Google",
+    "or": "or",
+    "resetTitle": "Reset password",
+    "resetSubtitle": "Enter your email and we'll send you a reset link.",
+    "sendResetLink": "Send reset link",
+    "resetSent": "A reset link has been sent to your email.",
+    "required": "Required",
+    "invalidEmail": "Enter a valid email",
+    "passwordsDontMatch": "Passwords don't match",
+    "passwordHint": "At least 8 characters, with letters and numbers",
+    "googleUnavailable": "Google sign-in isn't available right now"
   },
   "nav": {
     "home": "Home",
@@ -29,6 +63,15 @@
     "scanReceipt": "Scan receipt",
     "pasteSms": "Paste SMS",
     "manual": "Manual entry"
+  },
+  "income": {
+    "title": "What's your monthly income?",
+    "subtitle": "This stays private. It helps Mulinda set savings targets and advice that fit what you earn.",
+    "low": { "label": "Low income", "range": "MK 50,000 – 150,000" },
+    "lowerMiddle": { "label": "Lower-middle income", "range": "MK 150,000 – 400,000" },
+    "middle": { "label": "Middle income", "range": "MK 400,000 – 1,000,000" },
+    "upperMiddle": { "label": "Upper-middle income", "range": "MK 1,000,000 – 2,500,000" },
+    "upper": { "label": "Upper income", "range": "MK 2,500,000+" }
   },
   "home": { "greeting": "Welcome back", "askCoach": "Ask Mulinda" },
   "coach": { "title": "Ask Mulinda" },
