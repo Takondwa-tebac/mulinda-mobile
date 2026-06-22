@@ -1,0 +1,45 @@
+{
+  "app": { "name": "Mulinda", "tagline": "Your money, coached." },
+  "common": {
+    "continue": "Continue",
+    "comingSoon": "Coming soon",
+    "cancel": "Cancel"
+  },
+  "onboarding": {
+    "chooseLanguage": "Choose your language",
+    "welcomeTitle": "Take control of your money",
+    "welcomeSubtitle": "Mulinda turns your everyday transactions into a clear money picture, then coaches you to spend smarter and save to a target that fits you.",
+    "getStarted": "Get started"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "emailOrUsername": "Email or username",
+    "password": "Password",
+    "noAccount": "Don't have an account? Register",
+    "continueWithGoogle": "Continue with Google"
+  },
+  "nav": {
+    "home": "Home",
+    "activity": "Activity",
+    "plan": "Plan",
+    "profile": "Profile"
+  },
+  "capture": {
+    "title": "Add",
+    "scanReceipt": "Scan receipt",
+    "pasteSms": "Paste SMS",
+    "manual": "Manual entry"
+  },
+  "home": { "greeting": "Welcome back", "askCoach": "Ask Mulinda" },
+  "coach": { "title": "Ask Mulinda" },
+  "profile": {
+    "language": "Language",
+    "appearance": "Appearance",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "logOut": "Log out",
+    "english": "English",
+    "chichewa": "Chichewa"
+  }
+}

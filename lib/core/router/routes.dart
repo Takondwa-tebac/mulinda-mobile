@@ -1,0 +1,13 @@
+/// Centralised route paths.
+abstract class Routes {
+  static const splash = '/splash';
+  static const onboarding = '/onboarding';
+  static const login = '/login';
+
+  static const home = '/home';
+  static const activity = '/activity';
+  static const plan = '/plan';
+  static const profile = '/profile';
+
+  static const coach = '/coach';
+}

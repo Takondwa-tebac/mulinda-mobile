@@ -1,0 +1,45 @@
+{
+  "app": { "name": "Mulinda", "tagline": "Ndalama zanu, mothandizidwa." },
+  "common": {
+    "continue": "Pitirizani",
+    "comingSoon": "Zikubwera posachedwa",
+    "cancel": "Lekani"
+  },
+  "onboarding": {
+    "chooseLanguage": "Sankhani chinenero chanu",
+    "welcomeTitle": "Lamulirani ndalama zanu",
+    "welcomeSubtitle": "Mulinda imasandutsa ndalama zanu za tsiku ndi tsiku kukhala chithunzi chomveka, ndipo imakulangizani momwe mungagwiritsire ntchito mwanzeru ndi kusunga molingana ndi zomwe mumapeza.",
+    "getStarted": "Yambani"
+  },
+  "auth": {
+    "signIn": "Lowani",
+    "emailOrUsername": "Imelo kapena dzina",
+    "password": "Mawu achinsinsi",
+    "noAccount": "Mulibe akaunti? Lembetsani",
+    "continueWithGoogle": "Pitirizani ndi Google"
+  },
+  "nav": {
+    "home": "Kunyumba",
+    "activity": "Zochitika",
+    "plan": "Mapulani",
+    "profile": "Mbiri"
+  },
+  "capture": {
+    "title": "Onjezani",
+    "scanReceipt": "Jambulani risiti",
+    "pasteSms": "Matani SMS",
+    "manual": "Lembani nokha"
+  },
+  "home": { "greeting": "Takulandiraninso", "askCoach": "Funsani Mulinda" },
+  "coach": { "title": "Funsani Mulinda" },
+  "profile": {
+    "language": "Chinenero",
+    "appearance": "Maonekedwe",
+    "themeSystem": "Monga pa foni",
+    "themeLight": "Kuwala",
+    "themeDark": "Mdima",
+    "logOut": "Tulukani",
+    "english": "Chingerezi",
+    "chichewa": "Chichewa"
+  }
+}
