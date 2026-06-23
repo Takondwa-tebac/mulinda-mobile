@@ -16,6 +16,8 @@ import '../../features/coach/screens/coach_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
+import '../../features/plan/data/plan_models.dart';
+import '../../features/plan/screens/plan_forms.dart';
 import '../../features/plan/screens/plan_lists.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
@@ -91,6 +93,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.projects, builder: (_, _) => const ProjectsListScreen()),
       GoRoute(path: Routes.editProfile, builder: (_, _) => const EditProfileScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
+      GoRoute(path: Routes.goalForm, builder: (_, s) => GoalForm(item: s.extra as GoalItem?)),
+      GoRoute(path: Routes.budgetForm, builder: (_, s) => BudgetForm(item: s.extra as BudgetItem?)),
+      GoRoute(path: Routes.loanForm, builder: (_, s) => LoanForm(item: s.extra as LoanItem?)),
+      GoRoute(path: Routes.investmentForm, builder: (_, s) => InvestmentForm(item: s.extra as InvestmentItem?)),
+      GoRoute(path: Routes.projectForm, builder: (_, s) => ProjectForm(item: s.extra as ProjectItem?)),
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [

@@ -204,6 +204,33 @@
       "growth": "Kukula"
     }
   },
+  "form": {
+    "newGoal": "Cholinga chatsopano", "editGoal": "Sinthani cholinga",
+    "newBudget": "Bajeti yatsopano", "editBudget": "Sinthani bajeti",
+    "newLoan": "Ngongole yatsopano", "editLoan": "Sinthani ngongole",
+    "newInvestment": "Ndalama zatsopano", "editInvestment": "Sinthani ndalama zoyikidwa",
+    "newProject": "Pulojekiti yatsopano", "editProject": "Sinthani pulojekiti",
+    "contribute": "Onjezani thandizo", "repay": "Lembani kubweza",
+    "edit": "Sinthani", "delete": "Chotsani", "deleted": "Zachotsedwa", "saved": "Zasungidwa",
+    "create": "Pangani", "save": "Sungani zosintha",
+    "confirmDeleteTitle": "Chotsani?", "confirmDeleteBody": "Izi sizingabwezeretsedwe.", "cancel": "Lekani",
+    "name": "Dzina", "type": "Mtundu", "target": "Cholinga cha ndalama", "targetDate": "Tsiku lolinga (sikofunika)",
+    "monthly": "Thandizo la mwezi (sikofunika)",
+    "category": "Gulu (sikofunika)", "none": "Zogula zonse", "period": "Nthawi", "limit": "Malire", "alertThreshold": "Chenjezani pa (%)",
+    "lender": "Wobwereketsa (sikofunika)", "principal": "Ndalama yoyamba", "interestRate": "Chiwongoladzanja pa chaka (%)",
+    "interestType": "Mtundu wa chiwongoladzanja", "termMonths": "Nthawi (miyezi)", "disbursedAt": "Tsiku lopatsidwa", "firstPayment": "Kubweza koyamba (sikofunika)", "status": "Mkhalidwe",
+    "amountInvested": "Ndalama zoyikidwa", "currentValue": "Mtengo wapano (sikofunika)", "expectedReturn": "Phindu loyembekezeka pa chaka (%)",
+    "startedAt": "Tsiku loyamba", "maturityDate": "Tsiku lokhwima (sikofunika)", "notes": "Zolemba (sikofunika)",
+    "description": "Kufotokoza (sikofunika)", "budget": "Bajeti (sikofunika)", "completedAt": "Tsiku lomaliza (sikofunika)",
+    "amount": "Ndalama", "note": "Zolemba (sikofunika)", "paidAt": "Tsiku lolipira (sikofunika)", "contributedAt": "Tsiku (sikofunika)",
+    "weekly": "Sabata iliyonse", "monthly_period": "Mwezi uliwonse",
+    "goalType": {"emergency": "Ndalama zadzidzidzi", "house": "Nyumba", "car": "Galimoto", "business": "Bizinesi", "education": "Maphunziro", "vacation": "Tchuthi", "custom": "Zanu"},
+    "interestTypes": {"reducing_balance": "Reducing balance", "flat": "Flat"},
+    "loanStatus": {"active": "Yogwira", "paid_off": "Yamalizidwa", "defaulted": "Yolephereka", "closed": "Yotsekedwa"},
+    "investType": {"fixed_deposit": "Fixed deposit", "treasury_bill": "Treasury bill", "treasury_bond": "Treasury bond", "unit_trust": "Unit trust", "shares": "Masheya", "pension": "Penshoni", "business": "Bizinesi", "property": "Katundu", "other": "Zina"},
+    "investStatus": {"active": "Yogwira", "matured": "Yakhwima", "sold": "Yagulitsidwa", "closed": "Yotsekedwa"},
+    "projectStatus": {"planning": "Kukonzekera", "active": "Yogwira", "on_hold": "Yoima", "completed": "Yamalizidwa"}
+  },
   "profile": {
     "account": "Akaunti",
     "preferences": "Zokonda",

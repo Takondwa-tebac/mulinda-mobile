@@ -30,4 +30,11 @@ abstract class Routes {
   static const loans = '/loans';
   static const investments = '/investments';
   static const projects = '/projects';
+
+  // Plan create/edit forms (item passed via GoRouter `extra`)
+  static const goalForm = '/goal-form';
+  static const budgetForm = '/budget-form';
+  static const loanForm = '/loan-form';
+  static const investmentForm = '/investment-form';
+  static const projectForm = '/project-form';
 }

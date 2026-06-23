@@ -204,6 +204,33 @@
       "growth": "Growth"
     }
   },
+  "form": {
+    "newGoal": "New goal", "editGoal": "Edit goal",
+    "newBudget": "New budget", "editBudget": "Edit budget",
+    "newLoan": "New loan", "editLoan": "Edit loan",
+    "newInvestment": "New investment", "editInvestment": "Edit investment",
+    "newProject": "New project", "editProject": "Edit project",
+    "contribute": "Add contribution", "repay": "Record repayment",
+    "edit": "Edit", "delete": "Delete", "deleted": "Deleted", "saved": "Saved",
+    "create": "Create", "save": "Save changes",
+    "confirmDeleteTitle": "Delete?", "confirmDeleteBody": "This can't be undone.", "cancel": "Cancel",
+    "name": "Name", "type": "Type", "target": "Target amount", "targetDate": "Target date (optional)",
+    "monthly": "Monthly contribution (optional)",
+    "category": "Category (optional)", "none": "All spending", "period": "Period", "limit": "Limit", "alertThreshold": "Alert at (%)",
+    "lender": "Lender (optional)", "principal": "Principal", "interestRate": "Annual interest rate (%)",
+    "interestType": "Interest type", "termMonths": "Term (months)", "disbursedAt": "Disbursed on", "firstPayment": "First payment (optional)", "status": "Status",
+    "amountInvested": "Amount invested", "currentValue": "Current value (optional)", "expectedReturn": "Expected annual return (%)",
+    "startedAt": "Started on", "maturityDate": "Maturity date (optional)", "notes": "Notes (optional)",
+    "description": "Description (optional)", "budget": "Budget (optional)", "completedAt": "Completed on (optional)",
+    "amount": "Amount", "note": "Note (optional)", "paidAt": "Paid on (optional)", "contributedAt": "Date (optional)",
+    "weekly": "Weekly", "monthly_period": "Monthly",
+    "goalType": {"emergency": "Emergency fund", "house": "House", "car": "Car", "business": "Business", "education": "Education", "vacation": "Vacation", "custom": "Custom"},
+    "interestTypes": {"reducing_balance": "Reducing balance", "flat": "Flat"},
+    "loanStatus": {"active": "Active", "paid_off": "Paid off", "defaulted": "Defaulted", "closed": "Closed"},
+    "investType": {"fixed_deposit": "Fixed deposit", "treasury_bill": "Treasury bill", "treasury_bond": "Treasury bond", "unit_trust": "Unit trust", "shares": "Shares", "pension": "Pension", "business": "Business", "property": "Property", "other": "Other"},
+    "investStatus": {"active": "Active", "matured": "Matured", "sold": "Sold", "closed": "Closed"},
+    "projectStatus": {"planning": "Planning", "active": "Active", "on_hold": "On hold", "completed": "Completed"}
+  },
   "profile": {
     "account": "Account",
     "preferences": "Preferences",

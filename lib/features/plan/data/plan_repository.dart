@@ -27,6 +27,44 @@ class PlanRepository {
   Future<List<InvestmentItem>> investments() => _list('/v1/investments', InvestmentItem.fromJson);
   Future<List<ProjectItem>> projects() => _list('/v1/projects', ProjectItem.fromJson);
 
+  // ---- Mutations -----------------------------------------------------------
+
+  Future<void> createGoal(Map<String, dynamic> data) => _post('/v1/goals', data);
+  Future<void> updateGoal(String id, Map<String, dynamic> data) => _put('/v1/goals/$id', data);
+  Future<void> deleteGoal(String id) => _delete('/v1/goals/$id');
+  Future<void> contributeGoal(String id, Map<String, dynamic> data) => _post('/v1/goals/$id/contributions', data);
+
+  Future<void> createBudget(Map<String, dynamic> data) => _post('/v1/budgets', data);
+  Future<void> updateBudget(String id, Map<String, dynamic> data) => _put('/v1/budgets/$id', data);
+  Future<void> deleteBudget(String id) => _delete('/v1/budgets/$id');
+
+  Future<void> createLoan(Map<String, dynamic> data) => _post('/v1/loans', data);
+  Future<void> updateLoan(String id, Map<String, dynamic> data) => _put('/v1/loans/$id', data);
+  Future<void> deleteLoan(String id) => _delete('/v1/loans/$id');
+  Future<void> repayLoan(String id, Map<String, dynamic> data) => _post('/v1/loans/$id/repayments', data);
+
+  Future<void> createInvestment(Map<String, dynamic> data) => _post('/v1/investments', data);
+  Future<void> updateInvestment(String id, Map<String, dynamic> data) => _put('/v1/investments/$id', data);
+  Future<void> deleteInvestment(String id) => _delete('/v1/investments/$id');
+
+  Future<void> createProject(Map<String, dynamic> data) => _post('/v1/projects', data);
+  Future<void> updateProject(String id, Map<String, dynamic> data) => _put('/v1/projects/$id', data);
+  Future<void> deleteProject(String id) => _delete('/v1/projects/$id');
+
+  Future<void> _post(String path, Map<String, dynamic> data) => _send(() => _dio.post(path, data: data));
+  Future<void> _put(String path, Map<String, dynamic> data) => _send(() => _dio.put(path, data: data));
+  Future<void> _delete(String path) => _send(() => _dio.delete(path));
+
+  Future<void> _send(Future<Response> Function() call) async {
+    try {
+      await call();
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
+  // ---- Reads ----------------------------------------------------------------
+
   Future<Map<String, dynamic>?> _safe(String path) async {
     try {
       final res = await _dio.get(path);
