@@ -2,20 +2,28 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/localization/ny_localizations.dart';
 import 'core/notifications/notification_service.dart';
+import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (_) {
+    // Firebase not configured for this platform (e.g. desktop dev) — skip.
+  }
   await NotificationService.init();
 
   runApp(
@@ -45,11 +53,15 @@ class _MulindaAppState extends ConsumerState<MulindaApp> {
   @override
   void initState() {
     super.initState();
-    // Re-try a pending deep link once auth status is resolved.
+    // Re-try a pending deep link, and register the FCM token, once auth resolves.
     _authSub = ref.listenManual(authControllerProvider, (_, next) {
       if (next.status != AuthStatus.unknown) _flushPendingLink();
+      if (next.status == AuthStatus.authenticated) {
+        PushService.instance.registerToken(ref);
+      }
     });
     _initDeepLinks();
+    PushService.instance.init(ref);
   }
 
   Future<void> _initDeepLinks() async {

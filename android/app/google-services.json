@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "170317818551",
+    "project_id": "mulinda-5717f",
+    "storage_bucket": "mulinda-5717f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:170317818551:android:0c89a104f4d07e2b0fbb32",
+        "android_client_info": {
+          "package_name": "com.limitrovasys.ltd.mulinda_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChvJ3PL8P8oJuF0faIMteFKl9UR15T0AE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

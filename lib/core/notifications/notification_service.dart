@@ -29,4 +29,24 @@ class NotificationService {
       // Plugin unavailable (e.g. unsupported platform) — ignore.
     }
   }
+
+  /// Show a notification now (used to surface foreground FCM messages).
+  static Future<void> show(String title, String body) async {
+    try {
+      await _plugin.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channel.id,
+            _channel.name,
+            channelDescription: _channel.description,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    } catch (_) {}
+  }
 }

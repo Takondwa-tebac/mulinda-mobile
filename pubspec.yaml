@@ -13,6 +13,10 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
+  # Firebase (Google sign-in config + push messaging)
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+
   # State management
   flutter_riverpod: ^2.6.1
 
