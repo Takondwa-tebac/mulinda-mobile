@@ -12,6 +12,7 @@ import '../../features/auth/providers/auth_controller.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
@@ -46,17 +47,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == Routes.splash ? null : Routes.splash;
       }
 
-      const authFlow = {
-        Routes.splash,
+      // Signed-out pages (NOTE: splash is excluded — once resolved, leave it).
+      const unauthAllowed = {
         Routes.onboarding,
         Routes.login,
         Routes.register,
         Routes.forgotPassword,
+        Routes.resetPassword,
       };
-      final onAuthFlow = authFlow.contains(loc);
 
       if (status == AuthStatus.unauthenticated) {
-        return onAuthFlow ? null : Routes.onboarding;
+        return unauthAllowed.contains(loc) ? null : Routes.onboarding;
       }
 
       // Authenticated. First-run: declare income bracket before the app proper.
@@ -66,8 +67,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == Routes.incomeSetup ? null : Routes.incomeSetup;
       }
 
-      // Keep them out of the auth flow and the (now-complete) setup screen.
-      if (onAuthFlow || loc == Routes.incomeSetup) return Routes.home;
+      // Bounce off the splash, signed-out pages, and the (now-complete) setup.
+      if (loc == Routes.splash || unauthAllowed.contains(loc) || loc == Routes.incomeSetup) {
+        return Routes.home;
+      }
       return null;
     },
     routes: [
@@ -76,6 +79,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: Routes.register, builder: (_, _) => const RegisterScreen()),
       GoRoute(path: Routes.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
+      GoRoute(
+        path: Routes.resetPassword,
+        builder: (_, s) => ResetPasswordScreen(
+          token: s.uri.queryParameters['token'] ?? '',
+          email: s.uri.queryParameters['email'] ?? '',
+        ),
+      ),
       GoRoute(path: Routes.incomeSetup, builder: (_, _) => const IncomeSetupScreen()),
       GoRoute(
         path: Routes.coach,

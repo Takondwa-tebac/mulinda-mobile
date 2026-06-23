@@ -20,9 +20,21 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- app_links handles deep links directly; disable Flutter's own
+                 deep-link routing so the mulinda:// scheme isn't intercepted. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Password-reset deep link: mulinda://reset-password?token=..&email=.. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="mulinda" android:host="reset-password"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

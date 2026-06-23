@@ -87,6 +87,24 @@ class AuthRepository {
     }
   }
 
+  /// Completes a reset using the token from the emailed deep link.
+  Future<void> resetPassword({
+    required String token,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _dio.post('/v1/auth/reset-password', data: {
+        'token': token,
+        'email': email,
+        'password': password,
+        'password_confirmation': password,
+      });
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   /// Posts credentials, saves the returned token, and returns the user.
   Future<User> _authRequest(String path, Map<String, dynamic> body) async {
     try {

@@ -5,6 +5,7 @@ import 'app_colors.dart';
 /// Builds Mulinda's light and dark Material 3 themes from the brand palette.
 abstract class AppTheme {
   static const _radius = 16.0;
+  static const _font = 'Inter';
 
   static ThemeData get light => _build(_lightScheme, Brightness.light);
   static ThemeData get dark => _build(_darkScheme, Brightness.dark);
@@ -65,12 +66,15 @@ abstract class AppTheme {
     return base.copyWith(
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
+      textTheme: base.textTheme.apply(fontFamily: _font),
+      primaryTextTheme: base.primaryTextTheme.apply(fontFamily: _font),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: _font,
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: scheme.onSurface,
@@ -86,14 +90,14 @@ abstract class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontFamily: _font, fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontFamily: _font, fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -121,7 +125,7 @@ abstract class AppTheme {
         backgroundColor: scheme.surfaceContainerLowest,
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: const WidgetStatePropertyAll(
-          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          TextStyle(fontFamily: _font, fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
     );
