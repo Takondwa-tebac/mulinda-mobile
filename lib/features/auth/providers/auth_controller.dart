@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -28,24 +30,14 @@ class AuthController extends Notifier<AuthState> {
   /// Holds a minimum duration so the splash is visible, and never hangs: the
   /// reads are time-boxed and failures fall back to signed-out.
   Future<void> bootstrap() async {
-    const minSplash = Duration(milliseconds: 1600);
+    const minSplash = Duration(milliseconds: 1200);
     final stopwatch = Stopwatch()..start();
 
     String? token;
-    User? user;
     try {
-      token = await _tokens.read().timeout(const Duration(seconds: 4));
-      if (token != null) {
-        try {
-          user = await _repo.me().timeout(const Duration(seconds: 6));
-        } catch (_) {
-          // A 401 makes the Dio interceptor clear the token; re-read to confirm.
-          // Other (network) errors keep the token so offline users stay in.
-          token = await _tokens.read();
-        }
-      }
+      token = await _tokens.read().timeout(const Duration(seconds: 3));
     } catch (_) {
-      token = null;
+      token = null; // storage slow/unavailable → treat as signed out
     }
 
     final remaining = minSplash - stopwatch.elapsed;
@@ -53,9 +45,30 @@ class AuthController extends Notifier<AuthState> {
       await Future.delayed(remaining);
     }
 
-    state = token != null
-        ? AuthState(status: AuthStatus.authenticated, user: user)
-        : const AuthState(status: AuthStatus.unauthenticated);
+    // Decide auth purely from token presence — the splash never waits on the
+    // network. The profile is fetched in the background afterwards.
+    if (token == null) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
+      return;
+    }
+    state = const AuthState(status: AuthStatus.authenticated);
+    unawaited(_loadUser());
+  }
+
+  /// Fetch the signed-in user's profile without blocking the splash. A 401
+  /// signs out; other (offline) errors leave them in with the profile pending.
+  Future<void> _loadUser() async {
+    try {
+      final user = await _repo.me().timeout(const Duration(seconds: 10));
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        await _tokens.clear();
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    } catch (_) {
+      // Network/timeout — stay signed in; the profile loads on next try.
+    }
   }
 
   Future<void> login(String username, String password) async {
