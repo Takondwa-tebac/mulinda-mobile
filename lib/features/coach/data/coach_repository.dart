@@ -28,11 +28,18 @@ class CoachHistory {
   final List<CoachHistoryMessage> messages;
 }
 
+class ChartHint {
+  const ChartHint({required this.kind, this.params = const {}});
+  final String kind; // 'category_breakdown' | 'account_balances' | 'spending_summary' | 'savings_rule'
+  final Map<String, dynamic> params;
+}
+
 class CoachChunk {
-  const CoachChunk({this.text, this.isDone = false, this.conversationId});
+  const CoachChunk({this.text, this.isDone = false, this.conversationId, this.chartHint});
   final String? text;
   final bool isDone;
   final String? conversationId;
+  final ChartHint? chartHint;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +140,15 @@ class CoachRepository {
             final type = parsed['type'] as String?;
             if (type == 'delta') {
               yield CoachChunk(text: parsed['content'] as String?);
+            } else if (type == 'chart_hint') {
+              final kind = parsed['kind'] as String?;
+              if (kind != null) {
+                final rawParams = parsed['params'];
+                final params = rawParams is Map
+                    ? rawParams.cast<String, dynamic>()
+                    : <String, dynamic>{};
+                yield CoachChunk(chartHint: ChartHint(kind: kind, params: params));
+              }
             } else if (type == 'done') {
               yield CoachChunk(
                 isDone: true,

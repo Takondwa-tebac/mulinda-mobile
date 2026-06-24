@@ -9,7 +9,6 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 import 'plan_forms.dart';
-import 'plan_lists.dart';
 
 class GoalDetailScreen extends ConsumerWidget {
   const GoalDetailScreen({super.key, required this.goal});

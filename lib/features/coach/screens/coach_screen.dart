@@ -3,13 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../data/coach_chart_repository.dart';
 import '../data/coach_repository.dart';
+import '../widgets/coach_chart_widget.dart';
 
 class _Msg {
-  _Msg({required this.text, required this.fromUser, this.isStreaming = false});
+  _Msg({
+    required this.text,
+    required this.fromUser,
+    this.isStreaming = false,
+    this.charts = const [],
+  });
   final String text;
   final bool fromUser;
   final bool isStreaming;
+  final List<Future<Map<String, dynamic>?>> charts;
 }
 
 class CoachScreen extends ConsumerStatefulWidget {
@@ -86,10 +94,24 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
             _conversationId = chunk.conversationId ?? _conversationId;
             final last = _messages.last;
             _messages[_messages.length - 1] =
-                _Msg(text: last.text, fromUser: false);
+                _Msg(text: last.text, fromUser: false, charts: last.charts);
             _sending = false;
           });
           _scrollToBottom();
+        } else if (chunk.chartHint != null) {
+          final hint = chunk.chartHint!;
+          final future = ref
+              .read(coachChartRepositoryProvider)
+              .fetchChart(hint.kind, params: hint.params);
+          setState(() {
+            final last = _messages.last;
+            _messages[_messages.length - 1] = _Msg(
+              text: last.text,
+              fromUser: false,
+              isStreaming: true,
+              charts: [...last.charts, future],
+            );
+          });
         } else if (chunk.text != null && chunk.text!.isNotEmpty) {
           setState(() {
             final last = _messages.last;
@@ -97,6 +119,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
               text: last.text + chunk.text!,
               fromUser: false,
               isStreaming: true,
+              charts: last.charts,
             );
           });
           // Scroll only when at or near the bottom so we don't
@@ -195,11 +218,12 @@ class _Bubble extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final bg = msg.fromUser ? scheme.primary : scheme.surfaceContainerHigh;
     final fg = msg.fromUser ? scheme.onPrimary : scheme.onSurface;
+    final hasCharts = !msg.fromUser && msg.charts.isNotEmpty;
 
-    return Align(
+    final bubble = Align(
       alignment: msg.fromUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: EdgeInsets.only(bottom: hasCharts ? 4 : 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
@@ -213,7 +237,6 @@ class _Bubble extends StatelessWidget {
           ),
         ),
         child: msg.isStreaming && msg.text.isEmpty
-            // Waiting for first token — show spinner inside the bubble.
             ? SizedBox(
                 height: 16,
                 width: 16,
@@ -224,6 +247,48 @@ class _Bubble extends StatelessWidget {
               )
             : Text(msg.text, style: TextStyle(color: fg, height: 1.4)),
       ),
+    );
+
+    if (!hasCharts) return bubble;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          bubble,
+          ...msg.charts.map((f) => _ChartFuture(future: f)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartFuture extends StatelessWidget {
+  const _ChartFuture({required this.future});
+  final Future<Map<String, dynamic>?> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Center(
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+        final data = snapshot.data;
+        if (data == null) return const SizedBox.shrink();
+        return CoachChartWidget(data: data);
+      },
     );
   }
 }

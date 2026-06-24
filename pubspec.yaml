@@ -58,6 +58,9 @@ dependencies:
   # First-run / onboarding gate
   shared_preferences: ^2.3.4
 
+  # Charts (AI coach rich responses)
+  fl_chart: ^0.68.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
