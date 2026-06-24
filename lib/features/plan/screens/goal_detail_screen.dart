@@ -64,8 +64,7 @@ class GoalDetailScreen extends ConsumerWidget {
                                 style: text.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700)),
                             Text(
-                              'goal.type.${goal.type}'.tr(
-                                  fallbackKey: goal.type),
+                              'goal.type.${goal.type}'.tr(),
                               style: TextStyle(
                                   color: scheme.onSurfaceVariant,
                                   fontSize: 13),
