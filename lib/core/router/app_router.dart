@@ -14,10 +14,13 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
+import '../../features/dashboard/data/dashboard_models.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
+import '../../features/onboarding/onboarding_prefs.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
 import '../../features/plan/data/plan_models.dart';
+import '../../features/plan/screens/goal_detail_screen.dart';
 import '../../features/plan/screens/plan_forms.dart';
 import '../../features/plan/screens/plan_lists.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
@@ -26,6 +29,7 @@ import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/plan/screens/plan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/transactions/screens/transaction_detail_screen.dart';
 import 'routes.dart';
 
 /// App router with an auth guard driven by [authControllerProvider].
@@ -57,7 +61,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       };
 
       if (status == AuthStatus.unauthenticated) {
-        return unauthAllowed.contains(loc) ? null : Routes.onboarding;
+        if (unauthAllowed.contains(loc)) return null;
+        // Only show onboarding on first launch; returning users go to login.
+        final seen = ref.read(onboardingSeenProvider);
+        return seen ? Routes.login : Routes.onboarding;
       }
 
       // Authenticated. First-run: declare income bracket before the app proper.
@@ -103,6 +110,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.projects, builder: (_, _) => const ProjectsListScreen()),
       GoRoute(path: Routes.editProfile, builder: (_, _) => const EditProfileScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
+      GoRoute(
+        path: Routes.transactionDetail,
+        builder: (_, s) => TransactionDetailScreen(txn: s.extra as RecentTxn),
+      ),
+      GoRoute(
+        path: Routes.goalDetail,
+        builder: (_, s) => GoalDetailScreen(goal: s.extra as GoalItem),
+      ),
       GoRoute(path: Routes.goalForm, builder: (_, s) => GoalForm(item: s.extra as GoalItem?)),
       GoRoute(path: Routes.budgetForm, builder: (_, s) => BudgetForm(item: s.extra as BudgetItem?)),
       GoRoute(path: Routes.loanForm, builder: (_, s) => LoanForm(item: s.extra as LoanItem?)),

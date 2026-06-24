@@ -127,43 +127,56 @@ class ProfileScreen extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('profile.changeIncome'.tr(),
-                    style: Theme.of(sheetContext).textTheme.titleMedium),
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.55,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, scrollController) => SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('profile.changeIncome'.tr(),
+                      style: Theme.of(sheetContext).textTheme.titleMedium),
+                ),
               ),
-            ),
-            for (final band in kIncomeBands)
-              ListTile(
-                title: Text('${band.$2}.label'.tr()),
-                subtitle: Text('${band.$2}.range'.tr()),
-                trailing: current == band.$1 ? const Icon(Icons.check) : null,
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  try {
-                    await ref.read(authControllerProvider.notifier).setIncomeBracket(band.$1);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(SnackBar(content: Text('profile.saved'.tr())));
-                    }
-                  } on ApiException catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
-                    }
-                  }
-                },
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    for (final band in kIncomeBands)
+                      ListTile(
+                        title: Text('${band.$2}.label'.tr()),
+                        subtitle: Text('${band.$2}.range'.tr()),
+                        trailing: current == band.$1 ? const Icon(Icons.check) : null,
+                        onTap: () async {
+                          Navigator.of(sheetContext).pop();
+                          try {
+                            await ref.read(authControllerProvider.notifier).setIncomeBracket(band.$1);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(SnackBar(content: Text('profile.saved'.tr())));
+                            }
+                          } on ApiException catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+                            }
+                          }
+                        },
+                      ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-            const SizedBox(height: 8),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -55,14 +55,25 @@ class InboxRepository {
   Future<List<PendingReceipt>> pendingReceipts() => _list(
       '/v1/receipt-scans', PendingReceipt.fromJson, query: {'status': 'parsed', 'per_page': 50});
 
-  Future<void> approveSms(String id) => _post('/v1/sms/$id/approve');
+  Future<void> approveSms(String id, {required String financialAccountId, String? categoryId}) =>
+      _post('/v1/sms/$id/approve', body: {
+        'financial_account_id': financialAccountId,
+        if (categoryId != null) 'category_id': categoryId,
+      });
+
   Future<void> rejectSms(String id) => _post('/v1/sms/$id/reject');
-  Future<void> approveReceipt(String id) => _post('/v1/receipt-scans/$id/approve');
+
+  Future<void> approveReceipt(String id, {required String financialAccountId, String? categoryId}) =>
+      _post('/v1/receipt-scans/$id/approve', body: {
+        'financial_account_id': financialAccountId,
+        if (categoryId != null) 'category_id': categoryId,
+      });
+
   Future<void> rejectReceipt(String id) => _post('/v1/receipt-scans/$id/reject');
 
-  Future<void> _post(String path) async {
+  Future<void> _post(String path, {Map<String, dynamic>? body}) async {
     try {
-      await _dio.post(path);
+      await _dio.post(path, data: body);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }

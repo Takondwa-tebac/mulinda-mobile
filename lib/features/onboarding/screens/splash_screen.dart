@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/providers/auth_controller.dart';
+import '../onboarding_prefs.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -15,7 +16,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final seen = await OnboardingPrefs.hasSeen();
+      if (mounted) ref.read(onboardingSeenProvider.notifier).state = seen;
       ref.read(authControllerProvider.notifier).bootstrap();
     });
   }

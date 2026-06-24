@@ -234,6 +234,23 @@
     "investStatus": {"active": "Active", "matured": "Matured", "sold": "Sold", "closed": "Closed"},
     "projectStatus": {"planning": "Planning", "active": "Active", "on_hold": "On hold", "completed": "Completed"}
   },
+  "goal": {
+    "saved": "Saved",
+    "target": "Target",
+    "targetDate": "Target date",
+    "monthly": "Monthly",
+    "remaining": "Remaining",
+    "complete": "Complete!",
+    "type": {
+      "emergency": "Emergency fund",
+      "house": "House",
+      "car": "Car",
+      "business": "Business",
+      "education": "Education",
+      "vacation": "Vacation",
+      "custom": "Custom"
+    }
+  },
   "profile": {
     "account": "Account",
     "preferences": "Preferences",

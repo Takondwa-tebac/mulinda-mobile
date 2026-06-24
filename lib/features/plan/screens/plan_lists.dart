@@ -104,6 +104,7 @@ class GoalsListScreen extends ConsumerWidget {
           title: g.name,
           value: '${g.current.formatted} / ${g.target.formatted}',
           progress: g.progress,
+          onTap: () => context.push(Routes.goalDetail, extra: g),
           onEdit: () => context.push(Routes.goalForm, extra: g),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteGoal(g.id), goalsProvider),
           extra: ('form.contribute'.tr(), () => showContributeSheet(context, ref, g.id)),
@@ -228,6 +229,7 @@ class _PlanTile extends StatelessWidget {
     this.subColor,
     this.progress,
     this.danger = false,
+    this.onTap,
     required this.onEdit,
     required this.onDelete,
     this.extra,
@@ -239,6 +241,7 @@ class _PlanTile extends StatelessWidget {
   final Color? subColor;
   final double? progress;
   final bool danger;
+  final VoidCallback? onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final (String, VoidCallback)? extra;
@@ -249,48 +252,50 @@ class _PlanTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: onEdit,
+        onTap: onTap ?? onEdit,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: danger ? scheme.error : scheme.primary)),
-                  PopupMenuButton<int>(
-                    onSelected: (i) {
-                      if (i == 0) onEdit();
-                      if (i == 1 && extra != null) extra!.$2();
-                      if (i == 2) onDelete();
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(value: 0, child: Text('form.edit'.tr())),
-                      if (extra != null) PopupMenuItem(value: 1, child: Text(extra!.$1)),
-                      PopupMenuItem(value: 2, child: Text('form.delete'.tr())),
-                    ],
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: danger ? scheme.error : scheme.primary),
                   ),
                 ],
               ),
               if (sub != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 0, top: 2),
-                  child: Text(sub!, style: TextStyle(color: subColor ?? scheme.onSurfaceVariant, fontSize: 13)),
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(sub!,
+                      style: TextStyle(
+                          color: subColor ?? scheme.onSurfaceVariant,
+                          fontSize: 13)),
                 ),
               if (progress != null) ...[
                 const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 8,
-                      backgroundColor: scheme.surfaceContainerHigh,
-                      color: danger ? scheme.error : scheme.primary,
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: scheme.surfaceContainerHigh,
+                    color: danger ? scheme.error : scheme.primary,
                   ),
                 ),
               ],

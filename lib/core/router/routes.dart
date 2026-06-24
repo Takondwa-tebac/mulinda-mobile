@@ -32,6 +32,12 @@ abstract class Routes {
   static const investments = '/investments';
   static const projects = '/projects';
 
+  // Transaction detail
+  static const transactionDetail = '/transaction-detail';
+
+  // Goal detail (item passed via GoRouter `extra`)
+  static const goalDetail = '/goal-detail';
+
   // Plan create/edit forms (item passed via GoRouter `extra`)
   static const goalForm = '/goal-form';
   static const budgetForm = '/budget-form';

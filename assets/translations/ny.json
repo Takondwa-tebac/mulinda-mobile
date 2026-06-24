@@ -234,6 +234,23 @@
     "investStatus": {"active": "Yogwira", "matured": "Yakhwima", "sold": "Yagulitsidwa", "closed": "Yotsekedwa"},
     "projectStatus": {"planning": "Kukonzekera", "active": "Yogwira", "on_hold": "Yoima", "completed": "Yamalizidwa"}
   },
+  "goal": {
+    "saved": "Zasungidwa",
+    "target": "Cholinga",
+    "targetDate": "Tsiku lolinga",
+    "monthly": "Mwezi uliwonse",
+    "remaining": "Zotsala",
+    "complete": "Yathera!",
+    "type": {
+      "emergency": "Ndalama zadzidzidzi",
+      "house": "Nyumba",
+      "car": "Galimoto",
+      "business": "Bizinesi",
+      "education": "Maphunziro",
+      "vacation": "Tchuthi",
+      "custom": "Zanu"
+    }
+  },
   "profile": {
     "account": "Akaunti",
     "preferences": "Zokonda",
