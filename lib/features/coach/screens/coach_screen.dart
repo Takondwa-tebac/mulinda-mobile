@@ -6,9 +6,10 @@ import '../../../core/network/api_exception.dart';
 import '../data/coach_repository.dart';
 
 class _Msg {
-  const _Msg({required this.text, required this.fromUser});
+  _Msg({required this.text, required this.fromUser, this.isStreaming = false});
   final String text;
   final bool fromUser;
+  final bool isStreaming;
 }
 
 class CoachScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,13 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   final _scroll = ScrollController();
   String? _conversationId;
   bool _sending = false;
+  bool _loadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
 
   @override
   void dispose() {
@@ -32,75 +40,151 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     super.dispose();
   }
 
+  Future<void> _loadHistory() async {
+    try {
+      final history = await ref.read(coachRepositoryProvider).loadHistory();
+      if (!mounted) return;
+      if (history != null && history.messages.isNotEmpty) {
+        setState(() {
+          _conversationId = history.conversationId;
+          for (final m in history.messages) {
+            _messages.add(_Msg(text: m.content, fromUser: m.role == 'user'));
+          }
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    } catch (_) {
+      // History failure is non-fatal — start fresh.
+    } finally {
+      if (mounted) setState(() => _loadingHistory = false);
+    }
+  }
+
   Future<void> _send(String text) async {
     final message = text.trim();
     if (message.isEmpty || _sending) return;
 
     setState(() {
       _messages.add(_Msg(text: message, fromUser: true));
+      // Placeholder assistant bubble — spinner until first token.
+      _messages.add(_Msg(text: '', fromUser: false, isStreaming: true));
       _sending = true;
     });
     _input.clear();
     _scrollToBottom();
 
     try {
-      final reply = await ref.read(coachRepositoryProvider).send(
+      final stream = ref.read(coachRepositoryProvider).sendStream(
             message,
             conversationId: _conversationId,
           );
-      if (!mounted) return;
-      setState(() {
-        _conversationId = reply.conversationId ?? _conversationId;
-        _messages.add(_Msg(text: reply.reply, fromUser: false));
-        _sending = false;
-      });
+
+      await for (final chunk in stream) {
+        if (!mounted) return;
+        if (chunk.isDone) {
+          setState(() {
+            _conversationId = chunk.conversationId ?? _conversationId;
+            final last = _messages.last;
+            _messages[_messages.length - 1] =
+                _Msg(text: last.text, fromUser: false);
+            _sending = false;
+          });
+          _scrollToBottom();
+        } else if (chunk.text != null && chunk.text!.isNotEmpty) {
+          setState(() {
+            final last = _messages.last;
+            _messages[_messages.length - 1] = _Msg(
+              text: last.text + chunk.text!,
+              fromUser: false,
+              isStreaming: true,
+            );
+          });
+          // Scroll only when at or near the bottom so we don't
+          // interrupt the user if they're reading earlier messages.
+          _scrollToBottomIfNear();
+        }
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _sending = false);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      _handleSendError(e.displayMessage);
+    } catch (_) {
+      if (!mounted) return;
+      _handleSendError('coach.error'.tr());
     }
-    _scrollToBottom();
+  }
+
+  void _handleSendError(String message) {
+    setState(() {
+      _sending = false;
+      if (_messages.isNotEmpty && !_messages.last.fromUser) {
+        final last = _messages.last;
+        if (last.text.isEmpty) {
+          _messages.removeLast(); // Remove empty placeholder.
+        } else {
+          // Keep partial response but stop streaming indicator.
+          _messages[_messages.length - 1] =
+              _Msg(text: last.text, fromUser: false);
+        }
+      }
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) {
-        _scroll.animateTo(
-          _scroll.position.maxScrollExtent + 120,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
+      if (!_scroll.hasClients) return;
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent + 120,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     });
+  }
+
+  void _scrollToBottomIfNear() {
+    if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    final distanceFromBottom = pos.maxScrollExtent - pos.pixels;
+    if (distanceFromBottom < 120) _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
+    final showEmpty = !_loadingHistory && _messages.isEmpty && !_sending;
+
     return Scaffold(
       appBar: AppBar(title: Text('coach.title'.tr())),
       body: Column(
         children: [
           Expanded(
-            child: _messages.isEmpty && !_sending
-                ? _Empty(onTap: _send)
-                : ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length + (_sending ? 1 : 0),
-                    itemBuilder: (context, i) {
-                      if (i >= _messages.length) return const _TypingBubble();
-                      return _Bubble(msg: _messages[i]);
-                    },
-                  ),
+            child: _loadingHistory
+                ? const Center(child: CircularProgressIndicator())
+                : showEmpty
+                    ? _Empty(onTap: _send)
+                    : ListView.builder(
+                        controller: _scroll,
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, i) =>
+                            _Bubble(msg: _messages[i]),
+                      ),
           ),
-          _InputBar(controller: _input, enabled: !_sending, onSend: _send),
+          _InputBar(
+            controller: _input,
+            enabled: !_sending && !_loadingHistory,
+            onSend: _send,
+          ),
         ],
       ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Message bubble
+// ---------------------------------------------------------------------------
 
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.msg});
@@ -117,7 +201,8 @@ class _Bubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.only(
@@ -127,36 +212,25 @@ class _Bubble extends StatelessWidget {
             bottomRight: Radius.circular(msg.fromUser ? 4 : 16),
           ),
         ),
-        child: Text(msg.text, style: TextStyle(color: fg, height: 1.4)),
+        child: msg.isStreaming && msg.text.isEmpty
+            // Waiting for first token — show spinner inside the bubble.
+            ? SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: fg.withValues(alpha: 0.6),
+                ),
+              )
+            : Text(msg.text, style: TextStyle(color: fg, height: 1.4)),
       ),
     );
   }
 }
 
-class _TypingBubble extends StatelessWidget {
-  const _TypingBubble();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const SizedBox(
-          height: 16,
-          width: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
-  }
-}
+// ---------------------------------------------------------------------------
+// Empty / welcome state
+// ---------------------------------------------------------------------------
 
 class _Empty extends StatelessWidget {
   const _Empty({required this.onTap});
@@ -186,7 +260,8 @@ class _Empty extends StatelessWidget {
             const SizedBox(height: 8),
             Text('coach.emptySubtitle'.tr(),
                 textAlign: TextAlign.center,
-                style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                style:
+                    text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
             const SizedBox(height: 24),
             Wrap(
               alignment: WrapAlignment.center,
@@ -203,8 +278,16 @@ class _Empty extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Input bar
+// ---------------------------------------------------------------------------
+
 class _InputBar extends StatelessWidget {
-  const _InputBar({required this.controller, required this.enabled, required this.onSend});
+  const _InputBar({
+    required this.controller,
+    required this.enabled,
+    required this.onSend,
+  });
 
   final TextEditingController controller;
   final bool enabled;
@@ -229,7 +312,8 @@ class _InputBar extends StatelessWidget {
                 onSubmitted: onSend,
                 decoration: InputDecoration(
                   hintText: 'coach.hint'.tr(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ),
