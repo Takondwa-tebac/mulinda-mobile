@@ -50,10 +50,10 @@ class InboxRepository {
   final Dio _dio;
 
   Future<List<PendingSms>> pendingSms() =>
-      _list('/v1/sms', PendingSms.fromJson, query: {'status': 'pending', 'per_page': 50});
+      _list('/v1/sms', PendingSms.fromJson, query: {'status': 'parsed', 'per_page': 50});
 
   Future<List<PendingReceipt>> pendingReceipts() => _list(
-      '/v1/receipt-scans', PendingReceipt.fromJson, query: {'status': 'pending', 'per_page': 50});
+      '/v1/receipt-scans', PendingReceipt.fromJson, query: {'status': 'parsed', 'per_page': 50});
 
   Future<void> approveSms(String id) => _post('/v1/sms/$id/approve');
   Future<void> rejectSms(String id) => _post('/v1/sms/$id/reject');

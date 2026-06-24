@@ -8,6 +8,8 @@ class PermissionService {
 
   Future<bool> requestPhotos() async => (await Permission.photos.request()).isGranted;
 
+  Future<bool> requestSms() async => (await Permission.sms.request()).isGranted;
+
   /// Best-effort: returns whether notifications are allowed; never throws.
   Future<bool> requestNotifications() async {
     try {

@@ -36,6 +36,7 @@ dependencies:
   # Permissions + media (receipt scanning)
   permission_handler: ^11.3.1
   image_picker: ^1.1.2
+  flutter_sms_inbox: ^1.0.4
 
   # Notifications (bill / loan reminders)
   flutter_local_notifications: ^18.0.1
