@@ -51,7 +51,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final smsList = sms.valueOrNull ?? const [];
     final receiptList = receipts.valueOrNull ?? const [];
     final loading = sms.isLoading || receipts.isLoading;
-    final empty = !loading && smsList.isEmpty && receiptList.isEmpty;
+    final hasError = !loading && (sms.hasError || receipts.hasError);
+    final empty = !loading && !hasError && smsList.isEmpty && receiptList.isEmpty;
+    final errorMessage = sms.error?.toString() ?? receipts.error?.toString();
 
     return Scaffold(
       appBar: AppBar(title: Text('inbox.title'.tr())),
@@ -68,6 +70,32 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               padding: EdgeInsets.symmetric(vertical: 48),
               child: Center(child: CircularProgressIndicator()),
             ),
+            if (hasError)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Column(
+                  children: [
+                    const Icon(Icons.wifi_off_outlined, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Could not load inbox',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(errorMessage ?? 'Unknown error',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 12)),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {
+                        ref.invalidate(pendingSmsProvider);
+                        ref.invalidate(pendingReceiptsProvider);
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             if (empty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 64),
