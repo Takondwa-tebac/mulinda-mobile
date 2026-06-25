@@ -29,6 +29,10 @@ import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/plan/screens/plan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/admin/screens/admin_dashboard_screen.dart';
+import '../../features/admin/screens/audit_trail_screen.dart';
+import '../../features/admin/screens/push_notification_screen.dart';
+import '../../features/admin/screens/user_management_screen.dart';
 import '../../features/transactions/screens/transaction_detail_screen.dart';
 import 'routes.dart';
 
@@ -123,6 +127,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.loanForm, builder: (_, s) => LoanForm(item: s.extra as LoanItem?)),
       GoRoute(path: Routes.investmentForm, builder: (_, s) => InvestmentForm(item: s.extra as InvestmentItem?)),
       GoRoute(path: Routes.projectForm, builder: (_, s) => ProjectForm(item: s.extra as ProjectItem?)),
+
+      // Admin screens — full-screen pushes, not part of the shell tabs.
+      GoRoute(path: Routes.admin, builder: (_, _) => const AdminDashboardScreen()),
+      GoRoute(path: Routes.adminNotification, builder: (_, _) => const PushNotificationScreen()),
+      GoRoute(path: Routes.adminUsers, builder: (_, _) => const UserManagementScreen()),
+      GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
+
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [

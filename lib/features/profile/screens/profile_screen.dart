@@ -111,6 +111,19 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
+          if (user?.isAdmin == true) ...[
+            const SizedBox(height: 20),
+            _Label('Administration'),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Admin Panel'),
+                subtitle: const Text('Users, notifications, audit trail'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.admin),
+              ),
+            ),
+          ],
           const SizedBox(height: 28),
           OutlinedButton.icon(
             onPressed: () => ref.read(authControllerProvider.notifier).signOut(),

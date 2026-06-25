@@ -44,4 +44,10 @@ abstract class Routes {
   static const loanForm = '/loan-form';
   static const investmentForm = '/investment-form';
   static const projectForm = '/project-form';
+
+  // Admin (visible only to admin / super-admin users)
+  static const admin = '/admin';
+  static const adminNotification = '/admin/notification';
+  static const adminUsers = '/admin/users';
+  static const adminAudit = '/admin/audit';
 }
