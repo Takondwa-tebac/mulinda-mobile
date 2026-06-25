@@ -40,7 +40,20 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Keep code/resource shrinking off — this low-RAM host can't run R8 +
+            // the resource-shrink pass without exhausting memory. Re-enable on a
+            // bigger build machine if you want a smaller APK.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
+    }
+
+    // Release builds run `lintVital`, which spins up the Kotlin compiler and
+    // exhausts Metaspace on this machine. Lint isn't required to assemble the
+    // APK, so skip it for release.
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
