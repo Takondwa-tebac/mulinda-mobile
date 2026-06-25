@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Network access (Flutter only auto-adds this to debug/profile manifests,
+         so release builds need it declared here or all API calls silently hang). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- Camera: receipt scanning -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- SMS: auto-read financial messages from inbox -->
