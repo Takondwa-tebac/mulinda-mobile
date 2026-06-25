@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
 import '../data/user.dart';
 
@@ -82,8 +83,16 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Once a user has authenticated they should never see onboarding again,
+  /// regardless of how they signed in or that they later log out.
+  void _markOnboardingSeen() {
+    OnboardingPrefs.markSeen();
+    ref.read(onboardingSeenProvider.notifier).state = true;
+  }
+
   Future<void> login(String username, String password) async {
     final user = await _repo.login(username, password);
+    _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
@@ -109,6 +118,7 @@ class AuthController extends Notifier<AuthState> {
       passwordConfirmation: passwordConfirmation,
       incomeBracket: incomeBracket,
     );
+    _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
@@ -125,6 +135,7 @@ class AuthController extends Notifier<AuthState> {
     }
 
     final user = await _repo.googleToken(accessToken);
+    _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);
     return true;
   }

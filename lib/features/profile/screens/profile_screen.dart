@@ -80,6 +80,14 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.shield_outlined),
+                  title: Text('permissions.title'.tr()),
+                  subtitle: Text('permissions.manageSub'.tr()),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.permissions),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.workspace_premium_outlined),
                   title: Text('subscription.title'.tr()),
                   subtitle: Text(user?.subscription.active == true

@@ -10,7 +10,12 @@ import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  const AddTransactionScreen({super.key, this.projectId, this.projectName});
+
+  /// When set, the transaction is tagged to this project (recording spend
+  /// toward it) and defaults to an expense.
+  final String? projectId;
+  final String? projectName;
 
   @override
   ConsumerState<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -49,6 +54,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             occurredAt: _date,
             merchant: _merchant.text.trim(),
             notes: _notes.text.trim(),
+            projectId: widget.projectId,
           );
       ref
         ..invalidate(transactionsProvider)
@@ -111,6 +117,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (widget.projectName != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.home_work_outlined, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text('addTxn.towardProject'.tr(args: [widget.projectName!]),
+                                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     SegmentedButton<String>(
                       segments: [
                         ButtonSegment(value: 'expense', label: Text('addTxn.expense'.tr())),

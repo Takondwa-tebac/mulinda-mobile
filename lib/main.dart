@@ -11,6 +11,7 @@ import 'core/notifications/notification_service.dart';
 import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
+import 'features/capture/data/sms_auto_capture.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
@@ -25,6 +26,10 @@ Future<void> main() async {
     // Firebase not configured for this platform (e.g. desktop dev) — skip.
   }
   await NotificationService.init();
+
+  // Resume automatic SMS capture if the user previously opted in. No-op when
+  // disabled, unsupported, or signed out.
+  unawaited(SmsAutoCapture.instance.maybeStart());
 
   runApp(
     EasyLocalization(

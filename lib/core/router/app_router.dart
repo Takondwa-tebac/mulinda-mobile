@@ -14,6 +14,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
+import '../../features/legal/screens/legal_page_screen.dart';
 import '../../features/dashboard/data/dashboard_models.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
@@ -21,10 +22,12 @@ import '../../features/onboarding/onboarding_prefs.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
 import '../../features/plan/data/plan_models.dart';
 import '../../features/plan/screens/goal_detail_screen.dart';
+import '../../features/plan/screens/plan_detail_screens.dart';
 import '../../features/plan/screens/plan_forms.dart';
 import '../../features/plan/screens/plan_lists.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
+import '../../features/onboarding/screens/permissions_screen.dart';
 import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/plan/screens/plan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
@@ -61,6 +64,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Signed-out pages (NOTE: splash is excluded — once resolved, leave it).
       const unauthAllowed = {
         Routes.onboarding,
+        Routes.permissions,
+        Routes.legal,
         Routes.login,
         Routes.register,
         Routes.forgotPassword,
@@ -102,6 +107,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.incomeSetup, builder: (_, _) => const IncomeSetupScreen()),
       GoRoute(
+        path: Routes.permissions,
+        builder: (_, s) => PermissionsScreen(
+          fromOnboarding: s.uri.queryParameters['onboarding'] == 'true',
+        ),
+      ),
+      GoRoute(
+        path: Routes.legal,
+        builder: (_, s) => LegalPageScreen(slug: s.uri.queryParameters['slug'] ?? 'privacy'),
+      ),
+      GoRoute(
         path: Routes.coach,
         builder: (_, _) => const CoachScreen(),
       ),
@@ -124,6 +139,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.goalDetail,
         builder: (_, s) => GoalDetailScreen(goal: s.extra as GoalItem),
+      ),
+      GoRoute(
+        path: Routes.budgetDetail,
+        builder: (_, s) => BudgetDetailScreen(budget: s.extra as BudgetItem),
+      ),
+      GoRoute(
+        path: Routes.loanDetail,
+        builder: (_, s) => LoanDetailScreen(loan: s.extra as LoanItem),
+      ),
+      GoRoute(
+        path: Routes.projectDetail,
+        builder: (_, s) => ProjectDetailScreen(project: s.extra as ProjectItem),
       ),
       GoRoute(path: Routes.goalForm, builder: (_, s) => GoalForm(item: s.extra as GoalItem?)),
       GoRoute(path: Routes.budgetForm, builder: (_, s) => BudgetForm(item: s.extra as BudgetItem?)),

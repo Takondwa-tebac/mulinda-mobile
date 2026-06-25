@@ -54,6 +54,7 @@ class Txn {
     this.categoryName,
     this.occurredAt,
     this.notes,
+    this.projectId,
   });
 
   final String id;
@@ -63,6 +64,7 @@ class Txn {
   final String? categoryName;
   final String? occurredAt;
   final String? notes;
+  final String? projectId;
 
   bool get isIncome => type == 'income';
 
@@ -79,6 +81,7 @@ class Txn {
       categoryName: category?['name']?.toString(),
       occurredAt: json['occurred_at']?.toString(),
       notes: json['notes']?.toString(),
+      projectId: json['project_id']?.toString(),
     );
   }
 }

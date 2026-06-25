@@ -25,6 +25,7 @@ class ActivityRepository {
     required DateTime occurredAt,
     String? merchant,
     String? notes,
+    String? projectId,
   }) async {
     final body = <String, dynamic>{
       'financial_account_id': accountId,
@@ -35,6 +36,7 @@ class ActivityRepository {
     if (categoryId != null) body['category_id'] = categoryId;
     if (merchant != null && merchant.isNotEmpty) body['merchant'] = merchant;
     if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+    if (projectId != null) body['project_id'] = projectId;
 
     try {
       await _dio.post('/v1/transactions', data: body);

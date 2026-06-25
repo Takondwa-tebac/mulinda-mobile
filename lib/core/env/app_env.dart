@@ -7,6 +7,6 @@ abstract class AppEnv {
     'API_BASE_URL',
     // defaultValue: 'http://10.0.2.2:8000/api',
     // defaultValue: 'http://192.168.1.197:8000/api',
-    defaultValue: 'https:mulinda-api.sukulusmis.africa',
+    defaultValue: 'https://mulinda-api.sukulusmis.africa/api',
   );
 }

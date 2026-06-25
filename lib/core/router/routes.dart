@@ -8,6 +8,8 @@ abstract class Routes {
   static const resetPassword = '/reset-password';
 
   static const incomeSetup = '/income-setup';
+  static const permissions = '/permissions';
+  static const legal = '/legal';
 
   static const home = '/home';
   static const activity = '/activity';
@@ -35,8 +37,11 @@ abstract class Routes {
   // Transaction detail
   static const transactionDetail = '/transaction-detail';
 
-  // Goal detail (item passed via GoRouter `extra`)
+  // Detail screens (item passed via GoRouter `extra`)
   static const goalDetail = '/goal-detail';
+  static const budgetDetail = '/budget-detail';
+  static const loanDetail = '/loan-detail';
+  static const projectDetail = '/project-detail';
 
   // Plan create/edit forms (item passed via GoRouter `extra`)
   static const goalForm = '/goal-form';

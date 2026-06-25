@@ -7,7 +7,8 @@
     "continue": "Pitirizani",
     "comingSoon": "Zikubwera posachedwa",
     "cancel": "Lekani",
-    "retry": "Yesaninso"
+    "retry": "Yesaninso",
+    "back": "Bwererani"
   },
   "onboarding": {
     "chooseLanguage": "Sankhani chinenero chanu",
@@ -57,7 +58,16 @@
     "invalidEmail": "Lowetsani imelo yolondola",
     "passwordsDontMatch": "Achinsinsi sagwirizana",
     "passwordHint": "Osachepera zilembo 8, zokhala ndi zilembo ndi manambala",
-    "googleUnavailable": "Google sign-in sikupezeka pakali pano"
+    "googleUnavailable": "Google sign-in sikupezeka pakali pano",
+    "agreePrefix": "Ndikuvomereza",
+    "and": "ndi",
+    "terms": "Malamulo",
+    "privacy": "Ndondomeko ya Zachinsinsi",
+    "mustAcceptTerms": "Chonde vomerezani Malamulo ndi Ndondomeko ya Zachinsinsi kuti mupitirize.",
+    "optional": "osankha",
+    "stepName": "Dzina",
+    "stepAccount": "Akaunti",
+    "stepSecurity": "Chitetezo"
   },
   "nav": {
     "home": "Kunyumba",
@@ -107,7 +117,8 @@
     "notes": "Zolemba (sikofunika)",
     "save": "Sungani zochitika",
     "needAccount": "Onjezani akaunti choyamba kuti mulembe zochitika.",
-    "saved": "Zochitika zasungidwa"
+    "saved": "Zochitika zasungidwa",
+    "towardProject": "Kulemba pa: {}"
   },
   "account": {
     "title": "Onjezani akaunti",
@@ -411,5 +422,42 @@
     "date": "Tsiku",
     "reference": "Reference",
     "footer": "Zikomo pogwiritsa ntchito Mulinda"
+  },
+  "detail": {
+    "spent": "Zogwiritsidwa",
+    "limit": "Malire",
+    "remaining": "Zotsala",
+    "overBudget": "Mwapyola malire",
+    "alertAt": "Chenjezo pa",
+    "outstanding": "Zotsala kulipira",
+    "principal": "Ngongole yoyamba",
+    "budget": "Bajeti",
+    "recordSpend": "Lembani zogula",
+    "transactions": "Zochitika",
+    "noProjectTxns": "Palibe zochitika zolembedwa pa polojekiti iyi panobe."
+  },
+  "permissions": {
+    "title": "Zilolezo & zachinsinsi",
+    "manageSub": "Lamulirani SMS, kamera, zithunzi & zidziwitso",
+    "intro": "Mulinda imapempha zilolezo zochepa kuti kusunga ndalama kukhale kosavuta. Chilichonse ndi chosankha — mutha kuyatsa tsopano kapena pambuyo pake mu Profile.",
+    "smsTitle": "Kujambula SMS mwadzidzidzi",
+    "smsBody": "Mukayatsa, Mulinda imawerenga ma SMS a ndalama ndi a banki (Airtel Money, TNM Mpamba, mabanki) ndikukonza zochitika kuti muwunike. Timangoyang'ana mauthenga okhala ndi zochitika za ndalama — mauthenga aumwini sawerengedwa kapena kusungidwa. Mutha kuzimitsa nthawi iliyonse.",
+    "smsToggle": "Yatsani kujambula SMS mwadzidzidzi",
+    "smsDenied": "Chilolezo cha SMS sichinaperekedwe.",
+    "cameraTitle": "Kamera",
+    "cameraBody": "Imagwiritsidwa ntchito mukajambula risiti kuti titulutse zochitika.",
+    "photosTitle": "Zithunzi & media",
+    "photosBody": "Imalola kusankha chithunzi cha risiti kuchokera mu gallery kuti tisankhe.",
+    "notifTitle": "Zidziwitso",
+    "notifBody": "Zikumbutso za mabilu ndi ngongole, zikumbutso za kumapeto kwa tsiku, ndi zosintha za kulembetsa.",
+    "allow": "Lolani",
+    "allowed": "Zaloledwa",
+    "footer": "Mumakhalabe ndi ulamuliro. Zilolezo zitha kusinthidwa nthawi iliyonse mu Profile, kapena mu zoikamo za foni yanu. Sitigulitsa deta yanu.",
+    "continue": "Pitirizani",
+    "done": "Zatha"
+  },
+  "legal": {
+    "title": "Zalamulo",
+    "loadError": "Sitinathe kutsegula tsamba ili. Onani intaneti yanu."
   }
 }

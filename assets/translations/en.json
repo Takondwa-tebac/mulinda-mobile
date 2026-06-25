@@ -7,7 +7,8 @@
     "continue": "Continue",
     "comingSoon": "Coming soon",
     "cancel": "Cancel",
-    "retry": "Retry"
+    "retry": "Retry",
+    "back": "Back"
   },
   "onboarding": {
     "chooseLanguage": "Choose your language",
@@ -57,7 +58,16 @@
     "invalidEmail": "Enter a valid email",
     "passwordsDontMatch": "Passwords don't match",
     "passwordHint": "At least 8 characters, with letters and numbers",
-    "googleUnavailable": "Google sign-in isn't available right now"
+    "googleUnavailable": "Google sign-in isn't available right now",
+    "agreePrefix": "I agree to the",
+    "and": "and",
+    "terms": "Terms",
+    "privacy": "Privacy Policy",
+    "mustAcceptTerms": "Please accept the Terms and Privacy Policy to continue.",
+    "optional": "optional",
+    "stepName": "Name",
+    "stepAccount": "Account",
+    "stepSecurity": "Security"
   },
   "nav": {
     "home": "Home",
@@ -107,7 +117,8 @@
     "notes": "Notes (optional)",
     "save": "Save transaction",
     "needAccount": "Add an account first to record transactions.",
-    "saved": "Transaction saved"
+    "saved": "Transaction saved",
+    "towardProject": "Recording toward: {}"
   },
   "account": {
     "title": "Add account",
@@ -411,5 +422,42 @@
     "date": "Date",
     "reference": "Reference",
     "footer": "Thank you for using Mulinda"
+  },
+  "detail": {
+    "spent": "Spent",
+    "limit": "Limit",
+    "remaining": "Remaining",
+    "overBudget": "Over budget",
+    "alertAt": "Alert at",
+    "outstanding": "Outstanding",
+    "principal": "Principal",
+    "budget": "Budget",
+    "recordSpend": "Record spend",
+    "transactions": "Transactions",
+    "noProjectTxns": "No transactions recorded for this project yet."
+  },
+  "permissions": {
+    "title": "Permissions & privacy",
+    "manageSub": "Control SMS, camera, photos & notifications",
+    "intro": "Mulinda asks for a few permissions to make tracking effortless. Each is optional — you can turn them on now or later from Profile.",
+    "smsTitle": "Automatic SMS capture",
+    "smsBody": "When enabled, Mulinda reads incoming mobile-money and bank SMS (Airtel Money, TNM Mpamba, banks) and drafts a transaction for you to review. We only look at messages that contain a financial transaction — personal messages are never read or stored. You can turn this off any time.",
+    "smsToggle": "Enable automatic SMS capture",
+    "smsDenied": "SMS permission was not granted.",
+    "cameraTitle": "Camera",
+    "cameraBody": "Used only when you snap a receipt to extract the transaction.",
+    "photosTitle": "Photos & media",
+    "photosBody": "Lets you pick a receipt image from your gallery to scan.",
+    "notifTitle": "Notifications",
+    "notifBody": "Bill and loan reminders, end-of-day nudges, and subscription updates.",
+    "allow": "Allow",
+    "allowed": "Allowed",
+    "footer": "You stay in control. Permissions can be changed any time in Profile, or in your phone settings. We never sell your data.",
+    "continue": "Continue",
+    "done": "Done"
+  },
+  "legal": {
+    "title": "Legal",
+    "loadError": "Couldn't load this page. Check your connection."
   }
 }

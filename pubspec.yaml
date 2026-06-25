@@ -63,6 +63,8 @@ dependencies:
 
   # Hosted checkout (PayChangu payment pages)
   webview_flutter: ^4.10.0
+  gpt_markdown: ^1.1.7
+  another_telephony: ^0.4.1
 
 dev_dependencies:
   flutter_test:

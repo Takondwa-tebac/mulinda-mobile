@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpt_markdown/gpt_markdown.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../auth/providers/auth_controller.dart';
@@ -262,7 +263,12 @@ class _Bubble extends StatelessWidget {
                   color: fg.withValues(alpha: 0.6),
                 ),
               )
-            : Text(msg.text, style: TextStyle(color: fg, height: 1.4)),
+            // User text is plain; the assistant's replies are Markdown
+            // (headings, bold, lists, tables) and render incrementally as
+            // tokens stream in.
+            : msg.fromUser
+                ? Text(msg.text, style: TextStyle(color: fg, height: 1.4))
+                : GptMarkdown(msg.text, style: TextStyle(color: fg, height: 1.4)),
       ),
     );
 

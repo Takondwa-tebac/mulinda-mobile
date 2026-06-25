@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
-import '../onboarding_prefs.dart';
 
 /// Three branded intro slides with a persistent language toggle (Chichewa
 /// default, switchable here) and Skip / Next / Get started controls.
@@ -32,14 +31,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _markAndGo() async {
-    await OnboardingPrefs.markSeen();
-    if (mounted) context.go(Routes.login);
-  }
+  // Hand off to the permissions screen, which explains each permission and
+  // then marks onboarding seen + proceeds to login.
+  void _goPermissions() => context.go('${Routes.permissions}?onboarding=true');
 
   void _next() {
     if (_isLast) {
-      _markAndGo();
+      _goPermissions();
     } else {
       _controller.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -62,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   const _LanguageToggle(),
                   TextButton(
-                    onPressed: _markAndGo,
+                    onPressed: _goPermissions,
                     child: Text('onboarding.skip'.tr()),
                   ),
                 ],

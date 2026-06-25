@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../capture/data/inbox_repository.dart';
+import '../../dashboard/data/dashboard_models.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
@@ -57,7 +58,10 @@ class ActivityScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
               accounts.maybeWhen(
-                data: (a) => _AccountsStrip(accounts: a),
+                data: (a) => _AccountsStrip(
+                  accounts: a,
+                  onAdded: () => ref.invalidate(accountsProvider),
+                ),
                 orElse: () => const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
@@ -79,27 +83,40 @@ class ActivityScreen extends ConsumerWidget {
 }
 
 class _AccountsStrip extends StatelessWidget {
-  const _AccountsStrip({required this.accounts});
+  const _AccountsStrip({required this.accounts, required this.onAdded});
   final List<Account> accounts;
+  final VoidCallback onAdded;
 
   @override
   Widget build(BuildContext context) {
-    if (accounts.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('activity.accounts'.tr(),
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('activity.accounts'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            TextButton.icon(
+              onPressed: () => _addAccount(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text('account.add'.tr()),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         SizedBox(
           height: 96,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: accounts.length,
+            // +1 for the trailing "add account" tile.
+            itemCount: accounts.length + 1,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (_, i) {
+              if (i == accounts.length) return _AddAccountTile(onTap: () => _addAccount(context));
               final a = accounts[i];
               return Container(
                 width: 180,
@@ -131,6 +148,42 @@ class _AccountsStrip extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _addAccount(BuildContext context) async {
+    final added = await context.push<bool>(Routes.addAccount);
+    if (added == true) onAdded();
+  }
+}
+
+class _AddAccountTile extends StatelessWidget {
+  const _AddAccountTile({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_circle_outline, color: scheme.primary),
+            const SizedBox(height: 8),
+            Text('account.add'.tr(),
+                style: TextStyle(fontWeight: FontWeight.w600, color: scheme.primary)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _TxnTile extends StatelessWidget {
@@ -158,6 +211,18 @@ class _TxnTile extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.w700,
           color: txn.isIncome ? scheme.primary : scheme.onSurface,
+        ),
+      ),
+      onTap: () => context.push(
+        Routes.transactionDetail,
+        // The detail/receipt screen takes the dashboard RecentTxn shape.
+        extra: RecentTxn(
+          id: txn.id,
+          date: txn.date,
+          type: txn.type,
+          amount: txn.amount,
+          merchant: txn.merchant,
+          category: txn.categoryName,
         ),
       ),
     );
