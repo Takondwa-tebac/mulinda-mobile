@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../auth/providers/auth_controller.dart';
+import '../../subscription/data/subscription_models.dart';
+import '../../subscription/widgets/premium_lock.dart';
 import '../data/coach_chart_repository.dart';
 import '../data/coach_repository.dart';
 import '../widgets/coach_chart_widget.dart';
@@ -175,6 +178,20 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Coach is premium — gate the whole screen behind an active subscription/trial.
+    final entitled =
+        ref.watch(currentUserProvider)?.can(Entitlements.coachChat) ?? false;
+    if (!entitled) {
+      return Scaffold(
+        appBar: AppBar(title: Text('coach.title'.tr())),
+        body: PremiumLockView(
+          title: 'coach.lockedTitle'.tr(),
+          message: 'coach.lockedMessage'.tr(),
+          icon: Icons.auto_awesome,
+        ),
+      );
+    }
+
     final showEmpty = !_loadingHistory && _messages.isEmpty && !_sending;
 
     return Scaffold(

@@ -8,6 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/permissions/permission_service.dart';
 import '../../activity/data/activity_repository.dart';
+import '../../auth/providers/auth_controller.dart';
+import '../../subscription/data/subscription_models.dart';
+import '../../subscription/widgets/premium_lock.dart';
 
 class ScanReceiptScreen extends ConsumerStatefulWidget {
   const ScanReceiptScreen({super.key});
@@ -59,6 +62,21 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
+    // AI receipt extraction is premium — gate the screen behind a subscription.
+    final entitled =
+        ref.watch(currentUserProvider)?.can(Entitlements.receiptScan) ?? false;
+    if (!entitled) {
+      return Scaffold(
+        appBar: AppBar(title: Text('receipt.title'.tr())),
+        body: PremiumLockView(
+          title: 'capture.lockedTitle'.tr(),
+          message: 'capture.lockedReceipt'.tr(),
+          icon: Icons.document_scanner_outlined,
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text('receipt.title'.tr())),
       body: SafeArea(

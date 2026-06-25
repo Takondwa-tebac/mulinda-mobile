@@ -78,6 +78,18 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _changeIncome(context, ref),
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.workspace_premium_outlined),
+                  title: Text('subscription.title'.tr()),
+                  subtitle: Text(user?.subscription.active == true
+                      ? (user!.subscription.isTrial
+                          ? 'subscription.trialActive'.tr()
+                          : user.subscription.planLabel ?? 'subscription.active'.tr())
+                      : 'subscription.free'.tr()),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.subscription),
+                ),
               ],
             ),
           ),

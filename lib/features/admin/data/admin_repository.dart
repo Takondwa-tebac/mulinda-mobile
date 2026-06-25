@@ -36,6 +36,20 @@ class AdminRepository {
     return res.data ?? {};
   }
 
+  /// Comp a user a subscription period (admin gift). [period] is a
+  /// BillingPeriod value: day | three_day | week | month.
+  Future<void> grantCredit({
+    required String userId,
+    required String period,
+    String? reason,
+  }) async {
+    await _dio.post('/v1/admin/credits', data: {
+      'user_id': userId,
+      'period': period,
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    });
+  }
+
   Future<int> broadcastNotification({
     required String title,
     required String body,

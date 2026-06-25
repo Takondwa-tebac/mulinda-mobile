@@ -61,6 +61,9 @@ dependencies:
   # Charts (AI coach rich responses)
   fl_chart: ^0.68.0
 
+  # Hosted checkout (PayChangu payment pages)
+  webview_flutter: ^4.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

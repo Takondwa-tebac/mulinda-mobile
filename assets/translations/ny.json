@@ -1,9 +1,13 @@
 {
-  "app": { "name": "Mulinda", "tagline": "Ndalama zanu, mothandizidwa." },
+  "app": {
+    "name": "Mulinda",
+    "tagline": "Ndalama zanu, mothandizidwa."
+  },
   "common": {
     "continue": "Pitirizani",
     "comingSoon": "Zikubwera posachedwa",
-    "cancel": "Lekani"
+    "cancel": "Lekani",
+    "retry": "Yesaninso"
   },
   "onboarding": {
     "chooseLanguage": "Sankhani chinenero chanu",
@@ -65,7 +69,10 @@
     "title": "Onjezani",
     "scanReceipt": "Jambulani risiti",
     "pasteSms": "Matani SMS",
-    "manual": "Lembani nokha"
+    "manual": "Lembani nokha",
+    "lockedTitle": "Chinthu cha Premium",
+    "lockedReceipt": "Lembetsani kuti mujambule marisiti ndi kutulutsa zochitika mwa AI.",
+    "lockedSms": "Lembetsani kuti musinthe ma SMS a mobile money kukhala zochitika."
   },
   "activity": {
     "accounts": "Maakaunti",
@@ -135,11 +142,26 @@
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",
     "subtitle": "Izi ndi zachinsinsi. Zimathandiza Mulinda kukhazikitsa zolinga zosungira ndi malangizo oyenera ndi zomwe mumapeza.",
-    "low": { "label": "Ndalama zochepa", "range": "MK 50,000 – 150,000" },
-    "lowerMiddle": { "label": "Zapakatikati zotsika", "range": "MK 150,000 – 400,000" },
-    "middle": { "label": "Zapakatikati", "range": "MK 400,000 – 1,000,000" },
-    "upperMiddle": { "label": "Zapakatikati zapamwamba", "range": "MK 1,000,000 – 2,500,000" },
-    "upper": { "label": "Zapamwamba", "range": "MK 2,500,000+" }
+    "low": {
+      "label": "Ndalama zochepa",
+      "range": "MK 50,000 – 150,000"
+    },
+    "lowerMiddle": {
+      "label": "Zapakatikati zotsika",
+      "range": "MK 150,000 – 400,000"
+    },
+    "middle": {
+      "label": "Zapakatikati",
+      "range": "MK 400,000 – 1,000,000"
+    },
+    "upperMiddle": {
+      "label": "Zapakatikati zapamwamba",
+      "range": "MK 1,000,000 – 2,500,000"
+    },
+    "upper": {
+      "label": "Zapamwamba",
+      "range": "MK 2,500,000+"
+    }
   },
   "home": {
     "greeting": "Takulandiraninso",
@@ -178,7 +200,9 @@
     "s1": "Ndikuyenda bwanji mwezi uno?",
     "s2": "Ndingasunge bwanji zochuluka?",
     "s3": "Kodi ndingakwanitse ngongole?",
-    "error": "Sitinathe kufika kwa mlangizi. Yesaninso."
+    "error": "Sitinathe kufika kwa mlangizi. Yesaninso.",
+    "lockedTitle": "Coach wa AI ndi wa Premium",
+    "lockedMessage": "Lembetsani kuti muzitha kucheza ndi mlangizi wanu wa ndalama wa AI ndi kulandira malangizo."
   },
   "plan": {
     "advisory": "Malangizo anu",
@@ -205,34 +229,107 @@
       "conservative": "Osamala",
       "balanced": "Wolinganizidwa",
       "growth": "Kukula"
-    }
+    },
+    "advisoryLockedTitle": "Malangizo a Premium",
+    "advisoryLockedMessage": "Lembetsani kuti mutsegule kuyang'ana lamulo losunga, chiwerengero cha ngongole ndi malangizo a ndalama."
   },
   "form": {
-    "newGoal": "Cholinga chatsopano", "editGoal": "Sinthani cholinga",
-    "newBudget": "Bajeti yatsopano", "editBudget": "Sinthani bajeti",
-    "newLoan": "Ngongole yatsopano", "editLoan": "Sinthani ngongole",
-    "newInvestment": "Ndalama zatsopano", "editInvestment": "Sinthani ndalama zoyikidwa",
-    "newProject": "Pulojekiti yatsopano", "editProject": "Sinthani pulojekiti",
-    "contribute": "Onjezani thandizo", "repay": "Lembani kubweza",
-    "edit": "Sinthani", "delete": "Chotsani", "deleted": "Zachotsedwa", "saved": "Zasungidwa",
-    "create": "Pangani", "save": "Sungani zosintha",
-    "confirmDeleteTitle": "Chotsani?", "confirmDeleteBody": "Izi sizingabwezeretsedwe.", "cancel": "Lekani",
-    "name": "Dzina", "type": "Mtundu", "target": "Cholinga cha ndalama", "targetDate": "Tsiku lolinga (sikofunika)",
+    "newGoal": "Cholinga chatsopano",
+    "editGoal": "Sinthani cholinga",
+    "newBudget": "Bajeti yatsopano",
+    "editBudget": "Sinthani bajeti",
+    "newLoan": "Ngongole yatsopano",
+    "editLoan": "Sinthani ngongole",
+    "newInvestment": "Ndalama zatsopano",
+    "editInvestment": "Sinthani ndalama zoyikidwa",
+    "newProject": "Pulojekiti yatsopano",
+    "editProject": "Sinthani pulojekiti",
+    "contribute": "Onjezani thandizo",
+    "repay": "Lembani kubweza",
+    "edit": "Sinthani",
+    "delete": "Chotsani",
+    "deleted": "Zachotsedwa",
+    "saved": "Zasungidwa",
+    "create": "Pangani",
+    "save": "Sungani zosintha",
+    "confirmDeleteTitle": "Chotsani?",
+    "confirmDeleteBody": "Izi sizingabwezeretsedwe.",
+    "cancel": "Lekani",
+    "name": "Dzina",
+    "type": "Mtundu",
+    "target": "Cholinga cha ndalama",
+    "targetDate": "Tsiku lolinga (sikofunika)",
     "monthly": "Thandizo la mwezi (sikofunika)",
-    "category": "Gulu (sikofunika)", "none": "Zogula zonse", "period": "Nthawi", "limit": "Malire", "alertThreshold": "Chenjezani pa (%)",
-    "lender": "Wobwereketsa (sikofunika)", "principal": "Ndalama yoyamba", "interestRate": "Chiwongoladzanja pa chaka (%)",
-    "interestType": "Mtundu wa chiwongoladzanja", "termMonths": "Nthawi (miyezi)", "disbursedAt": "Tsiku lopatsidwa", "firstPayment": "Kubweza koyamba (sikofunika)", "status": "Mkhalidwe",
-    "amountInvested": "Ndalama zoyikidwa", "currentValue": "Mtengo wapano (sikofunika)", "expectedReturn": "Phindu loyembekezeka pa chaka (%)",
-    "startedAt": "Tsiku loyamba", "maturityDate": "Tsiku lokhwima (sikofunika)", "notes": "Zolemba (sikofunika)",
-    "description": "Kufotokoza (sikofunika)", "budget": "Bajeti (sikofunika)", "completedAt": "Tsiku lomaliza (sikofunika)",
-    "amount": "Ndalama", "note": "Zolemba (sikofunika)", "paidAt": "Tsiku lolipira (sikofunika)", "contributedAt": "Tsiku (sikofunika)",
-    "weekly": "Sabata iliyonse", "monthly_period": "Mwezi uliwonse",
-    "goalType": {"emergency": "Ndalama zadzidzidzi", "house": "Nyumba", "car": "Galimoto", "business": "Bizinesi", "education": "Maphunziro", "vacation": "Tchuthi", "custom": "Zanu"},
-    "interestTypes": {"reducing_balance": "Reducing balance", "flat": "Flat"},
-    "loanStatus": {"active": "Yogwira", "paid_off": "Yamalizidwa", "defaulted": "Yolephereka", "closed": "Yotsekedwa"},
-    "investType": {"fixed_deposit": "Fixed deposit", "treasury_bill": "Treasury bill", "treasury_bond": "Treasury bond", "unit_trust": "Unit trust", "shares": "Masheya", "pension": "Penshoni", "business": "Bizinesi", "property": "Katundu", "other": "Zina"},
-    "investStatus": {"active": "Yogwira", "matured": "Yakhwima", "sold": "Yagulitsidwa", "closed": "Yotsekedwa"},
-    "projectStatus": {"planning": "Kukonzekera", "active": "Yogwira", "on_hold": "Yoima", "completed": "Yamalizidwa"}
+    "category": "Gulu (sikofunika)",
+    "none": "Zogula zonse",
+    "period": "Nthawi",
+    "limit": "Malire",
+    "alertThreshold": "Chenjezani pa (%)",
+    "lender": "Wobwereketsa (sikofunika)",
+    "principal": "Ndalama yoyamba",
+    "interestRate": "Chiwongoladzanja pa chaka (%)",
+    "interestType": "Mtundu wa chiwongoladzanja",
+    "termMonths": "Nthawi (miyezi)",
+    "disbursedAt": "Tsiku lopatsidwa",
+    "firstPayment": "Kubweza koyamba (sikofunika)",
+    "status": "Mkhalidwe",
+    "amountInvested": "Ndalama zoyikidwa",
+    "currentValue": "Mtengo wapano (sikofunika)",
+    "expectedReturn": "Phindu loyembekezeka pa chaka (%)",
+    "startedAt": "Tsiku loyamba",
+    "maturityDate": "Tsiku lokhwima (sikofunika)",
+    "notes": "Zolemba (sikofunika)",
+    "description": "Kufotokoza (sikofunika)",
+    "budget": "Bajeti (sikofunika)",
+    "completedAt": "Tsiku lomaliza (sikofunika)",
+    "amount": "Ndalama",
+    "note": "Zolemba (sikofunika)",
+    "paidAt": "Tsiku lolipira (sikofunika)",
+    "contributedAt": "Tsiku (sikofunika)",
+    "weekly": "Sabata iliyonse",
+    "monthly_period": "Mwezi uliwonse",
+    "goalType": {
+      "emergency": "Ndalama zadzidzidzi",
+      "house": "Nyumba",
+      "car": "Galimoto",
+      "business": "Bizinesi",
+      "education": "Maphunziro",
+      "vacation": "Tchuthi",
+      "custom": "Zanu"
+    },
+    "interestTypes": {
+      "reducing_balance": "Reducing balance",
+      "flat": "Flat"
+    },
+    "loanStatus": {
+      "active": "Yogwira",
+      "paid_off": "Yamalizidwa",
+      "defaulted": "Yolephereka",
+      "closed": "Yotsekedwa"
+    },
+    "investType": {
+      "fixed_deposit": "Fixed deposit",
+      "treasury_bill": "Treasury bill",
+      "treasury_bond": "Treasury bond",
+      "unit_trust": "Unit trust",
+      "shares": "Masheya",
+      "pension": "Penshoni",
+      "business": "Bizinesi",
+      "property": "Katundu",
+      "other": "Zina"
+    },
+    "investStatus": {
+      "active": "Yogwira",
+      "matured": "Yakhwima",
+      "sold": "Yagulitsidwa",
+      "closed": "Yotsekedwa"
+    },
+    "projectStatus": {
+      "planning": "Kukonzekera",
+      "active": "Yogwira",
+      "on_hold": "Yoima",
+      "completed": "Yamalizidwa"
+    }
   },
   "goal": {
     "saved": "Zasungidwa",
@@ -272,5 +369,47 @@
     "logOut": "Tulukani",
     "english": "Chingerezi",
     "chichewa": "Chichewa"
+  },
+  "subscription": {
+    "title": "Kulembetsa",
+    "active": "Yogwira",
+    "free": "Pulani yaulere",
+    "freeBlurb": "Muli pa pulani yaulere. Kusunga ndalama kwa maziko ndi kwaulere — lembetsani kuti mutsegule coach wa AI, mbiri ya zokambirana, malangizo apamwamba ndi kujambula kwadzidzidzi.",
+    "trialActive": "Nthawi yoyesa yaulere",
+    "renewsOrEnds": "Mpaka",
+    "subscribe": "Lembetsani",
+    "extend": "Wonjezani / sinthani pulani",
+    "invoices": "Ma invoyisi ndi marisiti",
+    "noInvoices": "Palibe ma invoyisi panobe.",
+    "complete": "Malizani",
+    "paywallTitle": "Tsegulani Mulinda Premium",
+    "paywallSubtitle": "Landirani zonse za Mulinda.",
+    "bestValue": "Yabwino kwambiri",
+    "unlock": "Tsegulani premium",
+    "activated": "Premium yatsegulidwa 🎉",
+    "pendingVerify": "Malipiro alandiridwa — tikutsimikizira. Onani Kulembetsa posachedwa.",
+    "plansError": "Sitinathe kukweza mapulani.",
+    "benefitCoach": "Mlangizi wa ndalama wa AI",
+    "benefitHistory": "Mbiri ya zokambirana yosungidwa",
+    "benefitInsights": "Malangizo apamwamba ndi maneneratu",
+    "benefitCapture": "Kujambula marisiti ndi SMS mwadzidzidzi",
+    "statusPaid": "Yalipidwa",
+    "statusGift": "Mphatso",
+    "statusPending": "Ikudikira",
+    "statusFailed": "Yalephera",
+    "statusCancelled": "Yathetsedwa"
+  },
+  "billReceipt": {
+    "title": "Risiti",
+    "share": "Gawani risiti",
+    "paid": "YALIPIDWA",
+    "gift": "MPHATSO",
+    "subscription": "kulembetsa",
+    "plan": "Pulani",
+    "amount": "Ndalama",
+    "method": "Njira",
+    "date": "Tsiku",
+    "reference": "Reference",
+    "footer": "Zikomo pogwiritsa ntchito Mulinda"
   }
 }

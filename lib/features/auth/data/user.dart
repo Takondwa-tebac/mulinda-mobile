@@ -1,3 +1,5 @@
+import '../../subscription/data/subscription_models.dart';
+
 /// The authenticated user, mirroring the API's user payload.
 class User {
   const User({
@@ -13,6 +15,7 @@ class User {
     this.incomeBracket,
     this.declaredIncomeBracket,
     this.roles = const [],
+    this.subscription = const SubscriptionInfo.none(),
   });
 
   final String id;
@@ -27,8 +30,12 @@ class User {
   final String? incomeBracket;
   final String? declaredIncomeBracket;
   final List<String> roles;
+  final SubscriptionInfo subscription;
 
   bool get isAdmin => roles.contains('admin') || roles.contains('super-admin');
+
+  /// Whether the user currently holds a premium entitlement (see [Entitlements]).
+  bool can(String entitlement) => subscription.can(entitlement);
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -44,6 +51,10 @@ class User {
       incomeBracket: json['income_bracket']?.toString(),
       declaredIncomeBracket: json['declared_income_bracket']?.toString(),
       roles: (json['roles'] as List?)?.map((r) => r.toString()).toList() ?? const [],
+      subscription: json['subscription'] is Map
+          ? SubscriptionInfo.fromJson(
+              (json['subscription'] as Map).cast<String, dynamic>())
+          : const SubscriptionInfo.none(),
     );
   }
 }

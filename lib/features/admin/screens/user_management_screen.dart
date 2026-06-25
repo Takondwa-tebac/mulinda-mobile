@@ -203,6 +203,62 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
     }
   }
 
+  Future<void> _giftPremium() async {
+    const periods = [
+      ('day', 'Day Pass'),
+      ('three_day', '3-Day Pass'),
+      ('week', 'Weekly'),
+      ('month', 'Monthly'),
+    ];
+
+    final period = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Gift a subscription',
+                    style: Theme.of(sheetCtx).textTheme.titleMedium),
+              ),
+            ),
+            for (final (value, label) in periods)
+              ListTile(
+                leading: const Icon(Icons.card_giftcard),
+                title: Text(label),
+                onTap: () => Navigator.of(sheetCtx).pop(value),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (period == null || !mounted) return;
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(adminRepositoryProvider).grantCredit(
+            userId: widget.user['id'].toString(),
+            period: period,
+            reason: 'Admin gift',
+          );
+      if (mounted) {
+        Navigator.of(context).pop();
+        widget.onChanged();
+        _snack('Premium gifted to ${widget.user['full_name'] ?? widget.user['username']}.');
+      }
+    } on ApiException catch (e) {
+      if (mounted) _snack(e.displayMessage, error: true);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _deleteUser() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -299,6 +355,15 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
             ),
           ),
           const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: busy ? null : _giftPremium,
+              icon: const Icon(Icons.card_giftcard),
+              label: const Text('Gift premium'),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(

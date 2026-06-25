@@ -1,9 +1,13 @@
 {
-  "app": { "name": "Mulinda", "tagline": "Your money, coached." },
+  "app": {
+    "name": "Mulinda",
+    "tagline": "Your money, coached."
+  },
   "common": {
     "continue": "Continue",
     "comingSoon": "Coming soon",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "retry": "Retry"
   },
   "onboarding": {
     "chooseLanguage": "Choose your language",
@@ -65,7 +69,10 @@
     "title": "Add",
     "scanReceipt": "Scan receipt",
     "pasteSms": "Paste SMS",
-    "manual": "Manual entry"
+    "manual": "Manual entry",
+    "lockedTitle": "Premium feature",
+    "lockedReceipt": "Subscribe to scan receipts and auto-extract transactions with AI.",
+    "lockedSms": "Subscribe to auto-parse mobile-money SMS into transactions."
   },
   "activity": {
     "accounts": "Accounts",
@@ -135,11 +142,26 @@
   "income": {
     "title": "What's your monthly income?",
     "subtitle": "This stays private. It helps Mulinda set savings targets and advice that fit what you earn.",
-    "low": { "label": "Low income", "range": "MK 50,000 – 150,000" },
-    "lowerMiddle": { "label": "Lower-middle income", "range": "MK 150,000 – 400,000" },
-    "middle": { "label": "Middle income", "range": "MK 400,000 – 1,000,000" },
-    "upperMiddle": { "label": "Upper-middle income", "range": "MK 1,000,000 – 2,500,000" },
-    "upper": { "label": "Upper income", "range": "MK 2,500,000+" }
+    "low": {
+      "label": "Low income",
+      "range": "MK 50,000 – 150,000"
+    },
+    "lowerMiddle": {
+      "label": "Lower-middle income",
+      "range": "MK 150,000 – 400,000"
+    },
+    "middle": {
+      "label": "Middle income",
+      "range": "MK 400,000 – 1,000,000"
+    },
+    "upperMiddle": {
+      "label": "Upper-middle income",
+      "range": "MK 1,000,000 – 2,500,000"
+    },
+    "upper": {
+      "label": "Upper income",
+      "range": "MK 2,500,000+"
+    }
   },
   "home": {
     "greeting": "Welcome back",
@@ -178,7 +200,9 @@
     "s1": "How am I doing this month?",
     "s2": "Where can I save more?",
     "s3": "Can I afford a loan?",
-    "error": "Couldn't reach the coach. Please try again."
+    "error": "Couldn't reach the coach. Please try again.",
+    "lockedTitle": "AI Coach is premium",
+    "lockedMessage": "Subscribe to chat with your AI money coach and get personalised guidance."
   },
   "plan": {
     "advisory": "Your guidance",
@@ -205,34 +229,107 @@
       "conservative": "Conservative",
       "balanced": "Balanced",
       "growth": "Growth"
-    }
+    },
+    "advisoryLockedTitle": "Premium insights",
+    "advisoryLockedMessage": "Subscribe to unlock your savings-rule check, credit score and investing guidance."
   },
   "form": {
-    "newGoal": "New goal", "editGoal": "Edit goal",
-    "newBudget": "New budget", "editBudget": "Edit budget",
-    "newLoan": "New loan", "editLoan": "Edit loan",
-    "newInvestment": "New investment", "editInvestment": "Edit investment",
-    "newProject": "New project", "editProject": "Edit project",
-    "contribute": "Add contribution", "repay": "Record repayment",
-    "edit": "Edit", "delete": "Delete", "deleted": "Deleted", "saved": "Saved",
-    "create": "Create", "save": "Save changes",
-    "confirmDeleteTitle": "Delete?", "confirmDeleteBody": "This can't be undone.", "cancel": "Cancel",
-    "name": "Name", "type": "Type", "target": "Target amount", "targetDate": "Target date (optional)",
+    "newGoal": "New goal",
+    "editGoal": "Edit goal",
+    "newBudget": "New budget",
+    "editBudget": "Edit budget",
+    "newLoan": "New loan",
+    "editLoan": "Edit loan",
+    "newInvestment": "New investment",
+    "editInvestment": "Edit investment",
+    "newProject": "New project",
+    "editProject": "Edit project",
+    "contribute": "Add contribution",
+    "repay": "Record repayment",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "saved": "Saved",
+    "create": "Create",
+    "save": "Save changes",
+    "confirmDeleteTitle": "Delete?",
+    "confirmDeleteBody": "This can't be undone.",
+    "cancel": "Cancel",
+    "name": "Name",
+    "type": "Type",
+    "target": "Target amount",
+    "targetDate": "Target date (optional)",
     "monthly": "Monthly contribution (optional)",
-    "category": "Category (optional)", "none": "All spending", "period": "Period", "limit": "Limit", "alertThreshold": "Alert at (%)",
-    "lender": "Lender (optional)", "principal": "Principal", "interestRate": "Annual interest rate (%)",
-    "interestType": "Interest type", "termMonths": "Term (months)", "disbursedAt": "Disbursed on", "firstPayment": "First payment (optional)", "status": "Status",
-    "amountInvested": "Amount invested", "currentValue": "Current value (optional)", "expectedReturn": "Expected annual return (%)",
-    "startedAt": "Started on", "maturityDate": "Maturity date (optional)", "notes": "Notes (optional)",
-    "description": "Description (optional)", "budget": "Budget (optional)", "completedAt": "Completed on (optional)",
-    "amount": "Amount", "note": "Note (optional)", "paidAt": "Paid on (optional)", "contributedAt": "Date (optional)",
-    "weekly": "Weekly", "monthly_period": "Monthly",
-    "goalType": {"emergency": "Emergency fund", "house": "House", "car": "Car", "business": "Business", "education": "Education", "vacation": "Vacation", "custom": "Custom"},
-    "interestTypes": {"reducing_balance": "Reducing balance", "flat": "Flat"},
-    "loanStatus": {"active": "Active", "paid_off": "Paid off", "defaulted": "Defaulted", "closed": "Closed"},
-    "investType": {"fixed_deposit": "Fixed deposit", "treasury_bill": "Treasury bill", "treasury_bond": "Treasury bond", "unit_trust": "Unit trust", "shares": "Shares", "pension": "Pension", "business": "Business", "property": "Property", "other": "Other"},
-    "investStatus": {"active": "Active", "matured": "Matured", "sold": "Sold", "closed": "Closed"},
-    "projectStatus": {"planning": "Planning", "active": "Active", "on_hold": "On hold", "completed": "Completed"}
+    "category": "Category (optional)",
+    "none": "All spending",
+    "period": "Period",
+    "limit": "Limit",
+    "alertThreshold": "Alert at (%)",
+    "lender": "Lender (optional)",
+    "principal": "Principal",
+    "interestRate": "Annual interest rate (%)",
+    "interestType": "Interest type",
+    "termMonths": "Term (months)",
+    "disbursedAt": "Disbursed on",
+    "firstPayment": "First payment (optional)",
+    "status": "Status",
+    "amountInvested": "Amount invested",
+    "currentValue": "Current value (optional)",
+    "expectedReturn": "Expected annual return (%)",
+    "startedAt": "Started on",
+    "maturityDate": "Maturity date (optional)",
+    "notes": "Notes (optional)",
+    "description": "Description (optional)",
+    "budget": "Budget (optional)",
+    "completedAt": "Completed on (optional)",
+    "amount": "Amount",
+    "note": "Note (optional)",
+    "paidAt": "Paid on (optional)",
+    "contributedAt": "Date (optional)",
+    "weekly": "Weekly",
+    "monthly_period": "Monthly",
+    "goalType": {
+      "emergency": "Emergency fund",
+      "house": "House",
+      "car": "Car",
+      "business": "Business",
+      "education": "Education",
+      "vacation": "Vacation",
+      "custom": "Custom"
+    },
+    "interestTypes": {
+      "reducing_balance": "Reducing balance",
+      "flat": "Flat"
+    },
+    "loanStatus": {
+      "active": "Active",
+      "paid_off": "Paid off",
+      "defaulted": "Defaulted",
+      "closed": "Closed"
+    },
+    "investType": {
+      "fixed_deposit": "Fixed deposit",
+      "treasury_bill": "Treasury bill",
+      "treasury_bond": "Treasury bond",
+      "unit_trust": "Unit trust",
+      "shares": "Shares",
+      "pension": "Pension",
+      "business": "Business",
+      "property": "Property",
+      "other": "Other"
+    },
+    "investStatus": {
+      "active": "Active",
+      "matured": "Matured",
+      "sold": "Sold",
+      "closed": "Closed"
+    },
+    "projectStatus": {
+      "planning": "Planning",
+      "active": "Active",
+      "on_hold": "On hold",
+      "completed": "Completed"
+    }
   },
   "goal": {
     "saved": "Saved",
@@ -272,5 +369,47 @@
     "logOut": "Log out",
     "english": "English",
     "chichewa": "Chichewa"
+  },
+  "subscription": {
+    "title": "Subscription",
+    "active": "Active",
+    "free": "Free plan",
+    "freeBlurb": "You're on the free plan. Core tracking stays free — subscribe to unlock the AI coach, chat history, advanced insights and auto-capture.",
+    "trialActive": "Free trial active",
+    "renewsOrEnds": "Access until",
+    "subscribe": "Subscribe",
+    "extend": "Extend / change plan",
+    "invoices": "Invoices & receipts",
+    "noInvoices": "No invoices yet.",
+    "complete": "Complete",
+    "paywallTitle": "Unlock Mulinda Premium",
+    "paywallSubtitle": "Get the full Mulinda experience.",
+    "bestValue": "Best value",
+    "unlock": "Unlock premium",
+    "activated": "Premium activated 🎉",
+    "pendingVerify": "Payment received — we're confirming it. Check Subscriptions shortly.",
+    "plansError": "Couldn't load plans.",
+    "benefitCoach": "AI financial coach",
+    "benefitHistory": "Saved chat history",
+    "benefitInsights": "Advanced insights & forecasts",
+    "benefitCapture": "Receipt & SMS auto-capture",
+    "statusPaid": "Paid",
+    "statusGift": "Gift",
+    "statusPending": "Pending",
+    "statusFailed": "Failed",
+    "statusCancelled": "Cancelled"
+  },
+  "billReceipt": {
+    "title": "Receipt",
+    "share": "Share receipt",
+    "paid": "PAID",
+    "gift": "GIFT",
+    "subscription": "subscription",
+    "plan": "Plan",
+    "amount": "Amount",
+    "method": "Method",
+    "date": "Date",
+    "reference": "Reference",
+    "footer": "Thank you for using Mulinda"
   }
 }

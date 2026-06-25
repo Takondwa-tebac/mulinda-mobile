@@ -71,6 +71,17 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Re-fetch the signed-in user's profile (e.g. after a subscription purchase
+  /// so refreshed entitlements take effect). Silent on failure.
+  Future<void> refresh() async {
+    try {
+      final user = await _repo.me();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (_) {
+      // Keep current state; entitlements refresh on the next successful load.
+    }
+  }
+
   Future<void> login(String username, String password) async {
     final user = await _repo.login(username, password);
     state = AuthState(status: AuthStatus.authenticated, user: user);

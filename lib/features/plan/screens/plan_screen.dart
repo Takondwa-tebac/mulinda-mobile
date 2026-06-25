@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../auth/providers/auth_controller.dart';
+import '../../subscription/data/subscription_models.dart';
+import '../../subscription/widgets/premium_lock.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 
@@ -14,6 +17,9 @@ class PlanScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final advisory = ref.watch(advisoryProvider);
     final text = Theme.of(context).textTheme;
+    // Advisory (savings-rule / creditworthiness / investing) is premium.
+    final canSeeAdvisory =
+        ref.watch(currentUserProvider)?.can(Entitlements.advancedInsights) ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text('nav.plan'.tr())),
@@ -27,11 +33,19 @@ class PlanScreen extends ConsumerWidget {
           children: [
             Text('plan.advisory'.tr(), style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
-            advisory.when(
-              loading: () => const _AdvisoryLoading(),
-              error: (_, _) => const SizedBox.shrink(),
-              data: (a) => _Advisory(summary: a),
-            ),
+            if (!canSeeAdvisory)
+              PremiumUpsellCard(
+                title: 'plan.advisoryLockedTitle'.tr(),
+                message: 'plan.advisoryLockedMessage'.tr(),
+                icon: Icons.insights_rounded,
+                compact: true,
+              )
+            else
+              advisory.when(
+                loading: () => const _AdvisoryLoading(),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (a) => _Advisory(summary: a),
+              ),
             const SizedBox(height: 24),
             ..._tiles(context),
           ],

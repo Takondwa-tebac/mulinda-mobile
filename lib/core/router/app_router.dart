@@ -33,6 +33,9 @@ import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/audit_trail_screen.dart';
 import '../../features/admin/screens/push_notification_screen.dart';
 import '../../features/admin/screens/user_management_screen.dart';
+import '../../features/subscription/data/subscription_models.dart';
+import '../../features/subscription/screens/receipt_screen.dart';
+import '../../features/subscription/screens/subscription_screen.dart';
 import '../../features/transactions/screens/transaction_detail_screen.dart';
 import 'routes.dart';
 
@@ -127,6 +130,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.loanForm, builder: (_, s) => LoanForm(item: s.extra as LoanItem?)),
       GoRoute(path: Routes.investmentForm, builder: (_, s) => InvestmentForm(item: s.extra as InvestmentItem?)),
       GoRoute(path: Routes.projectForm, builder: (_, s) => ProjectForm(item: s.extra as ProjectItem?)),
+
+      // Subscriptions & receipts
+      GoRoute(path: Routes.subscription, builder: (_, _) => const SubscriptionScreen()),
+      GoRoute(
+        path: Routes.receipt,
+        builder: (_, s) => ReceiptScreen(invoice: s.extra as InvoiceModel),
+      ),
 
       // Admin screens — full-screen pushes, not part of the shell tabs.
       GoRoute(path: Routes.admin, builder: (_, _) => const AdminDashboardScreen()),
