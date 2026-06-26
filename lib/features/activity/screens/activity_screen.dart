@@ -118,28 +118,42 @@ class _AccountsStrip extends StatelessWidget {
             itemBuilder: (_, i) {
               if (i == accounts.length) return _AddAccountTile(onTap: () => _addAccount(context));
               final a = accounts[i];
-              return Container(
-                width: 180,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(a.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
-                    Text(a.currentBalance.formatted,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: scheme.onPrimaryContainer)),
-                  ],
+              return InkWell(
+                onTap: () => context.push(Routes.accountDetail, extra: a),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 180,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(a.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: scheme.onPrimaryContainer)),
+                          ),
+                          Icon(Icons.chevron_right,
+                              size: 18, color: scheme.onPrimaryContainer),
+                        ],
+                      ),
+                      Text(a.currentBalance.formatted,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              color: scheme.onPrimaryContainer)),
+                    ],
+                  ),
                 ),
               );
             },

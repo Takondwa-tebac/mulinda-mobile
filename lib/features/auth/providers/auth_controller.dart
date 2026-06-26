@@ -146,6 +146,12 @@ class AuthController extends Notifier<AuthState> {
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
+  /// Upload a new avatar and refresh the user.
+  Future<void> uploadAvatar(String filePath) async {
+    final user = await _repo.uploadAvatar(filePath);
+    state = AuthState(status: AuthStatus.authenticated, user: user);
+  }
+
   /// Update editable profile fields and refresh the user.
   Future<void> updateProfile({
     String? firstName,
@@ -161,6 +167,13 @@ class AuthController extends Notifier<AuthState> {
 
     final user = await _repo.updateProfile(fields);
     state = AuthState(status: AuthStatus.authenticated, user: user);
+  }
+
+  /// Permanently delete the account, then clear local session.
+  Future<void> deleteAccount(String confirmation) async {
+    await _repo.deleteAccount(confirmation);
+    await _tokens.clear();
+    state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<void> signOut() async {

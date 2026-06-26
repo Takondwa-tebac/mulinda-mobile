@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activity/screens/activity_screen.dart';
+import '../../features/activity/data/activity_models.dart';
+import '../../features/activity/screens/account_detail_screen.dart';
 import '../../features/activity/screens/add_account_screen.dart';
 import '../../features/activity/screens/add_transaction_screen.dart';
 import '../../features/capture/screens/inbox_screen.dart';
@@ -61,19 +63,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == Routes.splash ? null : Routes.splash;
       }
 
-      // Signed-out pages (NOTE: splash is excluded — once resolved, leave it).
-      const unauthAllowed = {
+      // Auth-entry pages: meaningful only when signed OUT. An authenticated
+      // user landing here is bounced home.
+      const authEntryPages = {
         Routes.onboarding,
-        Routes.permissions,
-        Routes.legal,
         Routes.login,
         Routes.register,
         Routes.forgotPassword,
         Routes.resetPassword,
       };
+      // Public pages reachable in BOTH states (e.g. permissions, legal opened
+      // from Profile while signed in, or from the signup screen while out).
+      const publicAnywhere = {
+        Routes.permissions,
+        Routes.legal,
+      };
 
       if (status == AuthStatus.unauthenticated) {
-        if (unauthAllowed.contains(loc)) return null;
+        if (authEntryPages.contains(loc) || publicAnywhere.contains(loc)) return null;
         // Only show onboarding on first launch; returning users go to login.
         final seen = ref.read(onboardingSeenProvider);
         return seen ? Routes.login : Routes.onboarding;
@@ -86,8 +93,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == Routes.incomeSetup ? null : Routes.incomeSetup;
       }
 
-      // Bounce off the splash, signed-out pages, and the (now-complete) setup.
-      if (loc == Routes.splash || unauthAllowed.contains(loc) || loc == Routes.incomeSetup) {
+      // Bounce off the splash, auth-entry pages, and the (now-complete) setup —
+      // but NOT publicAnywhere pages (permissions, legal), which stay reachable.
+      if (loc == Routes.splash || authEntryPages.contains(loc) || loc == Routes.incomeSetup) {
         return Routes.home;
       }
       return null;
@@ -122,6 +130,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.addTransaction, builder: (_, _) => const AddTransactionScreen()),
       GoRoute(path: Routes.addAccount, builder: (_, _) => const AddAccountScreen()),
+      GoRoute(
+        path: Routes.accountDetail,
+        builder: (_, s) => AccountDetailScreen(account: s.extra as Account),
+      ),
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),

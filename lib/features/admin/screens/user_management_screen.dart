@@ -93,10 +93,12 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final u = users[i] as Map<String, dynamic>;
+              // Roles may arrive as plain name strings or as {name: ...} objects.
               final roles = (u['roles'] as List?)
-                      ?.map((r) => r['name']?.toString() ?? r.toString())
+                      ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
+                      .where((r) => r.isNotEmpty)
                       .toList() ??
-                  [];
+                  <String>[];
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor:

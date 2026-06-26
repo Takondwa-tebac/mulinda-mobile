@@ -35,10 +35,16 @@ class ProfileScreen extends ConsumerWidget {
                   radius: 28,
                   backgroundColor: scheme.primaryContainer,
                   foregroundColor: scheme.onPrimaryContainer,
-                  child: Text(
-                    _initials(user.fullName, user.username),
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-                  ),
+                  backgroundImage:
+                      (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(user.avatarUrl!)
+                          : null,
+                  child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
+                      ? Text(
+                          _initials(user.fullName, user.username),
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -150,6 +156,18 @@ class ProfileScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout),
             label: Text('profile.logOut'.tr()),
           ),
+          const SizedBox(height: 28),
+          _Label('profile.dangerZone'.tr()),
+          if (user != null)
+            OutlinedButton.icon(
+              onPressed: () => _showDeleteAccount(context, user.username),
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: Text('profile.deleteAccount'.tr()),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: scheme.error,
+                side: BorderSide(color: scheme.error),
+              ),
+            ),
         ],
       ),
     );
@@ -215,12 +233,107 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  void _showDeleteAccount(BuildContext context, String username) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _DeleteAccountDialog(username: username),
+    );
+  }
+
   String _initials(String fullName, String username) {
     final base = fullName.trim().isNotEmpty ? fullName.trim() : username;
     final parts = base.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
     return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+  }
+}
+
+/// GitHub-style destructive confirmation: the user must type their username
+/// exactly before the Delete button enables.
+class _DeleteAccountDialog extends ConsumerStatefulWidget {
+  const _DeleteAccountDialog({required this.username});
+  final String username;
+
+  @override
+  ConsumerState<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
+  final _controller = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _matches => _controller.text.trim() == widget.username;
+
+  Future<void> _delete() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authControllerProvider.notifier).deleteAccount(_controller.text.trim());
+      // Auth state flips to unauthenticated → router redirects to login.
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.displayMessage);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'coach.error'.tr());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: Text('profile.deleteAccount'.tr()),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('profile.deleteWarning'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
+          const SizedBox(height: 16),
+          Text('profile.deleteConfirmPrompt'.tr(args: [widget.username]),
+              style: const TextStyle(fontSize: 13)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autocorrect: false,
+            enableSuggestions: false,
+            enabled: !_busy,
+            decoration: InputDecoration(
+              hintText: widget.username,
+              border: const OutlineInputBorder(),
+              errorText: _error,
+              isDense: true,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: Text('form.cancel'.tr()),
+        ),
+        FilledButton(
+          onPressed: (_matches && !_busy) ? _delete : null,
+          style: FilledButton.styleFrom(backgroundColor: scheme.error),
+          child: _busy
+              ? const SizedBox(
+                  height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2.5))
+              : Text('profile.deleteConfirm'.tr()),
+        ),
+      ],
+    );
   }
 }
 

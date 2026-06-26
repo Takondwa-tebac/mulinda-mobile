@@ -17,6 +17,12 @@ class ActivityRepository {
   Future<List<Txn>> transactions() =>
       _list('/v1/transactions', Txn.fromJson, query: {'per_page': 50});
 
+  Future<List<Txn>> transactionsForAccount(String accountId) => _list(
+        '/v1/transactions',
+        Txn.fromJson,
+        query: {'financial_account_id': accountId, 'per_page': 200},
+      );
+
   Future<void> createTransaction({
     required String accountId,
     required String type,
@@ -106,3 +112,9 @@ final categoriesProvider =
 
 final transactionsProvider =
     FutureProvider.autoDispose<List<Txn>>((ref) => ref.read(activityRepositoryProvider).transactions());
+
+/// Transactions belonging to a single account (for the account detail screen).
+final accountTransactionsProvider =
+    FutureProvider.autoDispose.family<List<Txn>, String>(
+  (ref, accountId) => ref.read(activityRepositoryProvider).transactionsForAccount(accountId),
+);

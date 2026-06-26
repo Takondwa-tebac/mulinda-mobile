@@ -131,7 +131,18 @@
     "bank": "Bank",
     "cash": "Cash",
     "wallet": "Wallet",
-    "savings": "Savings"
+    "savings": "Savings",
+    "balance": "Current balance",
+    "income": "Income",
+    "spending": "Spending",
+    "transactions": "Transactions",
+    "noTransactions": "No transactions on this account yet.",
+    "goodTitle": "Good standing",
+    "goodBody": "You're bringing in more than you spend on this account. Keep it up.",
+    "overspendTitle": "Spending more than you earn",
+    "overspendBody": "On recent activity, spending on this account is higher than income. Consider easing off.",
+    "overdrawnTitle": "Account overdrawn",
+    "overdrawnBody": "This account balance is negative. Top it up or reduce spending."
   },
   "sms": {
     "title": "Paste SMS",
@@ -379,7 +390,13 @@
     "themeDark": "Dark",
     "logOut": "Log out",
     "english": "English",
-    "chichewa": "Chichewa"
+    "chichewa": "Chichewa",
+    "avatarUpdated": "Profile picture updated.",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete account",
+    "deleteWarning": "This permanently deletes your account and all your data — transactions, accounts, goals, budgets and subscriptions. This cannot be undone.",
+    "deleteConfirmPrompt": "Type your username {} to confirm:",
+    "deleteConfirm": "Delete forever"
   },
   "subscription": {
     "title": "Subscription",

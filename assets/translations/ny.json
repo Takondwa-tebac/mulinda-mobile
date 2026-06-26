@@ -131,7 +131,18 @@
     "bank": "Banki",
     "cash": "Ndalama",
     "wallet": "Chikwama",
-    "savings": "Kusunga"
+    "savings": "Kusunga",
+    "balance": "Ndalama zilipo",
+    "income": "Zolowa",
+    "spending": "Zogwiritsidwa",
+    "transactions": "Zochitika",
+    "noTransactions": "Palibe zochitika pa akaunti iyi panobe.",
+    "goodTitle": "Muli bwino",
+    "goodBody": "Mukulowetsa zambiri kuposa zomwe mukugwiritsa pa akaunti iyi. Pitirizani.",
+    "overspendTitle": "Mukugwiritsa kuposa zomwe mukupeza",
+    "overspendBody": "Malinga ndi zochitika zaposachedwa, zogwiritsidwa pa akaunti iyi zaposa zolowa. Onani mmene mungachepetsere.",
+    "overdrawnTitle": "Akaunti yatha ndalama",
+    "overdrawnBody": "Ndalama pa akaunti iyi zili pansi pa ziro. Onjezani kapena chepetsani zogula."
   },
   "sms": {
     "title": "Matani SMS",
@@ -379,7 +390,13 @@
     "themeDark": "Mdima",
     "logOut": "Tulukani",
     "english": "Chingerezi",
-    "chichewa": "Chichewa"
+    "chichewa": "Chichewa",
+    "avatarUpdated": "Chithunzi chasinthidwa.",
+    "dangerZone": "Malo owopsa",
+    "deleteAccount": "Chotsani akaunti",
+    "deleteWarning": "Izi zimachotsa akaunti yanu ndi deta yanu yonse — zochitika, ma akaunti, zolinga, mabajeti ndi zolembetsa — kwamuyaya. Sizingabwezeretsedwe.",
+    "deleteConfirmPrompt": "Lembani dzina lanu {} kuti mutsimikize:",
+    "deleteConfirm": "Chotsani kwamuyaya"
   },
   "subscription": {
     "title": "Kulembetsa",

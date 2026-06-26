@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../auth/providers/auth_controller.dart';
@@ -19,6 +20,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _lastName;
   late final TextEditingController _phone;
   bool _loading = false;
+  bool _uploadingAvatar = false;
+
+  Future<void> _changeAvatar() async {
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 1024);
+    if (picked == null) return;
+    setState(() => _uploadingAvatar = true);
+    try {
+      await ref.read(authControllerProvider.notifier).uploadAvatar(picked.path);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('profile.avatarUpdated'.tr())));
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
 
   @override
   void initState() {
@@ -77,6 +102,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Center(child: _AvatarPicker(
+                  busy: _uploadingAvatar,
+                  onTap: _uploadingAvatar ? null : _changeAvatar,
+                )),
+                const SizedBox(height: 24),
                 _field(_firstName, 'profile.firstName'.tr(), required: true),
                 _field(_middleName, 'profile.middleName'.tr()),
                 _field(_lastName, 'profile.lastName'.tr(), required: true),
@@ -113,5 +143,69 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             : null,
       ),
     );
+  }
+}
+
+/// Circular avatar with a camera badge; shows the current photo (network) or
+/// the user's initials, and a spinner while uploading.
+class _AvatarPicker extends ConsumerWidget {
+  const _AvatarPicker({required this.busy, required this.onTap});
+
+  final bool busy;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final user = ref.watch(currentUserProvider);
+    final url = user?.avatarUrl;
+
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 48,
+          backgroundColor: scheme.primaryContainer,
+          foregroundColor: scheme.onPrimaryContainer,
+          backgroundImage: (url != null && url.isNotEmpty) ? NetworkImage(url) : null,
+          child: (url == null || url.isEmpty)
+              ? Text(
+                  _initials(user?.fullName ?? user?.username ?? '?'),
+                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
+                )
+              : null,
+        ),
+        if (busy)
+          Positioned.fill(
+            child: CircleAvatar(
+              radius: 48,
+              backgroundColor: Colors.black.withValues(alpha: 0.4),
+              child: const CircularProgressIndicator(),
+            ),
+          ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: scheme.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(Icons.camera_alt, size: 18, color: scheme.onPrimary),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
   }
 }

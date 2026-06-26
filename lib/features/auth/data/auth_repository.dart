@@ -61,10 +61,33 @@ class AuthRepository {
     }
   }
 
+  /// Upload a new profile picture (multipart) and return the refreshed user.
+  Future<User> uploadAvatar(String filePath) async {
+    try {
+      final form = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(filePath),
+      });
+      final res = await _dio.post('/v1/auth/avatar', data: form);
+      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<User> me() async {
     try {
       final res = await _dio.get('/v1/auth/me');
       return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
+  /// Permanently delete the signed-in user's account. [confirmation] must equal
+  /// the username (verified server-side).
+  Future<void> deleteAccount(String confirmation) async {
+    try {
+      await _dio.delete('/v1/auth/account', data: {'confirmation': confirmation});
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }

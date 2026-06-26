@@ -23,6 +23,7 @@ abstract class Routes {
   // Capture / activity
   static const addTransaction = '/add-transaction';
   static const addAccount = '/add-account';
+  static const accountDetail = '/account-detail';
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
   static const inbox = '/inbox';
