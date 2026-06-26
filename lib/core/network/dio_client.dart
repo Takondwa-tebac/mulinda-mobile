@@ -21,9 +21,16 @@ final dioProvider = Provider<Dio>((ref) {
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await tokens.read();
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+        // Never let a slow/failing secure-storage read block the request from
+        // being sent (otherwise the UI spins forever and nothing reaches the
+        // server). Time-box it and proceed without a token on failure.
+        try {
+          final token = await tokens.read().timeout(const Duration(seconds: 5));
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+        } catch (_) {
+          // Proceed unauthenticated — auth endpoints don't need a token anyway.
         }
         handler.next(options);
       },
