@@ -17,11 +17,19 @@ class _Msg {
     required this.fromUser,
     this.isStreaming = false,
     this.charts = const [],
+    this.failed = false,
+    this.retryPrompt,
   });
   final String text;
   final bool fromUser;
   final bool isStreaming;
   final List<Future<Map<String, dynamic>?>> charts;
+
+  /// An assistant turn that errored — shows a Regenerate affordance.
+  final bool failed;
+
+  /// The user prompt that produced this (failed) turn, for regeneration.
+  final String? retryPrompt;
 }
 
 class CoachScreen extends ConsumerStatefulWidget {
@@ -76,13 +84,29 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     final message = text.trim();
     if (message.isEmpty || _sending) return;
 
+    setState(() => _messages.add(_Msg(text: message, fromUser: true)));
+    _input.clear();
+    await _runTurn(message);
+  }
+
+  /// Regenerate a failed turn: drop the failed bubble and re-run the same
+  /// prompt (the user message is kept).
+  Future<void> _regenerate(String prompt) async {
+    if (_sending) return;
     setState(() {
-      _messages.add(_Msg(text: message, fromUser: true));
+      if (_messages.isNotEmpty && _messages.last.failed) _messages.removeLast();
+    });
+    await _runTurn(prompt);
+  }
+
+  /// Run one assistant turn for [message]: stream tokens + chart hints into a
+  /// placeholder bubble. On failure the bubble becomes a Regenerate prompt.
+  Future<void> _runTurn(String message) async {
+    setState(() {
       // Placeholder assistant bubble — spinner until first token.
       _messages.add(_Msg(text: '', fromUser: false, isStreaming: true));
       _sending = true;
     });
-    _input.clear();
     _scrollToBottom();
 
     try {
@@ -133,25 +157,27 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       }
     } on ApiException catch (e) {
       if (!mounted) return;
-      _handleSendError(e.displayMessage);
+      _handleSendError(e.displayMessage, message);
     } catch (_) {
       if (!mounted) return;
-      _handleSendError('coach.error'.tr());
+      _handleSendError('coach.error'.tr(), message);
     }
   }
 
-  void _handleSendError(String message) {
+  void _handleSendError(String message, String prompt) {
     setState(() {
       _sending = false;
       if (_messages.isNotEmpty && !_messages.last.fromUser) {
         final last = _messages.last;
-        if (last.text.isEmpty) {
-          _messages.removeLast(); // Remove empty placeholder.
-        } else {
-          // Keep partial response but stop streaming indicator.
-          _messages[_messages.length - 1] =
-              _Msg(text: last.text, fromUser: false);
-        }
+        // Turn the placeholder/partial into a failed bubble that keeps any
+        // partial text and offers Regenerate. The user message stays put.
+        _messages[_messages.length - 1] = _Msg(
+          text: last.text,
+          fromUser: false,
+          charts: last.charts,
+          failed: true,
+          retryPrompt: prompt,
+        );
       }
     });
     ScaffoldMessenger.of(context)
@@ -208,8 +234,15 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                         controller: _scroll,
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         itemCount: _messages.length,
-                        itemBuilder: (context, i) =>
-                            _Bubble(msg: _messages[i]),
+                        itemBuilder: (context, i) {
+                          final m = _messages[i];
+                          return _Bubble(
+                            msg: m,
+                            onRegenerate: (m.failed && m.retryPrompt != null && !_sending)
+                                ? () => _regenerate(m.retryPrompt!)
+                                : null,
+                          );
+                        },
                       ),
           ),
           _InputBar(
@@ -228,8 +261,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 // ---------------------------------------------------------------------------
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.msg});
+  const _Bubble({required this.msg, this.onRegenerate});
   final _Msg msg;
+  final VoidCallback? onRegenerate;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +271,58 @@ class _Bubble extends StatelessWidget {
     final bg = msg.fromUser ? scheme.primary : scheme.surfaceContainerHigh;
     final fg = msg.fromUser ? scheme.onPrimary : scheme.onSurface;
     final hasCharts = !msg.fromUser && msg.charts.isNotEmpty;
+
+    // Failed assistant turn: show any partial text, an error line, and a
+    // Regenerate button.
+    if (msg.failed) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          constraints:
+              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+          decoration: BoxDecoration(
+            color: scheme.errorContainer.withValues(alpha: 0.5),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+              bottomLeft: Radius.circular(4),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (msg.text.isNotEmpty) ...[
+                GptMarkdown(msg.text, style: TextStyle(color: fg, height: 1.4)),
+                const SizedBox(height: 6),
+              ],
+              Row(
+                children: [
+                  Icon(Icons.error_outline, size: 16, color: scheme.error),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text('coach.noResponse'.tr(),
+                        style: TextStyle(color: scheme.error, fontSize: 13)),
+                  ),
+                ],
+              ),
+              if (onRegenerate != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: onRegenerate,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text('coach.regenerate'.tr()),
+                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
 
     final bubble = Align(
       alignment: msg.fromUser ? Alignment.centerRight : Alignment.centerLeft,

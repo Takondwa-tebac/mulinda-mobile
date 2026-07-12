@@ -189,6 +189,7 @@ class InvestmentsListScreen extends ConsumerWidget {
           value: i.value.formatted,
           sub: i.gain.formatted,
           subColor: i.gain.isNegative ? Colors.red : null,
+          onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteInvestment(i.id), investmentsListProvider),
         ),

@@ -224,7 +224,9 @@
     "s3": "Kodi ndingakwanitse ngongole?",
     "error": "Sitinathe kufika kwa mlangizi. Yesaninso.",
     "lockedTitle": "Coach wa AI ndi wa Premium",
-    "lockedMessage": "Lembetsani kuti muzitha kucheza ndi mlangizi wanu wa ndalama wa AI ndi kulandira malangizo."
+    "lockedMessage": "Lembetsani kuti muzitha kucheza ndi mlangizi wanu wa ndalama wa AI ndi kulandira malangizo.",
+    "noResponse": "Sitinathe kulandira yankho.",
+    "regenerate": "Yesaninso"
   },
   "plan": {
     "advisory": "Malangizo anu",
@@ -476,5 +478,30 @@
   "legal": {
     "title": "Zalamulo",
     "loadError": "Sitinathe kutsegula tsamba ili. Onani intaneti yanu."
+  },
+  "invest": {
+    "currentValue": "Mtengo wapano",
+    "amountInvested": "Ndalama zoyikidwa",
+    "annualRate": "Chiwongoladzanja pachaka",
+    "started": "Tsiku loyamba",
+    "maturity": "Tsiku lokhwima",
+    "maturityProjection": "Kuyerekeza kukhwima",
+    "maturesOn": "Ikhwima pa {} · masiku {} otsala",
+    "matured": "Ndalama izi zakhwima.",
+    "estToday": "Kuyerekeza lero",
+    "interestSoFar": "Phindu mpaka pano",
+    "atMaturity": "Pokhwima",
+    "totalInterest": "Phindu lonse",
+    "type": {
+      "fixed_deposit": "Fixed deposit",
+      "treasury_bill": "Treasury bill",
+      "treasury_bond": "Treasury bond",
+      "unit_trust": "Unit trust",
+      "shares": "Masheya",
+      "pension": "Penshoni",
+      "business": "Bizinesi",
+      "property": "Katundu",
+      "other": "Zina"
+    }
   }
 }

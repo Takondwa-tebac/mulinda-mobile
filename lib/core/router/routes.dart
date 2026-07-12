@@ -43,6 +43,7 @@ abstract class Routes {
   static const budgetDetail = '/budget-detail';
   static const loanDetail = '/loan-detail';
   static const projectDetail = '/project-detail';
+  static const investmentDetail = '/investment-detail';
 
   // Plan create/edit forms (item passed via GoRouter `extra`)
   static const goalForm = '/goal-form';

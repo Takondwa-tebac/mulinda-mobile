@@ -224,7 +224,9 @@
     "s3": "Can I afford a loan?",
     "error": "Couldn't reach the coach. Please try again.",
     "lockedTitle": "AI Coach is premium",
-    "lockedMessage": "Subscribe to chat with your AI money coach and get personalised guidance."
+    "lockedMessage": "Subscribe to chat with your AI money coach and get personalised guidance.",
+    "noResponse": "Couldn't get a response.",
+    "regenerate": "Regenerate"
   },
   "plan": {
     "advisory": "Your guidance",
@@ -476,5 +478,30 @@
   "legal": {
     "title": "Legal",
     "loadError": "Couldn't load this page. Check your connection."
+  },
+  "invest": {
+    "currentValue": "Current value",
+    "amountInvested": "Amount invested",
+    "annualRate": "Annual interest rate",
+    "started": "Start date",
+    "maturity": "Maturity date",
+    "maturityProjection": "Maturity projection",
+    "maturesOn": "Matures on {} · {} days to go",
+    "matured": "This investment has matured.",
+    "estToday": "Estimated today",
+    "interestSoFar": "Interest so far",
+    "atMaturity": "At maturity",
+    "totalInterest": "Total interest",
+    "type": {
+      "fixed_deposit": "Fixed deposit",
+      "treasury_bill": "Treasury bill",
+      "treasury_bond": "Treasury bond",
+      "unit_trust": "Unit trust",
+      "shares": "Shares",
+      "pension": "Pension",
+      "business": "Business",
+      "property": "Property",
+      "other": "Other"
+    }
   }
 }
