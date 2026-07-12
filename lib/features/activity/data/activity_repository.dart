@@ -55,9 +55,11 @@ class ActivityRepository {
     required String name,
     required String type,
     double? openingBalance,
+    String? currency,
   }) async {
     final body = <String, dynamic>{'name': name, 'type': type};
     if (openingBalance != null) body['opening_balance'] = openingBalance;
+    if (currency != null) body['currency'] = currency;
 
     try {
       await _dio.post('/v1/accounts', data: body);

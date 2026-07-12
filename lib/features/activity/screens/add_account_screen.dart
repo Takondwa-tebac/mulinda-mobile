@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/money/currency_picker.dart';
 import '../../../core/network/api_exception.dart';
 import '../data/activity_repository.dart';
 
@@ -19,6 +20,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   final _name = TextEditingController();
   final _opening = TextEditingController();
   String _type = 'mobile_money';
+  String _currency = 'MWK';
   bool _loading = false;
 
   @override
@@ -36,6 +38,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             name: _name.text.trim(),
             type: _type,
             openingBalance: double.tryParse(_opening.text.trim()),
+            currency: _currency,
           );
       ref.invalidate(accountsProvider);
       if (mounted) Navigator.of(context).pop(true);
@@ -74,6 +77,12 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                       .map((t) => DropdownMenuItem(value: t, child: Text('account.$t'.tr())))
                       .toList(),
                   onChanged: (v) => setState(() => _type = v ?? _type),
+                ),
+                const SizedBox(height: 16),
+                CurrencyField(
+                  value: _currency,
+                  label: 'account.currency'.tr(),
+                  onChanged: (v) => setState(() => _currency = v),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

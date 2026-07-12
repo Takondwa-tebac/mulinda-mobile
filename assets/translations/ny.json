@@ -142,7 +142,8 @@
     "overspendTitle": "Mukugwiritsa kuposa zomwe mukupeza",
     "overspendBody": "Malinga ndi zochitika zaposachedwa, zogwiritsidwa pa akaunti iyi zaposa zolowa. Onani mmene mungachepetsere.",
     "overdrawnTitle": "Akaunti yatha ndalama",
-    "overdrawnBody": "Ndalama pa akaunti iyi zili pansi pa ziro. Onjezani kapena chepetsani zogula."
+    "overdrawnBody": "Ndalama pa akaunti iyi zili pansi pa ziro. Onjezani kapena chepetsani zogula.",
+    "currency": "Ndalama"
   },
   "sms": {
     "title": "Matani SMS",
@@ -503,5 +504,9 @@
       "property": "Katundu",
       "other": "Zina"
     }
+  },
+  "currency": {
+    "select": "Sankhani ndalama",
+    "display": "Ndalama zowonetsera"
   }
 }

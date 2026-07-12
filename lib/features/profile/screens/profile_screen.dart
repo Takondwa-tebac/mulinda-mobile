@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/income/income_bands.dart';
+import '../../../core/money/currencies.dart';
+import '../../../core/money/currency_picker.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme_mode_controller.dart';
@@ -84,6 +86,17 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _changeIncome(context, ref),
                 ),
+                const Divider(height: 1),
+                Builder(builder: (_) {
+                  final c = currencyInfo(user?.displayCurrency ?? 'MWK');
+                  return ListTile(
+                    leading: const Icon(Icons.language_outlined),
+                    title: Text('currency.display'.tr()),
+                    subtitle: Text('${c.flag}  ${c.code} · ${c.name}'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _changeCurrency(context, ref),
+                  );
+                }),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.shield_outlined),
@@ -231,6 +244,26 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _changeCurrency(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(currentUserProvider)?.displayCurrency ?? 'MWK';
+    final picked = await showCurrencyPicker(context, selected: current);
+    if (picked == null || picked == current || !context.mounted) return;
+    try {
+      await ref.read(authControllerProvider.notifier).updateProfile(displayCurrency: picked);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('profile.saved'.tr())));
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    }
   }
 
   void _showDeleteAccount(BuildContext context, String username) {

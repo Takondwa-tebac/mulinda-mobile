@@ -158,12 +158,14 @@ class AuthController extends Notifier<AuthState> {
     String? middleName,
     String? lastName,
     String? phoneNumber,
+    String? displayCurrency,
   }) async {
     final fields = <String, dynamic>{};
     if (firstName != null) fields['first_name'] = firstName;
     if (middleName != null) fields['middle_name'] = middleName;
     if (lastName != null) fields['last_name'] = lastName;
     if (phoneNumber != null) fields['phone_number'] = phoneNumber;
+    if (displayCurrency != null) fields['display_currency'] = displayCurrency;
 
     final user = await _repo.updateProfile(fields);
     state = AuthState(status: AuthStatus.authenticated, user: user);

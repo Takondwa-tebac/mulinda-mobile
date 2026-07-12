@@ -142,7 +142,8 @@
     "overspendTitle": "Spending more than you earn",
     "overspendBody": "On recent activity, spending on this account is higher than income. Consider easing off.",
     "overdrawnTitle": "Account overdrawn",
-    "overdrawnBody": "This account balance is negative. Top it up or reduce spending."
+    "overdrawnBody": "This account balance is negative. Top it up or reduce spending.",
+    "currency": "Currency"
   },
   "sms": {
     "title": "Paste SMS",
@@ -503,5 +504,9 @@
       "property": "Property",
       "other": "Other"
     }
+  },
+  "currency": {
+    "select": "Select currency",
+    "display": "Display currency"
   }
 }

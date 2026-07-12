@@ -14,6 +14,7 @@ class User {
     this.avatarUrl,
     this.incomeBracket,
     this.declaredIncomeBracket,
+    this.displayCurrency = 'MWK',
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
   });
@@ -29,6 +30,7 @@ class User {
   final String? avatarUrl;
   final String? incomeBracket;
   final String? declaredIncomeBracket;
+  final String displayCurrency;
   final List<String> roles;
   final SubscriptionInfo subscription;
 
@@ -50,6 +52,7 @@ class User {
       avatarUrl: json['avatar_url']?.toString(),
       incomeBracket: json['income_bracket']?.toString(),
       declaredIncomeBracket: json['declared_income_bracket']?.toString(),
+      displayCurrency: json['display_currency']?.toString() ?? 'MWK',
       roles: (json['roles'] as List?)?.map((r) => r.toString()).toList() ?? const [],
       subscription: json['subscription'] is Map
           ? SubscriptionInfo.fromJson(
