@@ -399,7 +399,10 @@
     "deleteAccount": "Chotsani akaunti",
     "deleteWarning": "Izi zimachotsa akaunti yanu ndi deta yanu yonse — zochitika, ma akaunti, zolinga, mabajeti ndi zolembetsa — kwamuyaya. Sizingabwezeretsedwe.",
     "deleteConfirmPrompt": "Lembani dzina lanu {} kuti mutsimikize:",
-    "deleteConfirm": "Chotsani kwamuyaya"
+    "deleteConfirm": "Chotsani kwamuyaya",
+    "preferencesSub": "Chinenero, mtundu, ndalama & chitetezo",
+    "theme": "Maonekedwe",
+    "moneySecurity": "Ndalama & chitetezo"
   },
   "subscription": {
     "title": "Kulembetsa",
@@ -508,5 +511,16 @@
   "currency": {
     "select": "Sankhani ndalama",
     "display": "Ndalama zowonetsera"
+  },
+  "security": {
+    "biometricLock": "Tsegulani ndi biometrics",
+    "biometricSub": "Funsani chala kapena nkhope kuti mutsegule pulogalamu",
+    "unlockReason": "Tsimikizani kuti mutsegule Mulinda",
+    "lockedTitle": "Mulinda yatsekedwa",
+    "unlock": "Tsegulani",
+    "enableTitle": "Yatsani chitetezo cha biometric?",
+    "enableBody": "Onjezani chitetezo — gwiritsani ntchito chala kapena nkhope kutsegula Mulinda. Mutha kusintha nthawi iliyonse mu Preferences.",
+    "enable": "Yatsani",
+    "notNow": "Osati tsopano"
   }
 }

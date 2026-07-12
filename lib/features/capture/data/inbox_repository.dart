@@ -58,7 +58,7 @@ class InboxRepository {
   Future<void> approveSms(String id, {required String financialAccountId, String? categoryId}) =>
       _post('/v1/sms/$id/approve', body: {
         'financial_account_id': financialAccountId,
-        if (categoryId != null) 'category_id': categoryId,
+        'category_id': ?categoryId,
       });
 
   Future<void> rejectSms(String id) => _post('/v1/sms/$id/reject');
@@ -66,7 +66,7 @@ class InboxRepository {
   Future<void> approveReceipt(String id, {required String financialAccountId, String? categoryId}) =>
       _post('/v1/receipt-scans/$id/approve', body: {
         'financial_account_id': financialAccountId,
-        if (categoryId != null) 'category_id': categoryId,
+        'category_id': ?categoryId,
       });
 
   Future<void> rejectReceipt(String id) => _post('/v1/receipt-scans/$id/reject');

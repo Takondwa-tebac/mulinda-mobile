@@ -232,7 +232,7 @@ class _SmsPickerSheet extends StatelessWidget {
             child: ListView.separated(
               controller: controller,
               itemCount: messages.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (_, i) {
                 final msg = messages[i];
                 final date = msg.date;

@@ -16,6 +16,7 @@ abstract class Routes {
   static const plan = '/plan';
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
+  static const preferences = '/preferences';
 
   static const coach = '/coach';
   static const insights = '/insights';

@@ -399,7 +399,10 @@
     "deleteAccount": "Delete account",
     "deleteWarning": "This permanently deletes your account and all your data — transactions, accounts, goals, budgets and subscriptions. This cannot be undone.",
     "deleteConfirmPrompt": "Type your username {} to confirm:",
-    "deleteConfirm": "Delete forever"
+    "deleteConfirm": "Delete forever",
+    "preferencesSub": "Language, theme, currency & security",
+    "theme": "Theme",
+    "moneySecurity": "Money & security"
   },
   "subscription": {
     "title": "Subscription",
@@ -508,5 +511,16 @@
   "currency": {
     "select": "Select currency",
     "display": "Display currency"
+  },
+  "security": {
+    "biometricLock": "Unlock with biometrics",
+    "biometricSub": "Require fingerprint or face to open the app",
+    "unlockReason": "Authenticate to unlock Mulinda",
+    "lockedTitle": "Mulinda is locked",
+    "unlock": "Unlock",
+    "enableTitle": "Enable biometric lock?",
+    "enableBody": "Add a layer of security — use your fingerprint or face to open Mulinda. You can change this anytime in Preferences.",
+    "enable": "Enable",
+    "notNow": "Not now"
   }
 }

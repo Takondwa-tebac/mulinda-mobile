@@ -21,10 +21,14 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCaptureSheet(context),
-        child: const Icon(Icons.add),
-      ),
+      // Hide the capture FAB on the Profile tab (index 3) — it only clutters
+      // and overlaps content there.
+      floatingActionButton: navigationShell.currentIndex == 3
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _showCaptureSheet(context),
+              child: const Icon(Icons.add),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _goBranch,

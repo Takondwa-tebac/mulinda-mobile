@@ -65,6 +65,7 @@ dependencies:
   webview_flutter: ^4.10.0
   gpt_markdown: ^1.1.7
   another_telephony: ^0.4.1
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,8 @@
          so release builds need it declared here or all API calls silently hang). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Biometric app-lock (local_auth) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <!-- Camera: receipt scanning -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- SMS: auto-read financial messages from inbox -->

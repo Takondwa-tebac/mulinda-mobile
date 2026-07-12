@@ -4,11 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/income/income_bands.dart';
-import '../../../core/money/currencies.dart';
-import '../../../core/money/currency_picker.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
-import '../../../core/theme/theme_mode_controller.dart';
 import '../../auth/providers/auth_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -16,9 +13,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
     final user = ref.watch(currentUserProvider);
-    final isNyanja = context.locale.languageCode == 'ny';
     final scheme = Theme.of(context).colorScheme;
 
     final bracketKey = incomeBandKey(user?.declaredIncomeBracket);
@@ -87,16 +82,13 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => _changeIncome(context, ref),
                 ),
                 const Divider(height: 1),
-                Builder(builder: (_) {
-                  final c = currencyInfo(user?.displayCurrency ?? 'MWK');
-                  return ListTile(
-                    leading: const Icon(Icons.language_outlined),
-                    title: Text('currency.display'.tr()),
-                    subtitle: Text('${c.flag}  ${c.code} · ${c.name}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _changeCurrency(context, ref),
-                  );
-                }),
+                ListTile(
+                  leading: const Icon(Icons.tune_outlined),
+                  title: Text('profile.preferences'.tr()),
+                  subtitle: Text('profile.preferencesSub'.tr()),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.preferences),
+                ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.shield_outlined),
@@ -120,36 +112,6 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Preferences
-          _Label('profile.preferences'.tr()),
-          Card(
-            child: RadioGroup<bool>(
-              groupValue: isNyanja,
-              onChanged: (v) => context.setLocale(Locale(v == true ? 'ny' : 'en')),
-              child: Column(
-                children: [
-                  RadioListTile<bool>(value: true, title: Text('profile.chichewa'.tr())),
-                  RadioListTile<bool>(value: false, title: Text('profile.english'.tr())),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: RadioGroup<ThemeMode>(
-              groupValue: themeMode,
-              onChanged: (m) => ref.read(themeModeProvider.notifier).set(m!),
-              child: Column(
-                children: [
-                  RadioListTile<ThemeMode>(value: ThemeMode.system, title: Text('profile.themeSystem'.tr())),
-                  RadioListTile<ThemeMode>(value: ThemeMode.light, title: Text('profile.themeLight'.tr())),
-                  RadioListTile<ThemeMode>(value: ThemeMode.dark, title: Text('profile.themeDark'.tr())),
-                ],
-              ),
-            ),
-          ),
           if (user?.isAdmin == true) ...[
             const SizedBox(height: 20),
             _Label('Administration'),
@@ -169,18 +131,20 @@ class ProfileScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout),
             label: Text('profile.logOut'.tr()),
           ),
-          const SizedBox(height: 28),
-          _Label('profile.dangerZone'.tr()),
+          const SizedBox(height: 24),
+          // Deliberately understated — visible for compliance, not inviting.
           if (user != null)
-            OutlinedButton.icon(
-              onPressed: () => _showDeleteAccount(context, user.username),
-              icon: const Icon(Icons.delete_forever_outlined),
-              label: Text('profile.deleteAccount'.tr()),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: scheme.error,
-                side: BorderSide(color: scheme.error),
+            Center(
+              child: TextButton(
+                onPressed: () => _showDeleteAccount(context, user.username),
+                style: TextButton.styleFrom(
+                  foregroundColor: scheme.onSurfaceVariant,
+                  textStyle: const TextStyle(fontSize: 13),
+                ),
+                child: Text('profile.deleteAccount'.tr()),
               ),
             ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -244,26 +208,6 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _changeCurrency(BuildContext context, WidgetRef ref) async {
-    final current = ref.read(currentUserProvider)?.displayCurrency ?? 'MWK';
-    final picked = await showCurrencyPicker(context, selected: current);
-    if (picked == null || picked == current || !context.mounted) return;
-    try {
-      await ref.read(authControllerProvider.notifier).updateProfile(displayCurrency: picked);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('profile.saved'.tr())));
-      }
-    } on ApiException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
-      }
-    }
   }
 
   void _showDeleteAccount(BuildContext context, String username) {
