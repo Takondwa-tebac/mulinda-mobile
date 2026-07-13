@@ -155,6 +155,19 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           _scrollToBottomIfNear();
         }
       }
+
+      // Safety net: if the stream closed without a done event, finalise the
+      // message and re-enable the input so it never gets stuck "sending".
+      if (mounted && _sending) {
+        setState(() {
+          _sending = false;
+          final last = _messages.last;
+          if (!last.fromUser) {
+            _messages[_messages.length - 1] =
+                _Msg(text: last.text, fromUser: false, charts: last.charts);
+          }
+        });
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       _handleSendError(e.displayMessage, message);

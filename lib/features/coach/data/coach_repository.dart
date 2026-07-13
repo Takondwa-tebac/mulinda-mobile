@@ -126,42 +126,66 @@ class CoachRepository {
     await for (final bytes in response.data!.stream) {
       buffer += utf8.decode(bytes, allowMalformed: true);
 
-      // SSE events are separated by double newline.
+      // SSE events are separated by a blank line.
       final parts = buffer.split('\n\n');
       buffer = parts.removeLast(); // Keep any incomplete trailing fragment.
 
       for (final block in parts) {
-        for (final line in block.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          final data = line.substring(6).trim();
-          if (data == '[DONE]') return;
-          try {
-            final parsed = jsonDecode(data) as Map<String, dynamic>;
-            final type = parsed['type'] as String?;
-            if (type == 'delta') {
-              yield CoachChunk(text: parsed['content'] as String?);
-            } else if (type == 'chart_hint') {
-              final kind = parsed['kind'] as String?;
-              if (kind != null) {
-                final rawParams = parsed['params'];
-                final params = rawParams is Map
-                    ? rawParams.cast<String, dynamic>()
-                    : <String, dynamic>{};
-                yield CoachChunk(chartHint: ChartHint(kind: kind, params: params));
-              }
-            } else if (type == 'done') {
-              yield CoachChunk(
-                isDone: true,
-                conversationId: parsed['conversation_id']?.toString(),
-              );
-              return;
-            }
-          } catch (_) {
-            // Skip malformed SSE lines.
-          }
+        for (final chunk in _parseBlock(block)) {
+          yield chunk;
+          if (chunk.isDone) return;
         }
       }
     }
+
+    // The stream can close with a complete-but-unterminated final event still
+    // sitting in the buffer (no trailing blank line). Flush it so the last
+    // tokens / the done event aren't lost.
+    for (final chunk in _parseBlock(buffer)) {
+      yield chunk;
+      if (chunk.isDone) return;
+    }
+
+    // Stream ended without an explicit done — emit one so the UI finalises the
+    // message and re-enables the input.
+    yield const CoachChunk(isDone: true);
+  }
+
+  /// Parse one SSE block (which may contain several `data:` lines) into chunks.
+  List<CoachChunk> _parseBlock(String block) {
+    final out = <CoachChunk>[];
+    for (final line in block.split('\n')) {
+      if (!line.startsWith('data:')) continue;
+      final data = line.substring(line.indexOf(':') + 1).trim();
+      if (data.isEmpty) continue;
+      if (data == '[DONE]') {
+        out.add(const CoachChunk(isDone: true));
+        continue;
+      }
+      try {
+        final parsed = jsonDecode(data) as Map<String, dynamic>;
+        switch (parsed['type'] as String?) {
+          case 'delta':
+            out.add(CoachChunk(text: parsed['content'] as String?));
+          case 'chart_hint':
+            final kind = parsed['kind'] as String?;
+            if (kind != null) {
+              final rawParams = parsed['params'];
+              out.add(CoachChunk(
+                chartHint: ChartHint(
+                  kind: kind,
+                  params: rawParams is Map ? rawParams.cast<String, dynamic>() : const {},
+                ),
+              ));
+            }
+          case 'done':
+            out.add(CoachChunk(isDone: true, conversationId: parsed['conversation_id']?.toString()));
+        }
+      } catch (_) {
+        // Skip malformed SSE lines.
+      }
+    }
+    return out;
   }
 }
 
