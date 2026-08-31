@@ -33,6 +33,9 @@ class _CategoryBreakdownChart extends StatelessWidget {
     final currency = data['currency'] as String? ?? '';
     final series = (data['series'] as List<dynamic>?) ?? [];
 
+    // Nothing to show — don't render an empty titled card.
+    if (series.isEmpty) return const SizedBox.shrink();
+
     return _ChartCard(
       title: data['title'] as String? ?? 'Categories',
       child: Column(
@@ -65,6 +68,8 @@ class _AccountBalancesChart extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final currency = data['currency'] as String? ?? '';
     final accounts = (data['accounts'] as List<dynamic>?) ?? [];
+
+    if (accounts.isEmpty) return const SizedBox.shrink();
 
     final maxAmount = accounts
         .map((a) => ((a as Map<String, dynamic>)['amount_minor'] as num?)?.abs() ?? 0)
