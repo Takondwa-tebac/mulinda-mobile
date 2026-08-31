@@ -55,10 +55,17 @@ class Txn {
     this.occurredAt,
     this.notes,
     this.projectId,
+    this.needsReview = false,
+    this.component,
+    this.parentId,
+    this.sender,
+    this.reference,
+    this.accountName,
+    this.children = const [],
   });
 
   final String id;
-  final String type; // income | expense
+  final String type; // income | expense | transfer
   final Money amount;
   final String? merchant;
   final String? categoryName;
@@ -66,13 +73,33 @@ class Txn {
   final String? notes;
   final String? projectId;
 
+  /// Auto-recorded from an SMS and awaiting the user's confirmation.
+  final bool needsReview;
+
+  /// null for a standalone/principal row; otherwise principal | fee | levy | tax.
+  final String? component;
+  final String? parentId;
+
+  /// The SMS sender id this row was parsed from (e.g. AIRTELMONEY).
+  final String? sender;
+  final String? reference;
+  final String? accountName;
+
+  /// Fee/levy line items split from this principal, shown nested under it.
+  final List<Txn> children;
+
   bool get isIncome => type == 'income';
+  bool get isFee => component == 'fee';
+  bool get isLevy => component == 'levy';
+  bool get fromSms => sender != null && sender!.isNotEmpty;
 
   /// Date portion of the ISO occurred_at, for display.
   String get date => (occurredAt ?? '').split('T').first;
 
   factory Txn.fromJson(Map<String, dynamic> json) {
     final category = (json['category'] as Map?)?.cast<String, dynamic>();
+    final account = (json['financial_account'] as Map?)?.cast<String, dynamic>();
+    final rawChildren = (json['children'] as List?) ?? const [];
     return Txn(
       id: json['id'].toString(),
       type: json['type']?.toString() ?? 'expense',
@@ -82,6 +109,15 @@ class Txn {
       occurredAt: json['occurred_at']?.toString(),
       notes: json['notes']?.toString(),
       projectId: json['project_id']?.toString(),
+      needsReview: json['needs_review'] == true,
+      component: json['component']?.toString(),
+      parentId: json['parent_id']?.toString(),
+      sender: json['sender']?.toString(),
+      reference: json['reference']?.toString(),
+      accountName: account?['name']?.toString(),
+      children: rawChildren
+          .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
+          .toList(),
     );
   }
 }

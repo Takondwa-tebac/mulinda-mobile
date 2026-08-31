@@ -17,11 +17,26 @@ class ActivityScreen extends ConsumerWidget {
     final txns = ref.watch(transactionsProvider);
     final accounts = ref.watch(accountsProvider);
     final pending = ref.watch(pendingCountProvider);
+    final reviewCount = ref.watch(reviewCountProvider).maybeWhen(data: (n) => n, orElse: () => 0);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('nav.activity'.tr()),
         actions: [
+          IconButton(
+            tooltip: 'Review auto-recorded',
+            onPressed: () => context.push(Routes.review),
+            icon: Badge(
+              isLabelVisible: reviewCount > 0,
+              label: Text('$reviewCount'),
+              child: const Icon(Icons.fact_check_outlined),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Export records',
+            onPressed: () => context.push(Routes.exports),
+            icon: const Icon(Icons.ios_share_outlined),
+          ),
           IconButton(
             tooltip: 'inbox.title'.tr(),
             onPressed: () => context.push(Routes.inbox),

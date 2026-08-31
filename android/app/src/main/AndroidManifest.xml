@@ -10,6 +10,11 @@
     <!-- SMS: auto-read financial messages from inbox -->
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <!-- Local notifications + exact-time "review your transactions" reminders -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:label="Mulinda"
@@ -49,6 +54,21 @@
                 <data android:scheme="mulinda" android:host="reset-password"/>
             </intent-filter>
         </activity>
+
+        <!-- another_telephony: the plugin ships the IncomingSmsReceiver class but
+             NOT its manifest declaration, so the app must register it here or no
+             incoming SMS is ever delivered (foreground or background). The
+             BROADCAST_SMS permission restricts the sender to the Android system,
+             and exported=true lets the OS deliver the SMS_RECEIVED broadcast. -->
+        <receiver
+            android:name="com.shounakmulay.telephony.sms.IncomingSmsReceiver"
+            android:permission="android.permission.BROADCAST_SMS"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

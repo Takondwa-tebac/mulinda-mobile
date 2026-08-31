@@ -68,6 +68,32 @@ class ActivityRepository {
     }
   }
 
+  /// Transactions auto-recorded from SMS that are awaiting the user's review.
+  Future<List<Txn>> reviewTransactions() => _list(
+        '/v1/transactions',
+        Txn.fromJson,
+        query: {'needs_review': 1, 'per_page': 100},
+      );
+
+  /// Confirm auto-recorded items — clears the review flag on each (and its
+  /// fee/levy children).
+  Future<void> confirmTransactions(List<String> ids) async {
+    try {
+      await _dio.post('/v1/transactions/confirm', data: {'ids': ids});
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
+  /// Soft-delete a selection of transactions (recoverable server-side).
+  Future<void> bulkDeleteTransactions(List<String> ids) async {
+    try {
+      await _dio.post('/v1/transactions/bulk-delete', data: {'ids': ids});
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<void> ingestSms(String smsBody, {String? sender}) async {
     final body = <String, dynamic>{'body': smsBody};
     if (sender != null && sender.isNotEmpty) body['sender'] = sender;
@@ -120,3 +146,14 @@ final accountTransactionsProvider =
     FutureProvider.autoDispose.family<List<Txn>, String>(
   (ref, accountId) => ref.read(activityRepositoryProvider).transactionsForAccount(accountId),
 );
+
+/// Auto-recorded SMS transactions awaiting review.
+final reviewTransactionsProvider = FutureProvider.autoDispose<List<Txn>>(
+  (ref) => ref.read(activityRepositoryProvider).reviewTransactions(),
+);
+
+/// Count of items needing review — drives the badge on the activity tab.
+final reviewCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final items = await ref.watch(reviewTransactionsProvider.future);
+  return items.length;
+});

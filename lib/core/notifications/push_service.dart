@@ -76,8 +76,14 @@ class PushService {
   void _navigate(WidgetRef ref, Map<String, dynamic> data) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final type = data['type'] as String?;
+      final itemType = data['item_type'] as String?;
       final router = ref.read(routerProvider);
-      if (type == 'inbox') {
+      if (type == 'export') {
+        router.go(Routes.exports);
+      } else if (type == 'inbox' && itemType == 'transaction') {
+        // Auto-recorded SMS transactions land in the review queue.
+        router.go(Routes.review);
+      } else if (type == 'inbox') {
         router.go(Routes.inbox);
       } else {
         router.go(Routes.insights);

@@ -7,7 +7,9 @@ import '../../features/activity/data/activity_models.dart';
 import '../../features/activity/screens/account_detail_screen.dart';
 import '../../features/activity/screens/add_account_screen.dart';
 import '../../features/activity/screens/add_transaction_screen.dart';
+import '../../features/activity/screens/review_screen.dart';
 import '../../features/capture/screens/inbox_screen.dart';
+import '../../features/export/screens/export_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
 import '../../features/capture/screens/scan_receipt_screen.dart';
 import '../../features/auth/providers/auth_controller.dart';
@@ -139,6 +141,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
+      GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
+      GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.goals, builder: (_, _) => const GoalsListScreen()),
       GoRoute(path: Routes.budgets, builder: (_, _) => const BudgetsListScreen()),
       GoRoute(path: Routes.loans, builder: (_, _) => const LoansListScreen()),

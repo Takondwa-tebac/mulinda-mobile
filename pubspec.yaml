@@ -40,6 +40,8 @@ dependencies:
 
   # Notifications (bill / loan reminders)
   flutter_local_notifications: ^18.0.1
+  # Timezone DB for exact-time review reminders (already resolved transitively).
+  timezone: ^0.9.4
 
   # Auth
   google_sign_in: ^6.2.2

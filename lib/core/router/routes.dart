@@ -28,6 +28,8 @@ abstract class Routes {
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
   static const inbox = '/inbox';
+  static const review = '/review';
+  static const exports = '/exports';
 
   // Plan domain lists
   static const goals = '/goals';
