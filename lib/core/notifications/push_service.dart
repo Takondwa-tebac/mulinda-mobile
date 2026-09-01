@@ -78,7 +78,9 @@ class PushService {
       final type = data['type'] as String?;
       final itemType = data['item_type'] as String?;
       final router = ref.read(routerProvider);
-      if (type == 'export') {
+      if (type == 'daily_summary') {
+        router.go(Routes.dailySummaries);
+      } else if (type == 'export') {
         router.go(Routes.exports);
       } else if (type == 'inbox' && itemType == 'transaction') {
         // Auto-recorded SMS transactions land in the review queue.

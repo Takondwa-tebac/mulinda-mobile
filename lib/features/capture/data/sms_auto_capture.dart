@@ -1,15 +1,26 @@
+import 'dart:developer' as developer;
+
 import 'package:another_telephony/telephony.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/env/app_env.dart';
+
+/// Debug-only trace of the SMS-capture pipeline. Shows in `flutter run` and
+/// `adb logcat` under the `sms_capture` tag so a headed test can see exactly
+/// which stage fired. Compiled out of release builds.
+void smsCaptureLog(String message) {
+  if (kDebugMode) developer.log(message, name: 'sms_capture');
+}
 
 /// Background isolate entry point for incoming SMS. MUST be a top-level
 /// function annotated with `vm:entry-point` so it survives tree-shaking and can
 /// be invoked from the platform side when the app is backgrounded/killed.
 @pragma('vm:entry-point')
 Future<void> mulindaSmsBackgroundHandler(SmsMessage message) async {
+  smsCaptureLog('background SMS received from ${message.address}');
   await SmsAutoCapture.ingestIfFinancial(message.body, message.address);
 }
 
@@ -60,12 +71,17 @@ class SmsAutoCapture {
   Future<void> _startListening() async {
     try {
       _telephony.listenIncomingSms(
-        onNewMessage: (SmsMessage m) => ingestIfFinancial(m.body, m.address),
+        onNewMessage: (SmsMessage m) {
+          smsCaptureLog('foreground SMS received from ${m.address}');
+          ingestIfFinancial(m.body, m.address);
+        },
         onBackgroundMessage: mulindaSmsBackgroundHandler,
         listenInBackground: true,
       );
-    } catch (_) {
+      smsCaptureLog('listening for incoming SMS (foreground + background)');
+    } catch (e) {
       // Unsupported platform (iOS/desktop) or permission revoked — ignore.
+      smsCaptureLog('listen failed (unsupported platform or no permission): $e');
     }
   }
 
@@ -74,12 +90,19 @@ class SmsAutoCapture {
   /// it works in the background isolate.
   static Future<void> ingestIfFinancial(String? body, String? sender) async {
     final text = (body ?? '').trim();
-    if (text.isEmpty || !isFinancialSms(text)) return; // personal SMS stay on-device
+    if (text.isEmpty) return;
+
+    final financial = isFinancialSms(text);
+    smsCaptureLog('from ${sender ?? '?'} — financial=$financial');
+    if (!financial) return; // personal SMS stay on-device
 
     try {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: _tokenKey);
-      if (token == null || token.isEmpty) return; // not signed in
+      if (token == null || token.isEmpty) {
+        smsCaptureLog('skipped: not signed in (no auth token)');
+        return;
+      }
 
       final dio = Dio(BaseOptions(
         baseUrl: AppEnv.apiBaseUrl,
@@ -87,12 +110,16 @@ class SmsAutoCapture {
         connectTimeout: const Duration(seconds: 15),
         sendTimeout: const Duration(seconds: 15),
       ));
-      await dio.post('/v1/sms', data: {
+      final res = await dio.post('/v1/sms', data: {
         'body': text,
         if (sender != null && sender.isNotEmpty) 'sender': sender,
       });
-    } catch (_) {
+      smsCaptureLog('POST /v1/sms → ${res.statusCode} (status=${res.data is Map ? (res.data['data']?['status']) : '?'})');
+    } on DioException catch (e) {
+      smsCaptureLog('POST /v1/sms failed: ${e.response?.statusCode} ${e.message}');
+    } catch (e) {
       // Best-effort: never crash on a background message.
+      smsCaptureLog('capture error: $e');
     }
   }
 

@@ -15,6 +15,8 @@ class User {
     this.incomeBracket,
     this.declaredIncomeBracket,
     this.displayCurrency = 'MWK',
+    this.dailySummaryEnabled = true,
+    this.dailySummaryTime = '18:00',
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
   });
@@ -31,6 +33,8 @@ class User {
   final String? incomeBracket;
   final String? declaredIncomeBracket;
   final String displayCurrency;
+  final bool dailySummaryEnabled;
+  final String dailySummaryTime; // "HH:MM", local (Africa/Blantyre)
   final List<String> roles;
   final SubscriptionInfo subscription;
 
@@ -53,6 +57,8 @@ class User {
       incomeBracket: json['income_bracket']?.toString(),
       declaredIncomeBracket: json['declared_income_bracket']?.toString(),
       displayCurrency: json['display_currency']?.toString() ?? 'MWK',
+      dailySummaryEnabled: json['daily_summary_enabled'] != false,
+      dailySummaryTime: json['daily_summary_time']?.toString() ?? '18:00',
       roles: (json['roles'] as List?)?.map((r) => r.toString()).toList() ?? const [],
       subscription: json['subscription'] is Map
           ? SubscriptionInfo.fromJson(

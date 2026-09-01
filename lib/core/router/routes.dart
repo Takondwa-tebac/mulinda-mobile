@@ -30,6 +30,7 @@ abstract class Routes {
   static const inbox = '/inbox';
   static const review = '/review';
   static const exports = '/exports';
+  static const dailySummaries = '/daily-summaries';
 
   // Plan domain lists
   static const goals = '/goals';

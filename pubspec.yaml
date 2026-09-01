@@ -69,6 +69,14 @@ dependencies:
   another_telephony: ^0.4.1
   local_auth: ^3.0.2
 
+  # Native splash screen (has Android plugin code; must stay a real
+  # dependency, not dev_dependency — Flutter's Gradle plugin loader drops
+  # dev_dependency native plugins from release builds while
+  # GeneratedPluginRegistrant.java still references them, breaking the
+  # release compile with "package net.jonhanson.flutter_native_splash does
+  # not exist").
+  flutter_native_splash: ^2.4.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -77,7 +85,6 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.9.0
   flutter_launcher_icons: ^0.14.1
-  flutter_native_splash: ^2.4.3
 
 flutter:
   uses-material-design: true
