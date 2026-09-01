@@ -373,7 +373,7 @@ class _TxnTile extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      onTap: () => context.push(Routes.transactionDetail, extra: txn),
+      onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
       leading: CircleAvatar(
         backgroundColor: txn.isIncome
             ? scheme.primaryContainer

@@ -3,47 +3,41 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../dashboard/data/dashboard_models.dart';
+import '../../../core/widgets/receipt_view.dart';
+import '../../activity/data/activity_models.dart';
+import '../../activity/data/activity_repository.dart';
 
-class TransactionDetailScreen extends StatefulWidget {
-  const TransactionDetailScreen({super.key, required this.txn});
+/// Robust transaction detail: a share-ready receipt (bank-style), the fee/levy
+/// breakdown, and — for auto-captured transactions — the exact source SMS.
+class TransactionDetailScreen extends ConsumerStatefulWidget {
+  const TransactionDetailScreen({super.key, required this.txnId});
 
-  final RecentTxn txn;
+  final String txnId;
 
   @override
-  State<TransactionDetailScreen> createState() =>
-      _TransactionDetailScreenState();
+  ConsumerState<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
 }
 
-class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
+class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
   final _receiptKey = GlobalKey();
   bool _sharing = false;
-
-  RecentTxn get txn => widget.txn;
 
   Future<void> _share() async {
     setState(() => _sharing = true);
     try {
-      final boundary = _receiptKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
-
       final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
-
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) return;
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/mulinda_txn_${txn.id}.png');
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: '${txn.isIncome ? '+' : '-'}${txn.amount.formatted} · ${txn.date}',
-      );
+      final file = File('${dir.path}/mulinda_receipt_${widget.txnId}.png');
+      await file.writeAsBytes(bytes.buffer.asUint8List());
+      await Share.shareXFiles([XFile(file.path)], text: 'Mulinda transaction receipt');
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -51,7 +45,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final detail = ref.watch(transactionDetailProvider(widget.txnId));
 
     return Scaffold(
       appBar: AppBar(
@@ -60,168 +54,158 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           if (_sharing)
             const Padding(
               padding: EdgeInsets.all(14),
-              child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.5)),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5)),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Share',
-              onPressed: _share,
+            detail.maybeWhen(
+              data: (_) => IconButton(
+                icon: const Icon(Icons.share_outlined),
+                tooltip: 'Share receipt',
+                onPressed: _share,
+              ),
+              orElse: () => const SizedBox.shrink(),
             ),
         ],
       ),
-      backgroundColor: scheme.surfaceContainerLow,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-          child: RepaintBoundary(
-            key: _receiptKey,
-            child: _ReceiptCard(txn: txn),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReceiptCard extends StatelessWidget {
-  const _ReceiptCard({required this.txn});
-  final RecentTxn txn;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final isIncome = txn.isIncome;
-    final amountColor = isIncome ? scheme.primary : scheme.error;
-
-    final title = txn.merchant?.isNotEmpty == true
-        ? txn.merchant!
-        : (txn.category ?? txn.type);
-
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      body: detail.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const Center(child: Text('Could not load this transaction.')),
+        data: (txn) => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
           children: [
-            // App logo header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset('assets/logo.png', width: 28, height: 28),
-                    const SizedBox(width: 8),
-                    Text('Mulinda',
-                        style: text.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                  ],
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isIncome
-                        ? scheme.primaryContainer
-                        : scheme.errorContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isIncome ? 'Income' : 'Expense',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isIncome
-                            ? scheme.onPrimaryContainer
-                            : scheme.onErrorContainer),
-                  ),
-                ),
-              ],
+            RepaintBoundary(
+              key: _receiptKey,
+              child: ReceiptView(
+                title: _title(txn),
+                subtitle: txn.merchant ?? txn.counterparty ?? txn.categoryName,
+                amountLine: '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
+                amountColor: txn.isIncome ? Colors.green.shade700 : Colors.red.shade700,
+                statusColor: txn.isIncome ? Colors.green.shade600 : Theme.of(context).colorScheme.primary,
+                detailsHeading: 'Transaction Details',
+                rows: _rows(txn),
+              ),
             ),
-
-            const SizedBox(height: 28),
-
-            // Icon
-            CircleAvatar(
-              radius: 36,
-              backgroundColor:
-                  isIncome ? scheme.primaryContainer : scheme.errorContainer,
-              foregroundColor: isIncome
-                  ? scheme.onPrimaryContainer
-                  : scheme.onErrorContainer,
-              child: Icon(
-                  isIncome ? Icons.south_west : Icons.north_east, size: 30),
-            ),
-            const SizedBox(height: 16),
-
-            // Amount
-            Text(
-              '${isIncome ? '+' : '-'}${txn.amount.formatted}',
-              style: text.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.w800, color: amountColor),
-            ),
-            const SizedBox(height: 6),
-            Text(title,
-                textAlign: TextAlign.center,
-                style: text.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-
-            const SizedBox(height: 24),
-            const Divider(height: 1),
-            const SizedBox(height: 20),
-
-            // Detail rows
-            if (txn.category != null && txn.category != title)
-              _Row('Category', txn.category!),
-            _Row('Date', txn.date),
-            _Row('Reference', '#${txn.id.substring(0, 8).toUpperCase()}'),
-
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-
-            // Footer
-            Text('Generated by Mulinda',
-                style: TextStyle(
-                    color: scheme.onSurfaceVariant, fontSize: 11)),
+            if (txn.sourceSms != null) ...[
+              const SizedBox(height: 20),
+              _SourceSmsCard(sms: txn.sourceSms!),
+            ],
           ],
         ),
       ),
     );
   }
+
+  String _title(Txn txn) {
+    if (txn.isIncome) return 'Money Received';
+    return txn.type == 'transfer' ? 'Transfer' : 'Payment';
+  }
+
+  List<ReceiptRow> _rows(Txn txn) {
+    return [
+      if (txn.accountName != null) ReceiptRow('From', txn.accountName!),
+      if ((txn.counterparty ?? txn.merchant) != null)
+        ReceiptRow(txn.isIncome ? 'From party' : 'To', (txn.counterparty ?? txn.merchant)!),
+      ReceiptRow('Amount', '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}', emphasize: true),
+      // Fee / levy breakdown, if this principal was split.
+      for (final c in txn.children)
+        ReceiptRow(c.isLevy ? 'Govt levy' : 'Fee', '-${c.amount.formatted}', muted: true),
+      if (txn.categoryName != null) ReceiptRow('Category', txn.categoryName!),
+      if (txn.reference != null) ReceiptRow('Reference', txn.reference!),
+      ReceiptRow('Date', _prettyDateTime(txn.occurredAt)),
+      if (txn.balanceAfter != null) ReceiptRow('Balance after', txn.balanceAfter!.formatted),
+      if (txn.status != null) ReceiptRow('Status', _cap(txn.status!)),
+      ReceiptRow('Recorded via', txn.isAutoCaptured ? 'SMS auto-capture' : 'Manual entry'),
+      if (txn.notes != null && txn.notes!.isNotEmpty && txn.notes != txn.merchant)
+        ReceiptRow('Note', txn.notes!),
+    ];
+  }
+
+  String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  String _prettyDateTime(String? iso) {
+    if (iso == null || iso.isEmpty) return '—';
+    final d = DateTime.tryParse(iso)?.toLocal();
+    if (d == null) return iso;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.day} ${months[d.month - 1]} ${d.year}, $hh:$mm';
+  }
 }
 
-class _Row extends StatelessWidget {
-  const _Row(this.label, this.value);
-  final String label;
-  final String value;
+/// Collapsible card showing the exact SMS the transaction was parsed from.
+class _SourceSmsCard extends StatelessWidget {
+  const _SourceSmsCard({required this.sms});
+  final SourceSms sms;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(label,
-                style: TextStyle(
-                    color: scheme.onSurfaceVariant, fontSize: 13)),
+    return Card(
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: const Icon(Icons.sms_outlined),
+          title: const Text('Source SMS', style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(
+            [sms.sender, sms.receivedAt?.replaceFirst('T', ' ').split('.').first]
+                .whereType<String>()
+                .join(' · '),
+            style: const TextStyle(fontSize: 12),
           ),
-          Expanded(
-            child: Text(value,
-                textAlign: TextAlign.end,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        ],
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: SelectableText(
+                sms.body,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, height: 1.4),
+              ),
+            ),
+            if (sms.parsed != null) ...[
+              const SizedBox(height: 12),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('What we captured',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey)),
+              ),
+              const SizedBox(height: 6),
+              ...sms.parsed!.entries
+                  .where((e) => e.value != null && e.value.toString().isNotEmpty)
+                  .map((e) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              child: Text(_label(e.key),
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            ),
+                            Expanded(
+                              child: Text('${e.value}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      )),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _label(String key) {
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 }

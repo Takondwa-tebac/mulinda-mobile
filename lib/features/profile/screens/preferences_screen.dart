@@ -136,7 +136,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('profile.preferences'.tr())),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // Extra bottom inset so the last section clears the system nav bar and
+        // stays scrollable/tappable on gesture-nav devices.
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + MediaQuery.of(context).padding.bottom),
         children: [
           _Label('profile.language'.tr()),
           Card(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/router/routes.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
@@ -180,6 +182,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 txn: items[i],
                 selected: _selected.contains(items[i].id),
                 onToggle: () => _toggle(items[i].id),
+                onLongPress: () => context.push(Routes.transactionDetail, extra: items[i].id),
               ),
             );
           },
@@ -227,11 +230,17 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
 }
 
 class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.txn, required this.selected, required this.onToggle});
+  const _ReviewCard({
+    required this.txn,
+    required this.selected,
+    required this.onToggle,
+    required this.onLongPress,
+  });
 
   final Txn txn;
   final bool selected;
   final VoidCallback onToggle;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +256,10 @@ class _ReviewCard extends StatelessWidget {
             ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)
             : BorderSide.none,
       ),
-      child: Column(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onLongPress: onLongPress,
+        child: Column(
         children: [
           CheckboxListTile(
             value: selected,
@@ -311,6 +323,7 @@ class _ReviewCard extends StatelessWidget {
               ),
             ),
         ],
+        ),
       ),
     );
   }

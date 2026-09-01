@@ -17,6 +17,17 @@ class ActivityRepository {
   Future<List<Txn>> transactions() =>
       _list('/v1/transactions', Txn.fromJson, query: {'per_page': 50});
 
+  /// Full detail for one transaction — includes the source SMS, fee/levy
+  /// children, and account, which the list endpoint omits.
+  Future<Txn> transaction(String id) async {
+    try {
+      final res = await _dio.get('/v1/transactions/$id');
+      return Txn.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<List<Txn>> transactionsForAccount(String accountId) => _list(
         '/v1/transactions',
         Txn.fromJson,
@@ -150,6 +161,11 @@ final accountTransactionsProvider =
 /// Auto-recorded SMS transactions awaiting review.
 final reviewTransactionsProvider = FutureProvider.autoDispose<List<Txn>>(
   (ref) => ref.read(activityRepositoryProvider).reviewTransactions(),
+);
+
+/// Full detail (incl. source SMS + fee/levy) for one transaction.
+final transactionDetailProvider = FutureProvider.autoDispose.family<Txn, String>(
+  (ref, id) => ref.read(activityRepositoryProvider).transaction(id),
 );
 
 /// Count of items needing review — drives the badge on the activity tab.

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../capture/data/inbox_repository.dart';
-import '../../dashboard/data/dashboard_models.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
@@ -23,28 +22,23 @@ class ActivityScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text('nav.activity'.tr()),
         actions: [
-          IconButton(
-            tooltip: 'Review auto-recorded',
-            onPressed: () => context.push(Routes.review),
+          PopupMenuButton<String>(
+            tooltip: 'More',
             icon: Badge(
-              isLabelVisible: reviewCount > 0,
-              label: Text('$reviewCount'),
-              child: const Icon(Icons.fact_check_outlined),
+              isLabelVisible: pending > 0 || reviewCount > 0,
+              child: const Icon(Icons.more_vert),
             ),
-          ),
-          IconButton(
-            tooltip: 'Export records',
-            onPressed: () => context.push(Routes.exports),
-            icon: const Icon(Icons.ios_share_outlined),
-          ),
-          IconButton(
-            tooltip: 'inbox.title'.tr(),
-            onPressed: () => context.push(Routes.inbox),
-            icon: Badge(
-              isLabelVisible: pending > 0,
-              label: Text('$pending'),
-              child: const Icon(Icons.inbox_outlined),
-            ),
+            onSelected: (v) => context.push(switch (v) {
+              'review' => Routes.review,
+              'export' => Routes.exports,
+              _ => Routes.inbox,
+            }),
+            itemBuilder: (_) => [
+              _menuItem('review', Icons.fact_check_outlined, 'Review auto-recorded',
+                  count: reviewCount),
+              _menuItem('inbox', Icons.inbox_outlined, 'inbox.title'.tr(), count: pending),
+              _menuItem('export', Icons.ios_share_outlined, 'Export records'),
+            ],
           ),
         ],
       ),
@@ -72,6 +66,11 @@ class ActivityScreen extends ConsumerWidget {
           data: (list) => ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
+              // Surfaces itself only when there's something to review.
+              if (reviewCount > 0) ...[
+                _ReviewBanner(count: reviewCount, onTap: () => context.push(Routes.review)),
+                const SizedBox(height: 16),
+              ],
               accounts.maybeWhen(
                 data: (a) => _AccountsStrip(
                   accounts: a,
@@ -89,6 +88,72 @@ class ActivityScreen extends ConsumerWidget {
                 )
               else
                 ...list.map((t) => _TxnTile(txn: t)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A labeled overflow-menu row, optionally with a count pill.
+PopupMenuItem<String> _menuItem(String value, IconData icon, String label, {int count = 0}) {
+  return PopupMenuItem<String>(
+    value: value,
+    child: Row(
+      children: [
+        Icon(icon, size: 20),
+        const SizedBox(width: 12),
+        Text(label),
+        if (count > 0) ...[
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.all(Radius.circular(20))),
+            child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// Prominent, self-surfacing prompt to review auto-recorded transactions.
+class _ReviewBanner extends StatelessWidget {
+  const _ReviewBanner({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primaryContainer,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(Icons.fact_check_outlined, color: scheme.onPrimaryContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$count transaction${count == 1 ? '' : 's'} to review',
+                        style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer)),
+                    const SizedBox(height: 2),
+                    Text('Auto-recorded from your SMS — tap to confirm or remove',
+                        style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer.withValues(alpha: 0.8))),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
             ],
           ),
         ),
@@ -242,18 +307,8 @@ class _TxnTile extends StatelessWidget {
           color: txn.isIncome ? scheme.primary : scheme.onSurface,
         ),
       ),
-      onTap: () => context.push(
-        Routes.transactionDetail,
-        // The detail/receipt screen takes the dashboard RecentTxn shape.
-        extra: RecentTxn(
-          id: txn.id,
-          date: txn.date,
-          type: txn.type,
-          amount: txn.amount,
-          merchant: txn.merchant,
-          category: txn.categoryName,
-        ),
-      ),
+      // The detail screen fetches full detail (incl. source SMS) by id.
+      onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
     );
   }
 }

@@ -61,6 +61,11 @@ class Txn {
     this.sender,
     this.reference,
     this.accountName,
+    this.counterparty,
+    this.status,
+    this.source,
+    this.balanceAfter,
+    this.sourceSms,
     this.children = const [],
   });
 
@@ -84,6 +89,13 @@ class Txn {
   final String? sender;
   final String? reference;
   final String? accountName;
+  final String? counterparty;
+  final String? status; // pending | cleared
+  final String? source; // manual | sms | scan | import
+  final Money? balanceAfter;
+
+  /// The raw captured SMS, present only on auto-recorded transactions (detail view).
+  final SourceSms? sourceSms;
 
   /// Fee/levy line items split from this principal, shown nested under it.
   final List<Txn> children;
@@ -92,6 +104,7 @@ class Txn {
   bool get isFee => component == 'fee';
   bool get isLevy => component == 'levy';
   bool get fromSms => sender != null && sender!.isNotEmpty;
+  bool get isAutoCaptured => source == 'sms';
 
   /// Date portion of the ISO occurred_at, for display.
   String get date => (occurredAt ?? '').split('T').first;
@@ -100,6 +113,7 @@ class Txn {
     final category = (json['category'] as Map?)?.cast<String, dynamic>();
     final account = (json['financial_account'] as Map?)?.cast<String, dynamic>();
     final rawChildren = (json['children'] as List?) ?? const [];
+    final sms = (json['source_sms'] as Map?)?.cast<String, dynamic>();
     return Txn(
       id: json['id'].toString(),
       type: json['type']?.toString() ?? 'expense',
@@ -115,9 +129,33 @@ class Txn {
       sender: json['sender']?.toString(),
       reference: json['reference']?.toString(),
       accountName: account?['name']?.toString(),
+      counterparty: json['counterparty']?.toString(),
+      status: json['status']?.toString(),
+      source: json['source']?.toString(),
+      balanceAfter: json['balance_after'] is Map ? Money.parse(json['balance_after']) : null,
+      sourceSms: sms != null ? SourceSms.fromJson(sms) : null,
       children: rawChildren
           .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
     );
   }
+}
+
+/// The raw SMS an auto-captured transaction was parsed from.
+class SourceSms {
+  const SourceSms({this.sender, required this.body, this.receivedAt, this.confidence, this.parsed});
+
+  final String? sender;
+  final String body;
+  final String? receivedAt;
+  final num? confidence;
+  final Map<String, dynamic>? parsed;
+
+  factory SourceSms.fromJson(Map<String, dynamic> json) => SourceSms(
+        sender: json['sender']?.toString(),
+        body: json['body']?.toString() ?? '',
+        receivedAt: json['received_at']?.toString(),
+        confidence: json['confidence'] as num?,
+        parsed: (json['parsed'] as Map?)?.cast<String, dynamic>(),
+      );
 }

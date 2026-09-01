@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
-import '../../dashboard/data/dashboard_models.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
@@ -266,17 +265,7 @@ class _TxnTile extends StatelessWidget {
         '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
         style: TextStyle(fontWeight: FontWeight.w700, color: txn.isIncome ? scheme.primary : scheme.onSurface),
       ),
-      onTap: () => context.push(
-        Routes.transactionDetail,
-        extra: RecentTxn(
-          id: txn.id,
-          date: txn.date,
-          type: txn.type,
-          amount: txn.amount,
-          merchant: txn.merchant,
-          category: txn.categoryName,
-        ),
-      ),
+      onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
     );
   }
 }

@@ -20,7 +20,6 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
 import '../../features/legal/screens/legal_page_screen.dart';
-import '../../features/dashboard/data/dashboard_models.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
 import '../../features/onboarding/onboarding_prefs.dart';
@@ -155,7 +154,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
       GoRoute(
         path: Routes.transactionDetail,
-        builder: (_, s) => TransactionDetailScreen(txn: s.extra as RecentTxn),
+        builder: (_, s) => TransactionDetailScreen(txnId: s.extra as String),
       ),
       GoRoute(
         path: Routes.goalDetail,

@@ -49,7 +49,7 @@ class DailySummariesScreen extends ConsumerWidget {
               );
             }
             return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+              padding: EdgeInsets.fromLTRB(12, 8, 12, 32 + MediaQuery.of(context).padding.bottom),
               itemCount: list.length,
               itemBuilder: (_, i) => _SummaryCard(summary: list[i]),
             );
