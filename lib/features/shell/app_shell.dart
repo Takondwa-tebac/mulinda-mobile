@@ -1,24 +1,56 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../auth/providers/auth_controller.dart';
+import '../auth/widgets/terms_update_dialog.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
 /// contextual links — keeping the bar uncluttered.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  void _goBranch(int index) => navigationShell.goBranch(
+  @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  bool _termsPrompted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptTerms());
+  }
+
+  /// Prompt once per app session if the user is behind on the Terms. Re-checks
+  /// the freshest user, so it works whether they were already loaded or arrive
+  /// asynchronously after the shell mounts.
+  void _maybePromptTerms() {
+    if (_termsPrompted || !mounted) return;
+    final user = ref.read(currentUserProvider);
+    if (user != null && user.needsTermsAcceptance) {
+      _termsPrompted = true;
+      maybePromptTermsUpdate(context, ref);
+    }
+  }
+
+  void _goBranch(int index) => widget.navigationShell.goBranch(
         index,
-        initialLocation: index == navigationShell.currentIndex,
+        initialLocation: index == widget.navigationShell.currentIndex,
       );
 
   @override
   Widget build(BuildContext context) {
+    final navigationShell = widget.navigationShell;
+    // Catch the user loading (or changing) after the first frame.
+    ref.listen(currentUserProvider, (_, _) => _maybePromptTerms());
+
     return Scaffold(
       body: navigationShell,
       // Hide the capture FAB on the Profile tab (index 3) — it only clutters

@@ -177,6 +177,12 @@ class AuthController extends Notifier<AuthState> {
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
+  /// Record acceptance of the latest Terms version and refresh the user.
+  Future<void> acceptTerms() async {
+    final user = await _repo.acceptTerms();
+    state = AuthState(status: AuthStatus.authenticated, user: user);
+  }
+
   /// Permanently delete the account, then clear local session.
   Future<void> deleteAccount(String confirmation) async {
     await _repo.deleteAccount(confirmation);

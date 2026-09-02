@@ -17,6 +17,8 @@ class User {
     this.displayCurrency = 'MWK',
     this.dailySummaryEnabled = true,
     this.dailySummaryTime = '18:00',
+    this.termsVersion,
+    this.termsCurrentVersion,
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
   });
@@ -35,7 +37,14 @@ class User {
   final String displayCurrency;
   final bool dailySummaryEnabled;
   final String dailySummaryTime; // "HH:MM", local (Africa/Blantyre)
+  final String? termsVersion; // version the user accepted
+  final String? termsCurrentVersion; // latest published version
   final List<String> roles;
+
+  /// True when the published Terms are newer than what the user accepted (or
+  /// they never accepted), so they should be re-prompted.
+  bool get needsTermsAcceptance =>
+      termsCurrentVersion != null && termsVersion != termsCurrentVersion;
   final SubscriptionInfo subscription;
 
   bool get isAdmin => roles.contains('admin') || roles.contains('super-admin');
@@ -59,6 +68,8 @@ class User {
       displayCurrency: json['display_currency']?.toString() ?? 'MWK',
       dailySummaryEnabled: json['daily_summary_enabled'] != false,
       dailySummaryTime: json['daily_summary_time']?.toString() ?? '18:00',
+      termsVersion: json['terms_version']?.toString(),
+      termsCurrentVersion: json['terms_current_version']?.toString(),
       roles: (json['roles'] as List?)?.map((r) => r.toString()).toList() ?? const [],
       subscription: json['subscription'] is Map
           ? SubscriptionInfo.fromJson(

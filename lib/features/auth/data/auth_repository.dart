@@ -52,6 +52,16 @@ class AuthRepository {
     return _authRequest('/v1/auth/google/token', {'access_token': accessToken});
   }
 
+  /// Record acceptance of the latest Terms version.
+  Future<User> acceptTerms() async {
+    try {
+      final res = await _dio.post('/v1/auth/accept-terms');
+      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<User> updateIncomeBracket(String bracket) => updateProfile({'income_bracket': bracket});
 
   Future<User> updateProfile(Map<String, dynamic> fields) async {

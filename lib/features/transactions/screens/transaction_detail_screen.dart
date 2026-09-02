@@ -71,7 +71,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => const Center(child: Text('Could not load this transaction.')),
         data: (txn) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+          padding: EdgeInsets.fromLTRB(16, 20, 16, 40 + MediaQuery.of(context).padding.bottom),
           children: [
             RepaintBoundary(
               key: _receiptKey,
