@@ -31,6 +31,7 @@ import '../../features/plan/screens/plan_detail_screens.dart';
 import '../../features/plan/screens/plan_forms.dart';
 import '../../features/plan/screens/plan_lists.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/personal_data_screen.dart';
 import '../../features/profile/screens/preferences_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/permissions_screen.dart';
@@ -150,6 +151,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.investments, builder: (_, _) => const InvestmentsListScreen()),
       GoRoute(path: Routes.projects, builder: (_, _) => const ProjectsListScreen()),
       GoRoute(path: Routes.editProfile, builder: (_, _) => const EditProfileScreen()),
+      GoRoute(path: Routes.personalData, builder: (_, _) => const PersonalDataScreen()),
       GoRoute(path: Routes.preferences, builder: (_, _) => const PreferencesScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
       GoRoute(

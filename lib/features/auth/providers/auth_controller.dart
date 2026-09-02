@@ -106,6 +106,7 @@ class AuthController extends Notifier<AuthState> {
     required String password,
     required String passwordConfirmation,
     String? incomeBracket,
+    bool acceptedTerms = false,
   }) async {
     final user = await _repo.register(
       firstName: firstName,
@@ -117,6 +118,7 @@ class AuthController extends Notifier<AuthState> {
       password: password,
       passwordConfirmation: passwordConfirmation,
       incomeBracket: incomeBracket,
+      acceptedTerms: acceptedTerms,
     );
     _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);

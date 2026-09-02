@@ -17,6 +17,7 @@ abstract class Routes {
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
   static const preferences = '/preferences';
+  static const personalData = '/personal-data';
 
   static const coach = '/coach';
   static const insights = '/insights';

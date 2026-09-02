@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../providers/auth_controller.dart';
+import '../widgets/terms_accept_sheet.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -40,6 +41,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _openLegal(String slug) => context.push('${Routes.legal}?slug=$slug');
 
+  /// Open the Terms in a scroll-to-accept sheet; ticks the box only if the user
+  /// reads to the end and agrees.
+  Future<void> _reviewTerms() async {
+    final accepted = await showTermsAcceptSheet(context);
+    if (accepted == true && mounted) setState(() => _accepted = true);
+  }
+
   static const _lastStep = 2;
 
   /// Validate the current step, then advance — or submit on the final step.
@@ -68,6 +76,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _email.text.trim(),
             password: _password.text,
             passwordConfirmation: _confirm.text,
+            acceptedTerms: _accepted,
           );
       // Router guard redirects to home on success.
     } on ApiException catch (e) {
@@ -218,7 +227,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 children: [
                   Checkbox(
                     value: _accepted,
-                    onChanged: (v) => setState(() => _accepted = v ?? false),
+                    // Ticking it requires reading the Terms to the end first;
+                    // unticking is free.
+                    onChanged: (v) {
+                      if (v == true) {
+                        _reviewTerms();
+                      } else {
+                        setState(() => _accepted = false);
+                      }
+                    },
                   ),
                   Expanded(
                     child: Padding(
@@ -227,7 +244,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text('auth.agreePrefix'.tr()),
-                          _LegalLink('auth.terms'.tr(), () => _openLegal('terms')),
+                          _LegalLink('auth.terms'.tr(), _reviewTerms),
                           Text(' ${'auth.and'.tr()} '),
                           _LegalLink('auth.privacy'.tr(), () => _openLegal('privacy')),
                         ],

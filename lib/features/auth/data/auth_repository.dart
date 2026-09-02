@@ -30,6 +30,7 @@ class AuthRepository {
     required String password,
     required String passwordConfirmation,
     String? incomeBracket,
+    bool acceptedTerms = false,
   }) {
     final body = <String, dynamic>{
       'first_name': firstName,
@@ -39,6 +40,7 @@ class AuthRepository {
       'email': email,
       'password': password,
       'password_confirmation': passwordConfirmation,
+      if (acceptedTerms) 'accepted_terms': true,
     };
     if (middleName != null && middleName.isNotEmpty) body['middle_name'] = middleName;
     if (incomeBracket != null) body['income_bracket'] = incomeBracket;
