@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.limitrovasys.ltd.mulinda_mobile"
+    namespace = "tech.lyncsystems.mulinda"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
