@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyChvJ3PL8P8oJuF0faIMteFKl9UR15T0AE',
-    appId: '1:170317818551:android:0c89a104f4d07e2b0fbb32',
+    appId: '1:170317818551:android:b8e87023add659890fbb32',
     messagingSenderId: '170317818551',
     projectId: 'mulinda-5717f',
     storageBucket: 'mulinda-5717f.firebasestorage.app',
@@ -66,11 +66,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBLIu58kG2hvGtZWQyWGSpXvaRzOmO3fGU',
-    appId: '1:170317818551:web:64dc4043a16f1dc60fbb32',
+    appId: '1:170317818551:web:e1f8e3a8dd1a67ea0fbb32',
     messagingSenderId: '170317818551',
     projectId: 'mulinda-5717f',
     authDomain: 'mulinda-5717f.firebaseapp.com',
     storageBucket: 'mulinda-5717f.firebasestorage.app',
-    measurementId: 'G-N28B29197H',
+    measurementId: 'G-5RFRNYQXF4',
   );
 }

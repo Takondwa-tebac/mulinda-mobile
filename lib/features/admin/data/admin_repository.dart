@@ -53,17 +53,22 @@ class AdminRepository {
   Future<int> broadcastNotification({
     required String title,
     required String body,
+    String? imagePath,
     String? imageUrl,
     List<String>? userIds,
   }) async {
+    final form = FormData.fromMap({
+      'title': title,
+      'body': body,
+      if (imagePath != null && imagePath.isNotEmpty)
+        'image': await MultipartFile.fromFile(imagePath),
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+      if (userIds != null && userIds.isNotEmpty) 'user_ids': userIds,
+    });
+
     final res = await _dio.post<Map<String, dynamic>>(
       '/v1/admin/notifications/broadcast',
-      data: {
-        'title': title,
-        'body': body,
-        if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
-        if (userIds != null && userIds.isNotEmpty) 'user_ids': userIds,
-      },
+      data: form,
     );
     return (res.data?['sent_to'] as num?)?.toInt() ?? 0;
   }

@@ -1,4 +1,4 @@
-package com.limitrovasys.ltd.mulinda_mobile
+package tech.lyncsystems.mulinda
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
@@ -17,16 +20,26 @@ class _PushNotificationScreenState
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _body = TextEditingController();
-  final _imageUrl = TextEditingController();
   bool _broadcastAll = true;
   bool _sending = false;
+  String? _imagePath;
 
   @override
   void dispose() {
     _title.dispose();
     _body.dispose();
-    _imageUrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 1024);
+    if (picked == null) return;
+    setState(() => _imagePath = picked.path);
+  }
+
+  void _removeImage() {
+    setState(() => _imagePath = null);
   }
 
   Future<void> _send() async {
@@ -36,7 +49,7 @@ class _PushNotificationScreenState
       final count = await ref.read(adminRepositoryProvider).broadcastNotification(
             title: _title.text.trim(),
             body: _body.text.trim(),
-            imageUrl: _imageUrl.text.trim().isEmpty ? null : _imageUrl.text.trim(),
+            imagePath: _imagePath,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -47,7 +60,7 @@ class _PushNotificationScreenState
         ));
       _title.clear();
       _body.clear();
-      _imageUrl.clear();
+      _removeImage();
     } on ApiException catch (e) {
       if (!mounted) return;
       _showError(e.displayMessage);
@@ -160,23 +173,80 @@ class _PushNotificationScreenState
             ),
             const SizedBox(height: 16),
 
-            TextFormField(
-              controller: _imageUrl,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'Image URL (optional)',
-                hintText: 'https://... — must be a public HTTPS URL',
-                prefixIcon: Icon(Icons.image_outlined),
-                border: OutlineInputBorder(),
+            // Image picker
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Image (optional)',
+                        style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: 8),
+                    if (_imagePath != null)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(_imagePath!),
+                              height: 150,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.black54,
+                              ),
+                              onPressed: _removeImage,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      InkWell(
+                        onTap: _pickImage,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: scheme.outlineVariant,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: scheme.surfaceContainerHighest,
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  size: 32,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tap to add image',
+                                  style: TextStyle(
+                                    color: scheme.onSurfaceVariant,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return null;
-                final uri = Uri.tryParse(v.trim());
-                if (uri == null || !uri.hasScheme || !uri.isAbsolute) {
-                  return 'Enter a valid URL';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 24),
 

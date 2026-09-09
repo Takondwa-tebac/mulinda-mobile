@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:170317818551:android:0c89a104f4d07e2b0fbb32",
+        "mobilesdk_app_id": "1:170317818551:android:b8e87023add659890fbb32",
         "android_client_info": {
-          "package_name": "com.limitrovasys.ltd.mulinda_mobile"
+          "package_name": "tech.lyncsystems.mulinda"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "170317818551-gknapiqqops9lcujk5kui41t9pg5bal7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyChvJ3PL8P8oJuF0faIMteFKl9UR15T0AE"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "170317818551-gknapiqqops9lcujk5kui41t9pg5bal7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

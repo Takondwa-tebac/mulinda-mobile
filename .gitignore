@@ -46,3 +46,6 @@ app.*.map.json
 
 # JVM heap dumps from failed Gradle builds
 *.hprof
+# prevent cimmiting of sensitive files, keystore and key.properties
+android/key.properties
+android/keystore/*.jks
