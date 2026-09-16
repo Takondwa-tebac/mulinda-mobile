@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/widgets/receipt_view.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
@@ -25,6 +26,10 @@ class TransactionDetailScreen extends ConsumerStatefulWidget {
 class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
   final _receiptKey = GlobalKey();
   bool _sharing = false;
+  bool _editing = false;
+  final _merchantController = TextEditingController();
+  final _notesController = TextEditingController();
+  String? _selectedCategoryId;
 
   Future<void> _share() async {
     setState(() => _sharing = true);
@@ -43,6 +48,53 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
     }
   }
 
+  void _showEditSheet(Txn txn) {
+    _merchantController.text = txn.merchant ?? '';
+    _notesController.text = txn.notes ?? '';
+    _selectedCategoryId = txn.categoryId;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _EditTransactionSheet(
+        txn: txn,
+        merchantController: _merchantController,
+        notesController: _notesController,
+        selectedCategoryId: _selectedCategoryId,
+        onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
+        onSave: _saveEdit,
+      ),
+    );
+  }
+
+  Future<void> _saveEdit(Txn txn) async {
+    setState(() => _editing = true);
+    try {
+      await ref.read(activityRepositoryProvider).updateTransaction(
+        widget.txnId,
+        categoryId: _selectedCategoryId,
+        merchant: _merchantController.text.trim().isEmpty ? null : _merchantController.text.trim(),
+        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+        ref.invalidate(transactionDetailProvider(widget.txnId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction updated')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.displayMessage)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _editing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(transactionDetailProvider(widget.txnId));
@@ -58,10 +110,20 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
             )
           else
             detail.maybeWhen(
-              data: (_) => IconButton(
-                icon: const Icon(Icons.share_outlined),
-                tooltip: 'Share receipt',
-                onPressed: _share,
+              data: (txn) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit transaction',
+                    onPressed: () => _showEditSheet(txn),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined),
+                    tooltip: 'Share receipt',
+                    onPressed: _share,
+                  ),
+                ],
               ),
               orElse: () => const SizedBox.shrink(),
             ),
@@ -101,14 +163,26 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
   }
 
   List<ReceiptRow> _rows(Txn txn) {
+    final fee = txn.children.where((c) => c.isFee).firstOrNull;
+    final levy = txn.children.where((c) => c.isLevy).firstOrNull;
+
+    // Build amount breakdown string
+    String amountText = '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}';
+    if (fee != null || levy != null) {
+      final parts = <String>[amountText];
+      if (levy != null) parts.add('+ ${levy.amount.formatted} levy');
+      if (fee != null) parts.add('+ ${fee.amount.formatted} fee');
+      amountText = parts.join(' ');
+    }
+
     return [
       if (txn.accountName != null) ReceiptRow('From', txn.accountName!),
       if ((txn.counterparty ?? txn.merchant) != null)
         ReceiptRow(txn.isIncome ? 'From party' : 'To', (txn.counterparty ?? txn.merchant)!),
-      ReceiptRow('Amount', '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}', emphasize: true),
-      // Fee / levy breakdown, if this principal was split.
-      for (final c in txn.children)
-        ReceiptRow(c.isLevy ? 'Govt levy' : 'Fee', '-${c.amount.formatted}', muted: true),
+      ReceiptRow('Amount', amountText, emphasize: true),
+      // Show individual fee/levy breakdown for clarity
+      if (fee != null) ReceiptRow('Transaction fee', '-${fee.amount.formatted}', muted: true),
+      if (levy != null) ReceiptRow('Government levy (0.05%)', '-${levy.amount.formatted}', muted: true),
       if (txn.categoryName != null) ReceiptRow('Category', txn.categoryName!),
       if (txn.reference != null) ReceiptRow('Reference', txn.reference!),
       ReceiptRow('Date', _prettyDateTime(txn.occurredAt)),
@@ -207,5 +281,153 @@ class _SourceSmsCard extends StatelessWidget {
         .split(' ')
         .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
         .join(' ');
+  }
+}
+
+/// Bottom sheet for editing transaction details (category, merchant, notes).
+/// Source SMS is never editable to maintain data integrity.
+class _EditTransactionSheet extends ConsumerStatefulWidget {
+  const _EditTransactionSheet({
+    required this.txn,
+    required this.merchantController,
+    required this.notesController,
+    required this.selectedCategoryId,
+    required this.onCategoryChanged,
+    required this.onSave,
+  });
+
+  final Txn txn;
+  final TextEditingController merchantController;
+  final TextEditingController notesController;
+  final String? selectedCategoryId;
+  final Function(String?) onCategoryChanged;
+  final Function(Txn) onSave;
+
+  @override
+  ConsumerState<_EditTransactionSheet> createState() => _EditTransactionSheetState();
+}
+
+class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
+  bool _saving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = ref.watch(categoriesProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) => Container(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Edit Transaction',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    )),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      // Category selector
+                      Text('Category',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: scheme.primary,
+                            fontWeight: FontWeight.w700,
+                          )),
+                      const SizedBox(height: 8),
+                      categories.when(
+                        loading: () => const CircularProgressIndicator(),
+                        error: (_, __) => const Text('Failed to load categories'),
+                        data: (cats) => DropdownButtonFormField<String>(
+                          value: widget.selectedCategoryId,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                          ),
+                          items: cats.map((cat) {
+                            return DropdownMenuItem(
+                              value: cat.id,
+                              child: Text(cat.name),
+                            );
+                          }).toList(),
+                          onChanged: widget.onCategoryChanged,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Merchant field
+                      TextFormField(
+                        controller: widget.merchantController,
+                        decoration: const InputDecoration(
+                          labelText: 'Merchant / Payee',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Notes field
+                      TextFormField(
+                        controller: widget.notesController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Warning about SMS integrity
+                      if (widget.txn.isAutoCaptured)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: scheme.errorContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 20, color: scheme.onErrorContainer),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Source SMS cannot be edited to maintain data integrity.',
+                                  style: TextStyle(fontSize: 12, color: scheme.onErrorContainer),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _saving ? null : () => widget.onSave(widget.txn),
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : const Icon(Icons.check),
+                  label: Text(_saving ? 'Saving...' : 'Save Changes'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

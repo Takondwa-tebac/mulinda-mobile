@@ -52,6 +52,7 @@ class Txn {
     required this.amount,
     this.merchant,
     this.categoryName,
+    this.categoryId,
     this.occurredAt,
     this.notes,
     this.projectId,
@@ -74,6 +75,7 @@ class Txn {
   final Money amount;
   final String? merchant;
   final String? categoryName;
+  final String? categoryId;
   final String? occurredAt;
   final String? notes;
   final String? projectId;
@@ -120,6 +122,7 @@ class Txn {
       amount: Money.parse(json['amount']),
       merchant: json['merchant']?.toString(),
       categoryName: category?['name']?.toString(),
+      categoryId: category?['id']?.toString(),
       occurredAt: json['occurred_at']?.toString(),
       notes: json['notes']?.toString(),
       projectId: json['project_id']?.toString(),

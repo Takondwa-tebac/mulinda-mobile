@@ -28,6 +28,27 @@ class ActivityRepository {
     }
   }
 
+  /// Update an existing transaction. Amount changes recalculate the account balance.
+  Future<Txn> updateTransaction(String id, {
+    String? categoryId,
+    String? merchant,
+    String? notes,
+    String? projectId,
+  }) async {
+    final body = <String, dynamic>{};
+    if (categoryId != null) body['category_id'] = categoryId;
+    if (merchant != null && merchant.isNotEmpty) body['merchant'] = merchant;
+    if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+    if (projectId != null) body['project_id'] = projectId;
+
+    try {
+      final res = await _dio.put('/v1/transactions/$id', data: body);
+      return Txn.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<List<Txn>> transactionsForAccount(String accountId) => _list(
         '/v1/transactions',
         Txn.fromJson,

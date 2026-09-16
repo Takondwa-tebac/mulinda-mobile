@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
+import '../../activity/data/activity_models.dart';
 import 'summary_models.dart';
 
 class SummaryRepository {
@@ -33,6 +34,17 @@ class SummaryRepository {
       throw ApiException.fromDio(e);
     }
   }
+
+  /// Get a single daily summary with its transactions by ID.
+  Future<DailySummaryWithTransactions> getSummaryWithTransactions(String id) async {
+    try {
+      final res = await _dio.get('/v1/daily-summaries/$id');
+      final data = res.data['data'];
+      return DailySummaryWithTransactions.fromJson(data.cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
 }
 
 final summaryRepositoryProvider =
@@ -40,4 +52,9 @@ final summaryRepositoryProvider =
 
 final dailySummariesProvider = FutureProvider.autoDispose<List<DailySummary>>(
   (ref) => ref.read(summaryRepositoryProvider).history(),
+);
+
+/// Daily summary with transactions by ID.
+final dailySummaryDetailProvider = FutureProvider.autoDispose.family<DailySummaryWithTransactions, String>(
+  (ref, id) => ref.read(summaryRepositoryProvider).getSummaryWithTransactions(id),
 );

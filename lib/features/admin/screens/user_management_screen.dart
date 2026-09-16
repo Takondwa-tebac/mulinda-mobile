@@ -142,12 +142,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => _UserSheet(
-        user: user,
-        currentRoles: roles.map((r) => r.toString()).toList(),
-        onChanged: () {
-          ref.invalidate(_usersProvider(_query));
-        },
+      builder: (_) => SafeArea(
+        child: _UserSheet(
+          user: user,
+          currentRoles: roles.map((r) => r.toString()).toList(),
+          onChanged: () {
+            ref.invalidate(_usersProvider(_query));
+          },
+        ),
       ),
     );
   }
@@ -216,26 +218,30 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
     final period = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Gift a subscription',
-                    style: Theme.of(sheetCtx).textTheme.titleMedium),
+      isScrollControlled: true,
+      builder: (sheetCtx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Gift a subscription',
+                      style: Theme.of(sheetCtx).textTheme.titleMedium),
+                ),
               ),
-            ),
-            for (final (value, label) in periods)
-              ListTile(
-                leading: const Icon(Icons.card_giftcard),
-                title: Text(label),
-                onTap: () => Navigator.of(sheetCtx).pop(value),
-              ),
-            const SizedBox(height: 8),
-          ],
+              for (final (value, label) in periods)
+                ListTile(
+                  leading: const Icon(Icons.card_giftcard),
+                  title: Text(label),
+                  onTap: () => Navigator.of(sheetCtx).pop(value),
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -313,93 +319,95 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
     final busy = _saving || _deleting;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-          20, 8, 20, 24 + MediaQuery.of(context).viewInsets.bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.user['full_name']?.toString() ??
-                widget.user['username']?.toString() ??
-                'User',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          Text(widget.user['email']?.toString() ?? '',
-              style: TextStyle(color: scheme.onSurfaceVariant)),
-          const SizedBox(height: 20),
-          Text('Roles',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: scheme.primary, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Card(
-            child: Column(
-              children: _allRoles
-                  .map((role) => CheckboxListTile(
-                        title: Text(role),
-                        value: _roles.contains(role),
-                        onChanged: busy
-                            ? null
-                            : (v) {
-                                setState(() {
-                                  if (v == true) {
-                                    _roles.add(role);
-                                  } else {
-                                    _roles.remove(role);
-                                  }
-                                });
-                              },
-                      ))
-                  .toList(),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.user['full_name']?.toString() ??
+                  widget.user['username']?.toString() ??
+                  'User',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
-              onPressed: busy ? null : _giftPremium,
-              icon: const Icon(Icons.card_giftcard),
-              label: const Text('Gift premium'),
+            Text(widget.user['email']?.toString() ?? '',
+                style: TextStyle(color: scheme.onSurfaceVariant)),
+            const SizedBox(height: 20),
+            Text('Roles',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: scheme.primary, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Card(
+              child: Column(
+                children: _allRoles
+                    .map((role) => CheckboxListTile(
+                          title: Text(role),
+                          value: _roles.contains(role),
+                          onChanged: busy
+                              ? null
+                              : (v) {
+                                  setState(() {
+                                    if (v == true) {
+                                      _roles.add(role);
+                                    } else {
+                                      _roles.remove(role);
+                                    }
+                                  });
+                                },
+                        ))
+                    .toList(),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: busy ? null : _deleteUser,
-                  icon: _deleting
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.delete_outline),
-                  label: const Text('Delete'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: scheme.error,
-                    side: BorderSide(color: scheme.error),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: busy ? null : _giftPremium,
+                icon: const Icon(Icons.card_giftcard),
+                label: const Text('Gift premium'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: busy ? null : _deleteUser,
+                    icon: _deleting
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.delete_outline),
+                    label: const Text('Delete'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: scheme.error,
+                      side: BorderSide(color: scheme.error),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: busy ? null : _saveRoles,
-                  icon: _saving
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.check),
-                  label: const Text('Save roles'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: busy ? null : _saveRoles,
+                    icon: _saving
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.check),
+                    label: const Text('Save roles'),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

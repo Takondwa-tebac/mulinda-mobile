@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/summary_models.dart';
 import '../data/summary_repository.dart';
+import 'daily_summary_detail_screen.dart';
 
 /// Day-by-day history of the user's spending summaries — the screen the daily
 /// notification opens, and reachable from notification settings.
@@ -69,43 +70,58 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 5),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(_prettyDate(summary.date),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text('${summary.transactionCount} txns',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DailySummaryDetailScreen(summary: summary),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                _Metric(label: 'Spent', value: summary.expense.formatted, color: Colors.red.shade700),
-                _Metric(label: 'In', value: summary.income.formatted, color: Colors.green.shade700),
-                _Metric(label: 'Net', value: summary.net.formatted, color: null),
-              ],
-            ),
-            if (summary.topCategory != null) ...[
-              const SizedBox(height: 10),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.local_offer_outlined, size: 14, color: Colors.grey),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Most on ${summary.topCategory}'
-                    '${summary.topCategoryAmount != null ? ' · ${summary.topCategoryAmount!.formatted}' : ''}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(_prettyDate(summary.date),
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Row(
+                    children: [
+                      Text('${summary.transactionCount} txns',
+                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _Metric(label: 'Spent', value: summary.expense.formatted, color: Colors.red.shade700),
+                  _Metric(label: 'In', value: summary.income.formatted, color: Colors.green.shade700),
+                  _Metric(label: 'Net', value: summary.net.formatted, color: null),
+                ],
+              ),
+              if (summary.topCategory != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.local_offer_outlined, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Most on ${summary.topCategory}'
+                      '${summary.topCategoryAmount != null ? ' · ${summary.topCategoryAmount!.formatted}' : ''}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
