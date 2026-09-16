@@ -21,6 +21,7 @@ class User {
     this.termsCurrentVersion,
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
+    this.smsCaptureCount = 0,
   });
 
   final String id;
@@ -40,6 +41,7 @@ class User {
   final String? termsVersion; // version the user accepted
   final String? termsCurrentVersion; // latest published version
   final List<String> roles;
+  final int smsCaptureCount;
 
   /// True when the published Terms are newer than what the user accepted (or
   /// they never accepted), so they should be re-prompted.
@@ -70,11 +72,15 @@ class User {
       dailySummaryTime: json['daily_summary_time']?.toString() ?? '18:00',
       termsVersion: json['terms_version']?.toString(),
       termsCurrentVersion: json['terms_current_version']?.toString(),
-      roles: (json['roles'] as List?)?.map((r) => r.toString()).toList() ?? const [],
+      roles:
+          (json['roles'] as List?)?.map((r) => r.toString()).toList() ??
+          const [],
       subscription: json['subscription'] is Map
           ? SubscriptionInfo.fromJson(
-              (json['subscription'] as Map).cast<String, dynamic>())
+              (json['subscription'] as Map).cast<String, dynamic>(),
+            )
           : const SubscriptionInfo.none(),
+      smsCaptureCount: (json['sms_capture_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

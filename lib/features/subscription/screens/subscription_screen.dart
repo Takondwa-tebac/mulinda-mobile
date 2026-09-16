@@ -20,11 +20,38 @@ class SubscriptionScreen extends ConsumerStatefulWidget {
 
 class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String? _resuming;
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMorePages = true;
 
   Future<void> _refresh() async {
+    setState(() {
+      _currentPage = 1;
+      _hasMorePages = true;
+    });
     ref.invalidate(invoicesProvider);
     await ref.read(authControllerProvider.notifier).refresh();
-    await ref.read(invoicesProvider(null).future);
+    await ref.read(invoicesProvider((status: null, page: 1)).future);
+  }
+
+  Future<void> _loadMoreInvoices() async {
+    if (_isLoadingMore || !_hasMorePages) return;
+
+    setState(() => _isLoadingMore = true);
+    try {
+      final nextPage = _currentPage + 1;
+      final moreInvoices = await ref
+          .read(subscriptionRepositoryProvider)
+          .invoices(status: null, page: nextPage);
+
+      if (moreInvoices.length < 10) {
+        setState(() => _hasMorePages = false);
+      }
+
+      setState(() => _currentPage = nextPage);
+    } finally {
+      setState(() => _isLoadingMore = false);
+    }
   }
 
   /// Reopen checkout for a pending/failed invoice and re-verify on return.
@@ -35,8 +62,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
       // No stored URL (rare) — regenerate a fresh checkout for the same period.
       if (checkoutUrl == null) {
-        final fresh =
-            await ref.read(subscriptionRepositoryProvider).checkout(invoice.period);
+        final fresh = await ref
+            .read(subscriptionRepositoryProvider)
+            .checkout(invoice.period);
         checkoutUrl = fresh.checkoutUrl;
       }
       if (checkoutUrl == null || !mounted) return;
@@ -66,17 +94,22 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(msg),
-        backgroundColor: error ? Theme.of(context).colorScheme.error : null,
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: error ? Theme.of(context).colorScheme.error : null,
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final sub = ref.watch(currentUserProvider)?.subscription ??
+    final sub =
+        ref.watch(currentUserProvider)?.subscription ??
         const SubscriptionInfo.none();
-    final invoicesAsync = ref.watch(invoicesProvider(null));
+    final invoicesAsync = ref.watch(
+      invoicesProvider((status: null, page: _currentPage)),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text('subscription.title'.tr())),
@@ -87,10 +120,13 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           children: [
             _StatusCard(sub: sub, onSubscribe: () => showPaywall(context)),
             const SizedBox(height: 24),
-            Text('subscription.invoices'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.primary)),
+            Text(
+              'subscription.invoices'.tr(),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
             const SizedBox(height: 8),
             invoicesAsync.when(
               loading: () => const Padding(
@@ -104,21 +140,38 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               data: (invoices) => invoices.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Text('subscription.noInvoices'.tr(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant)),
+                      child: Text(
+                        'subscription.noInvoices'.tr(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     )
                   : Column(
-                      children: invoices
-                          .map((inv) => _InvoiceTile(
+                      children: [
+                        ...invoices
+                            .map(
+                              (inv) => _InvoiceTile(
                                 invoice: inv,
                                 resuming: _resuming == inv.id,
                                 onTap: () => _onInvoiceTap(inv),
-                              ))
-                          .toList(),
+                              ),
+                            )
+                            .toList(),
+                        if (_hasMorePages)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: _isLoadingMore
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : TextButton(
+                                    onPressed: _loadMoreInvoices,
+                                    child: Text('See More'),
+                                  ),
+                          ),
+                      ],
                     ),
             ),
           ],
@@ -147,7 +200,9 @@ class _StatusCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
-      color: sub.active ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+      color: sub.active
+          ? scheme.primaryContainer
+          : scheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -155,14 +210,18 @@ class _StatusCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(sub.active ? Icons.verified : Icons.lock_open_outlined,
-                    color: sub.active ? scheme.onPrimaryContainer : scheme.primary),
+                Icon(
+                  sub.active ? Icons.verified : Icons.lock_open_outlined,
+                  color: sub.active
+                      ? scheme.onPrimaryContainer
+                      : scheme.primary,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   sub.active
                       ? (sub.isTrial
-                          ? 'subscription.trialActive'.tr()
-                          : '${sub.planLabel ?? ''} · ${'subscription.active'.tr()}')
+                            ? 'subscription.trialActive'.tr()
+                            : '${sub.planLabel ?? ''} · ${'subscription.active'.tr()}')
                       : 'subscription.free'.tr(),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
@@ -192,9 +251,11 @@ class _StatusCard extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onSubscribe,
                 icon: const Icon(Icons.workspace_premium),
-                label: Text(sub.active
-                    ? 'subscription.extend'.tr()
-                    : 'subscription.subscribe'.tr()),
+                label: Text(
+                  sub.active
+                      ? 'subscription.extend'.tr()
+                      : 'subscription.subscribe'.tr(),
+                ),
               ),
             ),
           ],
@@ -229,29 +290,36 @@ class _InvoiceTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        onTap: (invoice.isPaid || invoice.isResumable) && !resuming ? onTap : null,
+        onTap: (invoice.isPaid || invoice.isResumable) && !resuming
+            ? onTap
+            : null,
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.15),
           foregroundColor: color,
           child: Icon(icon, size: 18),
         ),
-        title: Text('${invoice.periodLabel} · ${invoice.amount.formatted}',
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          '${invoice.periodLabel} · ${invoice.amount.formatted}',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(
           invoice.createdAt != null ? _fmtDate(invoice.createdAt!) : label,
           style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
         ),
         trailing: resuming
             ? const SizedBox(
-                width: 20, height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.5))
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              )
             : invoice.isResumable
-                ? TextButton(
-                    onPressed: onTap, child: Text('subscription.complete'.tr()))
-                : invoice.isPaid
-                    ? Icon(Icons.receipt_long_outlined,
-                        color: scheme.onSurfaceVariant)
-                    : _Chip(label: label, color: color),
+            ? TextButton(
+                onPressed: onTap,
+                child: Text('subscription.complete'.tr()),
+              )
+            : invoice.isPaid
+            ? Icon(Icons.receipt_long_outlined, color: scheme.onSurfaceVariant)
+            : _Chip(label: label, color: color),
       ),
     );
   }
@@ -259,11 +327,31 @@ class _InvoiceTile extends StatelessWidget {
   (Color, String, IconData) _statusVisual(BuildContext context, String status) {
     final scheme = Theme.of(context).colorScheme;
     return switch (status) {
-      'paid' => (scheme.primary, 'subscription.statusPaid'.tr(), Icons.check_circle),
-      'comped' => (scheme.tertiary, 'subscription.statusGift'.tr(), Icons.card_giftcard),
-      'pending' => (Colors.orange, 'subscription.statusPending'.tr(), Icons.schedule),
-      'failed' => (scheme.error, 'subscription.statusFailed'.tr(), Icons.error_outline),
-      'cancelled' => (scheme.onSurfaceVariant, 'subscription.statusCancelled'.tr(), Icons.cancel_outlined),
+      'paid' => (
+        scheme.primary,
+        'subscription.statusPaid'.tr(),
+        Icons.check_circle,
+      ),
+      'comped' => (
+        scheme.tertiary,
+        'subscription.statusGift'.tr(),
+        Icons.card_giftcard,
+      ),
+      'pending' => (
+        Colors.orange,
+        'subscription.statusPending'.tr(),
+        Icons.schedule,
+      ),
+      'failed' => (
+        scheme.error,
+        'subscription.statusFailed'.tr(),
+        Icons.error_outline,
+      ),
+      'cancelled' => (
+        scheme.onSurfaceVariant,
+        'subscription.statusCancelled'.tr(),
+        Icons.cancel_outlined,
+      ),
       _ => (scheme.onSurfaceVariant, status, Icons.receipt_long_outlined),
     };
   }
@@ -287,9 +375,14 @@ class _Chip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

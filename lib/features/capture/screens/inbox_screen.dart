@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/router/routes.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../subscription/widgets/paywall_sheet.dart';
 import '../data/inbox_repository.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
@@ -73,7 +75,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ..invalidate(accountsProvider)
       ..invalidate(dashboardProvider);
 
-    _snack(result == 'approved' ? 'inbox.approved'.tr() : 'inbox.rejected'.tr());
+    _snack(
+      result == 'approved' ? 'inbox.approved'.tr() : 'inbox.rejected'.tr(),
+    );
   }
 
   void _snack(String message) {
@@ -92,7 +96,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final receiptList = receipts.valueOrNull ?? const [];
     final loading = sms.isLoading || receipts.isLoading;
     final hasError = !loading && (sms.hasError || receipts.hasError);
-    final empty = !loading && !hasError && smsList.isEmpty && receiptList.isEmpty;
+    final empty =
+        !loading && !hasError && smsList.isEmpty && receiptList.isEmpty;
     final errorMessage = sms.error?.toString() ?? receipts.error?.toString();
 
     return Scaffold(
@@ -118,14 +123,19 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                   children: [
                     const Icon(Icons.wifi_off_outlined, size: 48),
                     const SizedBox(height: 12),
-                    const Text('Could not load inbox',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Could not load inbox',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 4),
-                    Text(errorMessage ?? 'Unknown error',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                            fontSize: 12)),
+                    Text(
+                      errorMessage ?? 'Unknown error',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     OutlinedButton(
                       onPressed: () {
@@ -140,41 +150,48 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             if (empty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 64),
-                child: Text('inbox.empty'.tr(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                child: Text(
+                  'inbox.empty'.tr(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
             if (smsList.isNotEmpty) ...[
               _Header('inbox.messages'.tr()),
-              ...smsList.map((m) => _ItemCard(
-                    icon: Icons.sms_outlined,
-                    title: m.merchant ?? m.sender ?? 'inbox.messages'.tr(),
-                    subtitle: m.amount != null ? 'MK ${m.amount}' : m.body,
-                    onTap: () => _openReview(
-                      id: m.id,
-                      isReceipt: false,
-                      parsed: m.parsed,
-                      sender: m.sender,
-                    ),
-                  )),
+              ...smsList.map(
+                (m) => _ItemCard(
+                  icon: Icons.sms_outlined,
+                  title: m.merchant ?? m.sender ?? 'inbox.messages'.tr(),
+                  subtitle: m.amount != null ? 'MK ${m.amount}' : m.body,
+                  onTap: () => _openReview(
+                    id: m.id,
+                    isReceipt: false,
+                    parsed: m.parsed,
+                    sender: m.sender,
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
             ],
             if (receiptList.isNotEmpty) ...[
               _Header('inbox.receipts'.tr()),
-              ...receiptList.map((r) => _ItemCard(
-                    icon: Icons.receipt_long_outlined,
-                    title: r.merchant ?? 'inbox.receipts'.tr(),
-                    subtitle: r.amount != null
-                        ? 'MK ${r.amount}'
-                        : 'inbox.processing'.tr(),
-                    onTap: () => _openReview(
-                      id: r.id,
-                      isReceipt: true,
-                      parsed: r.parsed,
-                      imageUrl: r.imageUrl,
-                    ),
-                  )),
+              ...receiptList.map(
+                (r) => _ItemCard(
+                  icon: Icons.receipt_long_outlined,
+                  title: r.merchant ?? 'inbox.receipts'.tr(),
+                  subtitle: r.amount != null
+                      ? 'MK ${r.amount}'
+                      : 'inbox.processing'.tr(),
+                  onTap: () => _openReview(
+                    id: r.id,
+                    isReceipt: true,
+                    parsed: r.parsed,
+                    imageUrl: r.imageUrl,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -233,7 +250,14 @@ class _ReviewSheetState extends State<_ReviewSheet> {
       await widget.onApprove(_selectedAccount!.id);
       if (mounted) Navigator.of(context).pop('approved');
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.displayMessage);
+      if (e.code == 'sms_capture_limit_reached') {
+        if (mounted) {
+          Navigator.of(context).pop();
+          showPaywall(context, feature: 'SMS auto-capture');
+        }
+      } else if (mounted) {
+        setState(() => _error = e.displayMessage);
+      }
     } finally {
       if (mounted) setState(() => _approving = false);
     }
@@ -269,136 +293,150 @@ class _ReviewSheetState extends State<_ReviewSheet> {
         32 + MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: scheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            Text(
-              widget.isReceipt ? 'Review Receipt' : 'Review SMS',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 20),
-
-            // Extracted details card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  if (merchant != null) _DetailRow('Merchant', merchant),
-                  if (amount != null)
-                    _DetailRow(
-                      'Amount',
-                      '$currency ${double.tryParse(amount.toString())?.toStringAsFixed(2) ?? amount}',
-                    ),
-                  _DetailRow('Type', type[0].toUpperCase() + type.substring(1)),
-                  if (widget.sender != null) _DetailRow('Sender', widget.sender!),
-                  if (parsed['reference'] != null)
-                    _DetailRow('Reference', parsed['reference'].toString()),
-                ],
+                color: scheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
+          Text(
+            widget.isReceipt ? 'Review Receipt' : 'Review SMS',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 20),
 
-            // Account selector
-            Text('Select Account',
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 8),
-
-            if (widget.accounts.isEmpty)
-              Text('No accounts found. Please add an account first.',
-                  style: TextStyle(color: scheme.error, fontSize: 13))
-            else
-              InputDecorator(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 4),
-                  errorText: _selectedAccount == null ? _error : null,
-                ),
-                child: DropdownButton<Account>(
-                  value: _selectedAccount,
-                  isExpanded: true,
-                  underline: const SizedBox.shrink(),
-                  hint: const Text('Choose an account'),
-                  items: widget.accounts
-                      .map((a) => DropdownMenuItem(
-                            value: a,
-                            child: Text(a.name,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1),
-                          ))
-                      .toList(),
-                  onChanged: (v) => setState(() {
-                    _selectedAccount = v;
-                    _error = null;
-                  }),
-                ),
-              ),
-
-            if (_error != null && _selectedAccount != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: TextStyle(color: scheme.error, fontSize: 13)),
-            ],
-
-            const SizedBox(height: 24),
-
-            Row(
+          // Extracted details card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : _reject,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                      side: BorderSide(
-                          color: Theme.of(context).colorScheme.error),
-                    ),
-                    child: _rejecting
-                        ? SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Theme.of(context).colorScheme.error))
-                        : const Text('Reject'),
+                if (merchant != null) _DetailRow('Merchant', merchant),
+                if (amount != null)
+                  _DetailRow(
+                    'Amount',
+                    '$currency ${double.tryParse(amount.toString())?.toStringAsFixed(2) ?? amount}',
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _busy || widget.accounts.isEmpty ? null : _approve,
-                    child: _approving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2.5))
-                        : const Text('Approve & Save'),
-                  ),
-                ),
+                _DetailRow('Type', type[0].toUpperCase() + type.substring(1)),
+                if (widget.sender != null) _DetailRow('Sender', widget.sender!),
+                if (parsed['reference'] != null)
+                  _DetailRow('Reference', parsed['reference'].toString()),
               ],
             ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Account selector
+          Text(
+            'Select Account',
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+
+          if (widget.accounts.isEmpty)
+            Text(
+              'No accounts found. Please add an account first.',
+              style: TextStyle(color: scheme.error, fontSize: 13),
+            )
+          else
+            InputDecorator(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                errorText: _selectedAccount == null ? _error : null,
+              ),
+              child: DropdownButton<Account>(
+                value: _selectedAccount,
+                isExpanded: true,
+                underline: const SizedBox.shrink(),
+                hint: const Text('Choose an account'),
+                items: widget.accounts
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a,
+                        child: Text(
+                          a.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() {
+                  _selectedAccount = v;
+                  _error = null;
+                }),
+              ),
+            ),
+
+          if (_error != null && _selectedAccount != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!, style: TextStyle(color: scheme.error, fontSize: 13)),
           ],
+
+          const SizedBox(height: 24),
+
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _busy ? null : _reject,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  child: _rejecting
+                      ? SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        )
+                      : const Text('Reject'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _busy || widget.accounts.isEmpty ? null : _approve,
+                  child: _approving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : const Text('Approve & Save'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -418,14 +456,19 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13)),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
           ),
         ],
       ),
@@ -443,10 +486,9 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4),
-        child: Text(text,
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4),
+    child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
+  );
 }
 
 class _ItemCard extends StatelessWidget {
@@ -484,22 +526,31 @@ class _ItemCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 2),
-                    Text(subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: scheme.onSurfaceVariant, fontSize: 13)),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded,
-                  color: scheme.onSurfaceVariant, size: 20),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.onSurfaceVariant,
+                size: 20,
+              ),
             ],
           ),
         ),

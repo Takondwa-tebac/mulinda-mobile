@@ -29,12 +29,15 @@ class PushService {
       // Foreground: show local notification and refresh the relevant provider.
       FirebaseMessaging.onMessage.listen((m) {
         final n = m.notification;
-        if (n != null) NotificationService.show(n.title ?? 'Mulinda', n.body ?? '');
+        if (n != null)
+          NotificationService.show(n.title ?? 'Mulinda', n.body ?? '');
         _refreshFromData(ref, m.data);
       });
 
       // Background tap: route to the correct screen.
-      FirebaseMessaging.onMessageOpenedApp.listen((m) => _navigate(ref, m.data));
+      FirebaseMessaging.onMessageOpenedApp.listen(
+        (m) => _navigate(ref, m.data),
+      );
 
       // Cold-start tap.
       final initial = await fm.getInitialMessage();
@@ -56,7 +59,9 @@ class PushService {
 
   Future<void> _registerToken(WidgetRef ref, String token) async {
     try {
-      await ref.read(dioProvider).post('/v1/devices', data: {'token': token, 'platform': 'android'});
+      await ref
+          .read(dioProvider)
+          .post('/v1/devices', data: {'token': token, 'platform': 'android'});
     } catch (_) {}
   }
 
@@ -87,6 +92,10 @@ class PushService {
         router.go(Routes.review);
       } else if (type == 'inbox') {
         router.go(Routes.inbox);
+      } else if (type == 'subscription_prompt' ||
+          type == 'subscription_expiration') {
+        // Show subscription screen for SMS capture limit or expiration reminders
+        router.go(Routes.subscription);
       } else {
         router.go(Routes.insights);
       }

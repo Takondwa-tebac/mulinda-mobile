@@ -3,11 +3,17 @@ import 'package:dio/dio.dart';
 /// A user-presentable API error, parsed from a Laravel JSON error response
 /// (`{message, errors: {field: [..]}}`) or a transport failure.
 class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode, this.errors = const {}});
+  ApiException(
+    this.message, {
+    this.statusCode,
+    this.errors = const {},
+    this.code,
+  });
 
   final String message;
   final int? statusCode;
   final Map<String, List<String>> errors;
+  final String? code;
 
   /// The first field-level validation message, if any, else [message].
   String get displayMessage {
@@ -21,6 +27,7 @@ class ApiException implements Exception {
 
     if (data is Map) {
       final message = data['message']?.toString() ?? 'Something went wrong.';
+      final code = data['code']?.toString();
       final errors = <String, List<String>>{};
       if (data['errors'] is Map) {
         (data['errors'] as Map).forEach((key, value) {
@@ -29,7 +36,12 @@ class ApiException implements Exception {
           }
         });
       }
-      return ApiException(message, statusCode: response?.statusCode, errors: errors);
+      return ApiException(
+        message,
+        statusCode: response?.statusCode,
+        errors: errors,
+        code: code,
+      );
     }
 
     final transport = switch (e.type) {

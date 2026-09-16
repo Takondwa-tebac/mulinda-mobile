@@ -15,13 +15,15 @@ Future<bool> showPaywall(BuildContext context, {String? feature}) async {
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (_, controller) =>
-          _PaywallSheet(scrollController: controller, feature: feature),
+    builder: (_) => SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) =>
+            _PaywallSheet(scrollController: controller, feature: feature),
+      ),
     ),
   );
   return result ?? false;
@@ -43,8 +45,9 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
   Future<void> _subscribe(PlanOption plan) async {
     setState(() => _busyPeriod = plan.period);
     try {
-      final invoice =
-          await ref.read(subscriptionRepositoryProvider).checkout(plan.period);
+      final invoice = await ref
+          .read(subscriptionRepositoryProvider)
+          .checkout(plan.period);
 
       if (invoice.checkoutUrl == null || !mounted) return;
 
@@ -67,8 +70,9 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
 
   Future<void> _verifyAndClose(String invoiceId) async {
     try {
-      final settled =
-          await ref.read(subscriptionRepositoryProvider).verify(invoiceId);
+      final settled = await ref
+          .read(subscriptionRepositoryProvider)
+          .verify(invoiceId);
       if (settled.isPaid) {
         await ref.read(authControllerProvider.notifier).refresh();
         if (mounted) {
@@ -87,10 +91,12 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(msg),
-        backgroundColor: error ? Theme.of(context).colorScheme.error : null,
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: error ? Theme.of(context).colorScheme.error : null,
+        ),
+      );
   }
 
   @override
@@ -104,12 +110,13 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
       children: [
         Icon(Icons.workspace_premium, size: 40, color: scheme.primary),
         const SizedBox(height: 12),
-        Text('subscription.paywallTitle'.tr(),
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          'subscription.paywallTitle'.tr(),
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 6),
         Text(
           widget.feature ?? 'subscription.paywallSubtitle'.tr(),
@@ -126,8 +133,12 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
           ),
           error: (e, _) => Column(
             children: [
-              Text(e is ApiException ? e.displayMessage : 'subscription.plansError'.tr(),
-                  textAlign: TextAlign.center),
+              Text(
+                e is ApiException
+                    ? e.displayMessage
+                    : 'subscription.plansError'.tr(),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
               OutlinedButton(
                 onPressed: () => ref.invalidate(plansProvider),
@@ -168,13 +179,15 @@ class _PlanList extends StatelessWidget {
 
     return Column(
       children: plans
-          .map((p) => _PlanTile(
-                plan: p,
-                isBestValue: p.period == bestValue,
-                busy: busyPeriod == p.period,
-                disabled: busyPeriod != null && busyPeriod != p.period,
-                onTap: () => onSelect(p),
-              ))
+          .map(
+            (p) => _PlanTile(
+              plan: p,
+              isBestValue: p.period == bestValue,
+              busy: busyPeriod == p.period,
+              disabled: busyPeriod != null && busyPeriod != p.period,
+              onTap: () => onSelect(p),
+            ),
+          )
           .toList(),
     );
   }
@@ -218,45 +231,62 @@ class _PlanTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(plan.label,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16)),
+                        Text(
+                          plan.label,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
                         if (isBestValue) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: scheme.primaryContainer,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text('subscription.bestValue'.tr(),
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: scheme.onPrimaryContainer)),
+                            child: Text(
+                              'subscription.bestValue'.tr(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onPrimaryContainer,
+                              ),
+                            ),
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text('${plan.days} ${plan.days == 1 ? 'day' : 'days'}',
-                        style: TextStyle(
-                            color: scheme.onSurfaceVariant, fontSize: 13)),
+                    Text(
+                      '${plan.days} ${plan.days == 1 ? 'day' : 'days'}',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ),
               if (busy)
                 const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5))
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
               else
-                Text(plan.amount.formatted,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: scheme.primary)),
+                Text(
+                  plan.amount.formatted,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: scheme.primary,
+                  ),
+                ),
             ],
           ),
         ),
@@ -283,17 +313,18 @@ class _BenefitsCard extends StatelessWidget {
       ),
       child: Column(
         children: benefits
-            .map((b) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle,
-                          size: 18, color: scheme.primary),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(b)),
-                    ],
-                  ),
-                ))
+            .map(
+              (b) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, size: 18, color: scheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(b)),
+                  ],
+                ),
+              ),
+            )
             .toList(),
       ),
     );

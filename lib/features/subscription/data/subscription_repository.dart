@@ -14,7 +14,8 @@ class SubscriptionRepository {
     try {
       final res = await _dio.get('/v1/subscription');
       return SubscriptionInfo.fromJson(
-          (res.data['data'] as Map).cast<String, dynamic>());
+        (res.data['data'] as Map).cast<String, dynamic>(),
+      );
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -35,19 +36,32 @@ class SubscriptionRepository {
   /// Start a checkout for [period]; returns the pending invoice with checkout_url.
   Future<InvoiceModel> checkout(String period) async {
     try {
-      final res = await _dio.post('/v1/subscription/checkout',
-          data: {'period': period});
+      final res = await _dio.post(
+        '/v1/subscription/checkout',
+        data: {'period': period},
+      );
       return InvoiceModel.fromJson(
-          (res.data['data'] as Map).cast<String, dynamic>());
+        (res.data['data'] as Map).cast<String, dynamic>(),
+      );
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
   }
 
-  Future<List<InvoiceModel>> invoices({String? status}) async {
+  Future<List<InvoiceModel>> invoices({
+    String? status,
+    int page = 1,
+    int perPage = 10,
+  }) async {
     try {
-      final res = await _dio.get('/v1/invoices',
-          queryParameters: status != null ? {'status': status} : null);
+      final res = await _dio.get(
+        '/v1/invoices',
+        queryParameters: {
+          if (status != null) 'status': status,
+          'page': page,
+          'per_page': perPage,
+        },
+      );
       final list = (res.data['data'] as List?) ?? [];
       return list
           .map((j) => InvoiceModel.fromJson((j as Map).cast<String, dynamic>()))
@@ -62,7 +76,8 @@ class SubscriptionRepository {
     try {
       final res = await _dio.post('/v1/invoices/$invoiceId/verify');
       return InvoiceModel.fromJson(
-          (res.data['data'] as Map).cast<String, dynamic>());
+        (res.data['data'] as Map).cast<String, dynamic>(),
+      );
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -72,7 +87,8 @@ class SubscriptionRepository {
     try {
       final res = await _dio.post('/v1/invoices/$invoiceId/cancel');
       return InvoiceModel.fromJson(
-          (res.data['data'] as Map).cast<String, dynamic>());
+        (res.data['data'] as Map).cast<String, dynamic>(),
+      );
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -90,6 +106,8 @@ final plansProvider = FutureProvider<List<PlanOption>>(
 
 /// Invoices, optionally filtered by status (Subscriptions screen tabs).
 final invoicesProvider =
-    FutureProvider.family<List<InvoiceModel>, String?>(
-  (ref, status) => ref.read(subscriptionRepositoryProvider).invoices(status: status),
-);
+    FutureProvider.family<List<InvoiceModel>, ({String? status, int page})>(
+      (ref, params) => ref
+          .read(subscriptionRepositoryProvider)
+          .invoices(status: params.status, page: params.page),
+    );
