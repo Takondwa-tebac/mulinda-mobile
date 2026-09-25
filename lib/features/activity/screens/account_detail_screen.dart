@@ -7,6 +7,9 @@ import '../../../core/router/routes.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
+final accountsProvider =
+    FutureProvider.autoDispose<List<Account>>((ref) => ref.read(activityRepositoryProvider).accounts());
+
 /// Shows a single account's balance, a standing verdict (good vs overspending),
 /// and the full list of transactions originating in that account.
 class AccountDetailScreen extends ConsumerWidget {
@@ -19,7 +22,15 @@ class AccountDetailScreen extends ConsumerWidget {
     final txns = ref.watch(accountTransactionsProvider(account.id));
 
     return Scaffold(
-      appBar: AppBar(title: Text(account.name, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(
+        title: Text(account.name, overflow: TextOverflow.ellipsis),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _showDeleteDialog(context, ref, account),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(accountTransactionsProvider(account.id));
@@ -282,4 +293,46 @@ String _money(int minor, String currency) {
   final grouped = parts[0].replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
   return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
+}
+
+Future<void> _showDeleteDialog(BuildContext context, WidgetRef ref, Account account) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text('Delete ${account.name}?'),
+      content: Text('This will permanently delete this account and all its transactions. This action cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(c, false),
+          child: Text('common.cancel'.tr()),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(c).colorScheme.error,
+          ),
+          onPressed: () => Navigator.pop(c, true),
+          child: Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    try {
+      await ref.read(activityRepositoryProvider).deleteAccount(account.id);
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ref.invalidate(accountsProvider);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('Account deleted successfully')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('Failed to delete account')));
+      }
+    }
+  }
 }

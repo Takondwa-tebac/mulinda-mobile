@@ -17,15 +17,15 @@
     "getStarted": "Get started",
     "slide1": {
       "title": "Take control of your money",
-      "body": "See everything in one place — accounts, spending, and savings — with a health score that's fair to your income."
+      "body": "See everything in one place - accounts, spending, and savings - with a health score that's fair to your income."
     },
     "slide2": {
       "title": "Your transactions, captured for you",
-      "body": "Forward a mobile-money SMS or snap a receipt — Mulinda turns it into a transaction. You just approve."
+      "body": "Forward a mobile-money SMS or snap a receipt - Mulinda turns it into a transaction. You just approve."
     },
     "slide3": {
       "title": "Save, borrow and invest wisely",
-      "body": "Set goals, get reminders, check if you can afford a loan, and learn when you're ready to invest — with a coach who knows your money."
+      "body": "Set goals, get reminders, check if you can afford a loan, and learn when you're ready to invest - with a coach who knows your money."
     }
   },
   "auth": {
@@ -39,7 +39,7 @@
     "createAccount": "Create account",
     "registerSubtitle": "Set up your Mulinda account",
     "firstName": "First name",
-    "middleName": "Middle name (optional)",
+    "middleName": "Middle name",
     "lastName": "Last name",
     "phoneNumber": "Phone number",
     "email": "Email",
@@ -151,7 +151,7 @@
     "body": "Message text",
     "sender": "Sender (optional)",
     "submit": "Read message",
-    "queued": "Got it — we're reading your message. It'll appear once you approve it."
+    "queued": "Got it - we're reading your message. It'll appear once you approve it."
   },
   "receipt": {
     "title": "Scan receipt",
@@ -159,7 +159,7 @@
     "takePhoto": "Take photo",
     "chooseImage": "Choose from gallery",
     "submit": "Scan receipt",
-    "queued": "Got it — we're reading your receipt. It'll appear once you approve it.",
+    "queued": "Got it - we're reading your receipt. It'll appear once you approve it.",
     "cameraDenied": "Camera access is needed to take a photo."
   },
   "income": {
@@ -231,7 +231,7 @@
   },
   "plan": {
     "advisory": "Your guidance",
-    "notAdvice": "Guidance only — not financial advice.",
+    "notAdvice": "Guidance only - not financial advice.",
     "savingsRule": "Savings rule",
     "creditworthiness": "Creditworthiness",
     "investing": "Investing",
@@ -301,8 +301,9 @@
     "amountInvested": "Amount invested",
     "currentValue": "Current value (optional)",
     "expectedReturn": "Expected annual return (%)",
+    "interestPeriod": "Interest period",
     "startedAt": "Started on",
-    "maturityDate": "Maturity date (optional)",
+    "maturityDate": "Maturity date",
     "notes": "Notes (optional)",
     "description": "Description (optional)",
     "budget": "Budget (optional)",
@@ -325,6 +326,10 @@
     "interestTypes": {
       "reducing_balance": "Reducing balance",
       "flat": "Flat"
+    },
+    "interestPeriods": {
+      "annual": "Annual",
+      "monthly": "Monthly"
     },
     "loanStatus": {
       "active": "Active",
@@ -380,7 +385,7 @@
     "incomeBracket": "Income bracket",
     "changeIncome": "Change income bracket",
     "firstName": "First name",
-    "middleName": "Middle name (optional)",
+    "middleName": "Middle name",
     "lastName": "Last name",
     "phone": "Phone number",
     "save": "Save changes",
@@ -397,7 +402,7 @@
     "avatarUpdated": "Profile picture updated.",
     "dangerZone": "Danger zone",
     "deleteAccount": "Delete account",
-    "deleteWarning": "This permanently deletes your account and all your data — transactions, accounts, goals, budgets and subscriptions. This cannot be undone.",
+    "deleteWarning": "This permanently deletes your account and all your data - transactions, accounts, goals, budgets and subscriptions. This cannot be undone.",
     "deleteConfirmPrompt": "Type your username {} to confirm:",
     "deleteConfirm": "Delete forever",
     "preferencesSub": "Language, theme, currency & security",
@@ -408,7 +413,7 @@
     "title": "Subscription",
     "active": "Active",
     "free": "Free plan",
-    "freeBlurb": "You're on the free plan. Core tracking stays free — subscribe to unlock the AI coach, chat history, advanced insights and auto-capture.",
+    "freeBlurb": "You're on the free plan. Core tracking stays free - subscribe to unlock the AI coach, chat history, advanced insights and auto-capture.",
     "trialActive": "Free trial active",
     "renewsOrEnds": "Access until",
     "subscribe": "Subscribe",
@@ -421,7 +426,7 @@
     "bestValue": "Best value",
     "unlock": "Unlock premium",
     "activated": "Premium activated 🎉",
-    "pendingVerify": "Payment received — we're confirming it. Check Subscriptions shortly.",
+    "pendingVerify": "Payment received - we're confirming it. Check Subscriptions shortly.",
     "plansError": "Couldn't load plans.",
     "benefitCoach": "AI financial coach",
     "benefitHistory": "Saved chat history",
@@ -462,9 +467,9 @@
   "permissions": {
     "title": "Permissions & privacy",
     "manageSub": "Control SMS, camera, photos & notifications",
-    "intro": "Mulinda asks for a few permissions to make tracking effortless. Each is optional — you can turn them on now or later from Profile.",
+    "intro": "Mulinda asks for a few permissions to make tracking effortless. Each is optional - you can turn them on now or later from Profile.",
     "smsTitle": "Automatic SMS capture",
-    "smsBody": "When enabled, Mulinda reads incoming mobile-money and bank SMS (Airtel Money, TNM Mpamba, banks) and drafts a transaction for you to review. We only look at messages that contain a financial transaction — personal messages are never read or stored. You can turn this off any time.",
+    "smsBody": "When enabled, Mulinda reads incoming mobile-money and bank SMS (Airtel Money, TNM Mpamba, banks) and drafts a transaction for you to review. We only look at messages that contain a financial transaction - personal messages are never read or stored. You can turn this off any time.",
     "smsToggle": "Enable automatic SMS capture",
     "smsDenied": "SMS permission was not granted.",
     "cameraTitle": "Camera",
@@ -519,7 +524,7 @@
     "lockedTitle": "Mulinda is locked",
     "unlock": "Unlock",
     "enableTitle": "Enable biometric lock?",
-    "enableBody": "Add a layer of security — use your fingerprint or face to open Mulinda. You can change this anytime in Preferences.",
+    "enableBody": "Add a layer of security - use your fingerprint or face to open Mulinda. You can change this anytime in Preferences.",
     "enable": "Enable",
     "notNow": "Not now"
   }

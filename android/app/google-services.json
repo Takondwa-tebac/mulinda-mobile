@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "170317818551-7orvqbung2hfv1ntmo9951up10gmf4mq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "tech.lyncsystems.mulinda",
+            "certificate_hash": "235d9831e16e56939460bc8bc0f184c2464c919e"
+          }
+        },
+        {
+          "client_id": "170317818551-aj7bmp7s82um7c6ad0hcfmh1j5mvnos0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "tech.lyncsystems.mulinda",
+            "certificate_hash": "83537c58b083237b774dc0287ece07cb4979d25a"
+          }
+        },
+        {
           "client_id": "170317818551-gknapiqqops9lcujk5kui41t9pg5bal7.apps.googleusercontent.com",
           "client_type": 3
         }

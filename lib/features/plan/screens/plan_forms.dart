@@ -18,6 +18,7 @@ const _investTypes = [
   'shares', 'pension', 'business', 'property', 'other'
 ];
 const _investStatuses = ['active', 'matured', 'sold', 'closed'];
+const _interestPeriods = ['annual', 'monthly'];
 const _projectStatuses = ['planning', 'active', 'on_hold', 'completed'];
 
 List<(String, String)> _entries(List<String> values, String prefix) =>
@@ -296,6 +297,7 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
   late final _notes = TextEditingController(text: widget.item?.notes ?? '');
   late String _type = widget.item?.type ?? 'fixed_deposit';
   late String _status = widget.item?.status ?? 'active';
+  late String _interestPeriod = widget.item?.interestPeriod ?? 'annual';
   late DateTime _startedAt = apiToDate(widget.item?.startedAt) ?? DateTime.now();
   late DateTime? _maturity = apiToDate(widget.item?.maturityDate);
 
@@ -311,17 +313,24 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
+    if (_maturity == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('auth.required'.tr())));
+      return;
+    }
     final data = <String, dynamic>{
       'name': _name.text.trim(),
       'type': _type,
       'status': _status,
+      'interest_period': _interestPeriod,
       'amount_invested': double.parse(_amount.text.trim()),
       'started_at': dateToApi(_startedAt),
+      'maturity_date': dateToApi(_maturity),
     };
     if (_value.text.trim().isNotEmpty) data['current_value'] = double.parse(_value.text.trim());
     final ret = double.tryParse(_return.text.trim());
     if (ret != null) data['expected_annual_return'] = ret / 100;
-    if (_maturity != null) data['maturity_date'] = dateToApi(_maturity);
     if (_notes.text.trim().isNotEmpty) data['notes'] = _notes.text.trim();
 
     final repo = ref.read(planRepositoryProvider);
@@ -344,8 +353,9 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
         pkMoney(controller: _amount, label: 'form.amountInvested'.tr()),
         pkMoney(controller: _value, label: 'form.currentValue'.tr(), required: false),
         pkText(controller: _return, label: 'form.expectedReturn'.tr(), keyboard: const TextInputType.numberWithOptions(decimal: true)),
+        pkDropdown<String>(value: _interestPeriod, label: 'form.interestPeriod'.tr(), entries: _entries(_interestPeriods, 'form.interestPeriods'), onChanged: (v) => setState(() => _interestPeriod = v)),
         pkDate(context: context, label: 'form.startedAt'.tr(), value: _startedAt, onPick: (d) => setState(() => _startedAt = d)),
-        pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d)),
+        pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d), required: true),
         pkText(controller: _notes, label: 'form.notes'.tr(), maxLines: 2),
       ],
     );

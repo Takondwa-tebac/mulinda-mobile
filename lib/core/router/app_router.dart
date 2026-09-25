@@ -9,6 +9,7 @@ import '../../features/activity/screens/add_account_screen.dart';
 import '../../features/activity/screens/add_transaction_screen.dart';
 import '../../features/activity/screens/review_screen.dart';
 import '../../features/capture/screens/inbox_screen.dart';
+import '../../features/capture/screens/bulk_sms_import_screen.dart';
 import '../../features/export/screens/export_screen.dart';
 import '../../features/summary/screens/daily_summaries_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
@@ -43,6 +44,7 @@ import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/audit_trail_screen.dart';
 import '../../features/admin/screens/push_notification_screen.dart';
 import '../../features/admin/screens/user_management_screen.dart';
+import '../../features/admin/screens/user_detail_screen.dart';
 import '../../features/subscription/data/subscription_models.dart';
 import '../../features/subscription/screens/receipt_screen.dart';
 import '../../features/subscription/screens/subscription_screen.dart';
@@ -142,6 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
+      GoRoute(path: Routes.bulkSmsImport, builder: (_, _) => const BulkSmsImportScreen()),
       GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),
@@ -195,6 +198,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.admin, builder: (_, _) => const AdminDashboardScreen()),
       GoRoute(path: Routes.adminNotification, builder: (_, _) => const PushNotificationScreen()),
       GoRoute(path: Routes.adminUsers, builder: (_, _) => const UserManagementScreen()),
+      GoRoute(
+        path: Routes.adminUserDetail,
+        builder: (_, s) => UserDetailScreen(userId: s.pathParameters['userId'] ?? ''),
+      ),
       GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
 
       StatefulShellRoute.indexedStack(

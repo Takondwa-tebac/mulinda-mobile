@@ -67,6 +67,7 @@ Widget pkDate({
   required ValueChanged<DateTime> onPick,
   DateTime? firstDate,
   DateTime? lastDate,
+  bool required = false,
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 16),
@@ -82,7 +83,10 @@ Widget pkDate({
         if (picked != null) onPick(picked);
       },
       child: InputDecorator(
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          errorText: required && value == null ? 'auth.required'.tr() : null,
+        ),
         child: Text(value == null ? '—' : value.toIso8601String().split('T').first),
       ),
     ),

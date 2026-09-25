@@ -172,6 +172,7 @@ class InvestmentItem {
     required this.value,
     required this.gain,
     this.expectedReturn,
+    this.interestPeriod,
     this.startedAt,
     this.maturityDate,
     this.notes,
@@ -185,6 +186,7 @@ class InvestmentItem {
   final Money value;
   final Money gain;
   final double? expectedReturn;
+  final String? interestPeriod;
   final String? startedAt;
   final String? maturityDate;
   final String? notes;
@@ -198,6 +200,7 @@ class InvestmentItem {
         value: Money.parse(j['current_value']),
         gain: Money.parse(j['gain']),
         expectedReturn: _num(j['expected_annual_return']),
+        interestPeriod: _str(j['interest_period']),
         startedAt: _str(j['started_at']),
         maturityDate: _str(j['maturity_date']),
         notes: _str(j['notes']),

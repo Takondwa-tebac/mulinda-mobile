@@ -13,6 +13,7 @@ import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/security/app_lock.dart';
 import 'features/capture/data/sms_auto_capture.dart';
+import 'features/capture/data/sms_manual_scanner.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
@@ -32,12 +33,15 @@ Future<void> main() async {
   // disabled, unsupported, or signed out.
   unawaited(SmsAutoCapture.instance.maybeStart());
 
+  // Run manual SMS scan on app open to catch any missed SMS
+  unawaited(SmsManualScanner.instance.scanFinancialSms());
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('ny'), Locale('en')],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('ny'), // Chichewa is the default language.
+      startLocale: const Locale('en'), // English is the default language.
       child: const ProviderScope(child: MulindaApp()),
     ),
   );

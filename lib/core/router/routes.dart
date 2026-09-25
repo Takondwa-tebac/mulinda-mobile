@@ -29,6 +29,7 @@ abstract class Routes {
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
   static const inbox = '/inbox';
+  static const bulkSmsImport = '/bulk-sms-import';
   static const review = '/review';
   static const exports = '/exports';
   static const dailySummaries = '/daily-summaries';
@@ -65,5 +66,6 @@ abstract class Routes {
   static const admin = '/admin';
   static const adminNotification = '/admin/notification';
   static const adminUsers = '/admin/users';
+  static const adminUserDetail = '/admin/users/:userId';
   static const adminAudit = '/admin/audit';
 }

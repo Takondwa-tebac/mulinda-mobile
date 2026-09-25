@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
+import 'user_detail_screen.dart';
 
 final _usersProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, search) {
@@ -63,75 +64,77 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ),
         ),
       ),
-      body: async.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off_outlined, size: 48),
-              const SizedBox(height: 12),
-              Text(e is ApiException ? e.displayMessage : e.toString(),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => ref.invalidate(_usersProvider(_query)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-        data: (data) {
-          final users = (data['data'] as List?) ?? [];
-          if (users.isEmpty) {
-            return const Center(child: Text('No users found.'));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: users.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final u = users[i] as Map<String, dynamic>;
-              // Roles may arrive as plain name strings or as {name: ...} objects.
-              final roles = (u['roles'] as List?)
-                      ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
-                      .where((r) => r.isNotEmpty)
-                      .toList() ??
-                  <String>[];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  child: Text(
-                    _initials(u['full_name']?.toString() ??
-                        u['username']?.toString() ??
-                        '?'),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
+      body: SafeArea(
+        child: async.when(
+          loading: () =>
+              const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wifi_off_outlined, size: 48),
+                const SizedBox(height: 12),
+                Text(e is ApiException ? e.displayMessage : e.toString(),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => ref.invalidate(_usersProvider(_query)),
+                  child: const Text('Retry'),
                 ),
-                title: Text(
-                    u['full_name']?.toString() ??
-                        u['username']?.toString() ??
-                        '',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(u['email']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12)),
-                trailing: roles.isEmpty
-                    ? null
-                    : Chip(
-                        label: Text(roles.first,
-                            style: const TextStyle(fontSize: 11)),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                onTap: () => _showUserSheet(context, u, roles),
-              );
-            },
-          );
-        },
+              ],
+            ),
+          ),
+          data: (data) {
+            final users = (data['data'] as List?) ?? [];
+            if (users.isEmpty) {
+              return const Center(child: Text('No users found.'));
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: users.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final u = users[i] as Map<String, dynamic>;
+                // Roles may arrive as plain name strings or as {name: ...} objects.
+                final roles = (u['roles'] as List?)
+                        ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
+                        .where((r) => r.isNotEmpty)
+                        .toList() ??
+                    <String>[];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    child: Text(
+                      _initials(u['full_name']?.toString() ??
+                          u['username']?.toString() ??
+                          '?'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  title: Text(
+                      u['full_name']?.toString() ??
+                          u['username']?.toString() ??
+                          '',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(u['email']?.toString() ?? '',
+                      style: const TextStyle(fontSize: 12)),
+                  trailing: roles.isEmpty
+                      ? null
+                      : Chip(
+                          label: Text(roles.first,
+                              style: const TextStyle(fontSize: 11)),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                  onTap: () => context.push('/admin/users/${u['id']}'),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

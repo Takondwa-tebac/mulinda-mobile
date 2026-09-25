@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Mulinda",
-    "tagline": "Ndalama zanu, mothandizidwa."
+    "tagline": "Uphungu Wabwino , Pa ndalama zanu."
   },
   "common": {
     "continue": "Pitirizani",
@@ -11,21 +11,21 @@
     "back": "Bwererani"
   },
   "onboarding": {
-    "chooseLanguage": "Sankhani chinenero chanu",
+    "chooseLanguage": "Sankhani Chiyankhulo chanu",
     "skip": "Dumphani",
     "next": "Tsatira",
     "getStarted": "Yambani",
     "slide1": {
       "title": "Lamulirani ndalama zanu",
-      "body": "Onani zonse pamodzi — maakaunti, kugwiritsa ntchito, ndi kusunga — ndi chiwerengero cha thanzi la ndalama chomwe chili choyenera ndi zomwe mumapeza."
+      "body": "Onani Zonse zomwe zikulowa muma akaunti anu , zomwe mwagwiritsa ntchito , zomwe mwasunga kapena mwapulumutsa zonsezitu malo amodzi Mulinda"
     },
     "slide2": {
       "title": "Zochitika zanu, zojambulidwa mwakhama",
-      "body": "Tumizani SMS ya mobile money kapena jambulani risiti — Mulinda imazisandutsa kukhala zochitika. Inu mungovomereza basi."
+      "body": "Tumizani SMS ya mobile money kapena jambulani risiti - Mulinda imazisandutsa kukhala zochitika. Inu mungovomereza basi."
     },
     "slide3": {
       "title": "Sungani, bwerekani, ndi kuyika ndalama mwanzeru",
-      "body": "Khazikitsani zolinga, landirani zikumbutso, onani ngati mungakwanitse ngongole, ndipo dziwani nthawi yoti muyambe kuyika ndalama — ndi mlangizi amene akudziwa ndalama zanu."
+      "body": "Khazikitsani zolinga, landirani zikumbutso, onani ngati mungakwanitse ngongole, ndipo dziwani nthawi yoti muyambe kuyika ndalama - ndi mlangizi amene akudziwa  za ndalama zanu."
     }
   },
   "auth": {
@@ -36,10 +36,10 @@
     "forgotPassword": "Mwaiwala achinsinsi?",
     "noAccount": "Mulibe akaunti?",
     "register": "Lembetsani",
-    "createAccount": "Pangani akaunti",
+    "createAccount": "Tsegulani akaunti",
     "registerSubtitle": "Khazikitsani akaunti yanu ya Mulinda",
     "firstName": "Dzina loyamba",
-    "middleName": "Dzina lapakati (sikofunika)",
+    "middleName": "Dzina lapakati",
     "lastName": "Dzina la banja",
     "phoneNumber": "Nambala ya foni",
     "email": "Imelo",
@@ -70,10 +70,10 @@
     "stepSecurity": "Chitetezo"
   },
   "nav": {
-    "home": "Kunyumba",
-    "activity": "Zochitika",
-    "plan": "Mapulani",
-    "profile": "Mbiri"
+    "home": "Home",
+    "activity": "Activity",
+    "plan": "Plan",
+    "profile": "Profile"
   },
   "capture": {
     "title": "Onjezani",
@@ -81,7 +81,7 @@
     "pasteSms": "Matani SMS",
     "manual": "Lembani nokha",
     "lockedTitle": "Chinthu cha Premium",
-    "lockedReceipt": "Lembetsani kuti mujambule marisiti ndi kutulutsa zochitika mwa AI.",
+    "lockedReceipt": "Lembetsani kuti mujambule marisiti",
     "lockedSms": "Lembetsani kuti musinthe ma SMS a mobile money kukhala zochitika."
   },
   "activity": {
@@ -151,7 +151,7 @@
     "body": "Mawu a uthenga",
     "sender": "Wotumiza (sikofunika)",
     "submit": "Werengani uthenga",
-    "queued": "Talandira — tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
+    "queued": "Talandira - tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
   },
   "receipt": {
     "title": "Jambulani risiti",
@@ -159,7 +159,7 @@
     "takePhoto": "Jambulani",
     "chooseImage": "Sankhani mu gallery",
     "submit": "Jambulani risiti",
-    "queued": "Talandira — tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
+    "queued": "Talandira - tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
     "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule."
   },
   "income": {
@@ -231,7 +231,7 @@
   },
   "plan": {
     "advisory": "Malangizo anu",
-    "notAdvice": "Malangizo okha — osati uphungu wa zachuma.",
+    "notAdvice": "Malangizo okha - osati uphungu wa zachuma.",
     "savingsRule": "Lamulo losunga",
     "creditworthiness": "Krediti",
     "investing": "Kuyika ndalama",
@@ -301,8 +301,9 @@
     "amountInvested": "Ndalama zoyikidwa",
     "currentValue": "Mtengo wapano (sikofunika)",
     "expectedReturn": "Phindu loyembekezeka pa chaka (%)",
+    "interestPeriod": "Nthawi ya chiwongoladzanja",
     "startedAt": "Tsiku loyamba",
-    "maturityDate": "Tsiku lokhwima (sikofunika)",
+    "maturityDate": "Tsiku lokhwima",
     "notes": "Zolemba (sikofunika)",
     "description": "Kufotokoza (sikofunika)",
     "budget": "Bajeti (sikofunika)",
@@ -325,6 +326,10 @@
     "interestTypes": {
       "reducing_balance": "Reducing balance",
       "flat": "Flat"
+    },
+    "interestPeriods": {
+      "annual": "Pa chaka",
+      "monthly": "Pa mwezi"
     },
     "loanStatus": {
       "active": "Yogwira",
@@ -380,7 +385,7 @@
     "incomeBracket": "Gulu la ndalama",
     "changeIncome": "Sinthani gulu la ndalama",
     "firstName": "Dzina loyamba",
-    "middleName": "Dzina lapakati (sikofunika)",
+    "middleName": "Dzina lapakati",
     "lastName": "Dzina la banja",
     "phone": "Nambala ya foni",
     "save": "Sungani zosintha",
@@ -397,7 +402,7 @@
     "avatarUpdated": "Chithunzi chasinthidwa.",
     "dangerZone": "Malo owopsa",
     "deleteAccount": "Chotsani akaunti",
-    "deleteWarning": "Izi zimachotsa akaunti yanu ndi deta yanu yonse — zochitika, ma akaunti, zolinga, mabajeti ndi zolembetsa — kwamuyaya. Sizingabwezeretsedwe.",
+    "deleteWarning": "Izi zimachotsa akaunti yanu ndi deta yanu yonse - zochitika, ma akaunti, zolinga, mabajeti ndi zolembetsa - kwamuyaya. Sizingabwezeretsedwe.",
     "deleteConfirmPrompt": "Lembani dzina lanu {} kuti mutsimikize:",
     "deleteConfirm": "Chotsani kwamuyaya",
     "preferencesSub": "Chinenero, mtundu, ndalama & chitetezo",
@@ -408,7 +413,7 @@
     "title": "Kulembetsa",
     "active": "Yogwira",
     "free": "Pulani yaulere",
-    "freeBlurb": "Muli pa pulani yaulere. Kusunga ndalama kwa maziko ndi kwaulere — lembetsani kuti mutsegule coach wa AI, mbiri ya zokambirana, malangizo apamwamba ndi kujambula kwadzidzidzi.",
+    "freeBlurb": "Muli pa pulani yaulere. Kusunga ndalama kwa maziko ndi kwaulere - lembetsani kuti mutsegule coach wa AI, mbiri ya zokambirana, malangizo apamwamba ndi kujambula kwadzidzidzi.",
     "trialActive": "Nthawi yoyesa yaulere",
     "renewsOrEnds": "Mpaka",
     "subscribe": "Lembetsani",
@@ -421,7 +426,7 @@
     "bestValue": "Yabwino kwambiri",
     "unlock": "Tsegulani premium",
     "activated": "Premium yatsegulidwa 🎉",
-    "pendingVerify": "Malipiro alandiridwa — tikutsimikizira. Onani Kulembetsa posachedwa.",
+    "pendingVerify": "Malipiro alandiridwa - tikutsimikizira. Onani Kulembetsa posachedwa.",
     "plansError": "Sitinathe kukweza mapulani.",
     "benefitCoach": "Mlangizi wa ndalama wa AI",
     "benefitHistory": "Mbiri ya zokambirana yosungidwa",
@@ -462,9 +467,9 @@
   "permissions": {
     "title": "Zilolezo & zachinsinsi",
     "manageSub": "Lamulirani SMS, kamera, zithunzi & zidziwitso",
-    "intro": "Mulinda imapempha zilolezo zochepa kuti kusunga ndalama kukhale kosavuta. Chilichonse ndi chosankha — mutha kuyatsa tsopano kapena pambuyo pake mu Profile.",
+    "intro": "Mulinda imapempha zilolezo zochepa kuti kusunga ndalama kukhale kosavuta. Chilichonse ndi chosankha - mutha kuyatsa tsopano kapena pambuyo pake mu Profile.",
     "smsTitle": "Kujambula SMS mwadzidzidzi",
-    "smsBody": "Mukayatsa, Mulinda imawerenga ma SMS a ndalama ndi a banki (Airtel Money, TNM Mpamba, mabanki) ndikukonza zochitika kuti muwunike. Timangoyang'ana mauthenga okhala ndi zochitika za ndalama — mauthenga aumwini sawerengedwa kapena kusungidwa. Mutha kuzimitsa nthawi iliyonse.",
+    "smsBody": "Mukayatsa, Mulinda imawerenga ma SMS a ndalama ndi a banki (Airtel Money, TNM Mpamba, mabanki) ndikukonza zochitika kuti muwunike. Timangoyang'ana mauthenga okhala ndi zochitika za ndalama - mauthenga aumwini sawerengedwa kapena kusungidwa. Mutha kuzimitsa nthawi iliyonse.",
     "smsToggle": "Yatsani kujambula SMS mwadzidzidzi",
     "smsDenied": "Chilolezo cha SMS sichinaperekedwe.",
     "cameraTitle": "Kamera",
@@ -519,8 +524,8 @@
     "lockedTitle": "Mulinda yatsekedwa",
     "unlock": "Tsegulani",
     "enableTitle": "Yatsani chitetezo cha biometric?",
-    "enableBody": "Onjezani chitetezo — gwiritsani ntchito chala kapena nkhope kutsegula Mulinda. Mutha kusintha nthawi iliyonse mu Preferences.",
+    "enableBody": "Onjezani chitetezo - gwiritsani ntchito chala kapena nkhope kutsegula Mulinda. Mutha kusintha nthawi iliyonse mu Preferences.",
     "enable": "Yatsani",
-    "notNow": "Osati tsopano"
+    "notNow": "Osati pakadali pano"
   }
 }
