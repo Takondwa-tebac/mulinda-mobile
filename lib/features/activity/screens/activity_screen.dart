@@ -170,6 +170,7 @@ class _AccountsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final showAddButton = accounts.length > 2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,12 +180,13 @@ class _AccountsStrip extends StatelessWidget {
           children: [
             Text('activity.accounts'.tr(),
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            TextButton.icon(
-              onPressed: () => _addAccount(context),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text('account.add'.tr()),
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-            ),
+            if (showAddButton)
+              TextButton.icon(
+                onPressed: () => _addAccount(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: Text('account.add'.tr()),
+                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+              ),
           ],
         ),
         const SizedBox(height: 10),
@@ -192,11 +194,11 @@ class _AccountsStrip extends StatelessWidget {
           height: 96,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            // +1 for the trailing "add account" tile.
-            itemCount: accounts.length + 1,
+            // +1 for the trailing "add account" tile when accounts <= 2
+            itemCount: accounts.length + (showAddButton ? 0 : 1),
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (_, i) {
-              if (i == accounts.length) return _AddAccountTile(onTap: () => _addAccount(context));
+              if (!showAddButton && i == accounts.length) return _AddAccountTile(onTap: () => _addAccount(context));
               final a = accounts[i];
               return InkWell(
                 onTap: () => context.push(Routes.accountDetail, extra: a),

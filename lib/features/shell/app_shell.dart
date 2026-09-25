@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../../core/widgets/app_update_banner.dart';
 import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
+import '../activity/data/activity_repository.dart';
+import '../capture/data/inbox_repository.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
@@ -51,8 +54,18 @@ class _AppShellState extends ConsumerState<AppShell> {
     // Catch the user loading (or changing) after the first frame.
     ref.listen(currentUserProvider, (_, _) => _maybePromptTerms());
 
+    // Watch for pending items to animate activity tab
+    final pendingCount = ref.watch(pendingCountProvider);
+    final reviewCount = ref.watch(reviewCountProvider).maybeWhen(data: (n) => n, orElse: () => 0);
+    final hasPendingItems = pendingCount > 0 || reviewCount > 0;
+
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const AppUpdateBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       // Hide the capture FAB on the Profile tab (index 3) — it only clutters
       // and overlaps content there.
       floatingActionButton: navigationShell.currentIndex == 3
@@ -71,8 +84,8 @@ class _AppShellState extends ConsumerState<AppShell> {
             label: 'nav.home'.tr(),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long),
+            icon: _ActivityIcon(hasPending: hasPendingItems),
+            selectedIcon: _ActivityIcon(hasPending: hasPendingItems, selected: true),
             label: 'nav.activity'.tr(),
           ),
           NavigationDestination(
@@ -125,6 +138,11 @@ class _AppShellState extends ConsumerState<AppShell> {
               onTap: () => _open(context, Routes.pasteSms),
             ),
             _CaptureTile(
+              icon: Icons.upload_file,
+              label: 'Bulk SMS Import',
+              onTap: () => _open(context, Routes.bulkSmsImport),
+            ),
+            _CaptureTile(
               icon: Icons.edit_outlined,
               label: 'capture.manual'.tr(),
               onTap: () => _open(context, Routes.addTransaction),
@@ -156,6 +174,46 @@ class _CaptureTile extends StatelessWidget {
       title: Text(label),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+}
+
+class _ActivityIcon extends StatelessWidget {
+  const _ActivityIcon({required this.hasPending, this.selected = false});
+
+  final bool hasPending;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(
+          selected ? Icons.receipt_long : Icons.receipt_long_outlined,
+        ),
+        if (hasPending)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: scheme.error,
+                shape: BoxShape.circle,
+              ),
+              child: const Text(
+                '!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

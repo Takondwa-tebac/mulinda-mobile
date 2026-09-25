@@ -100,6 +100,14 @@ class ActivityRepository {
     }
   }
 
+  Future<void> deleteAccount(String accountId) async {
+    try {
+      await _dio.delete('/v1/accounts/$accountId');
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   /// Transactions auto-recorded from SMS that are awaiting the user's review.
   Future<List<Txn>> reviewTransactions() => _list(
         '/v1/transactions',

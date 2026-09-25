@@ -42,6 +42,7 @@ class SubscriptionInfo {
     this.endsAt,
     this.isTrial = false,
     this.entitlements = const [],
+    this.smsCapture,
   });
 
   final bool active;
@@ -51,6 +52,7 @@ class SubscriptionInfo {
   final DateTime? endsAt;
   final bool isTrial;
   final List<String> entitlements;
+  final SmsCaptureInfo? smsCapture;
 
   bool can(String entitlement) => entitlements.contains(entitlement);
 
@@ -61,7 +63,8 @@ class SubscriptionInfo {
         source = null,
         endsAt = null,
         isTrial = false,
-        entitlements = const [];
+        entitlements = const [],
+        smsCapture = null;
 
   factory SubscriptionInfo.fromJson(Map<String, dynamic> json) {
     return SubscriptionInfo(
@@ -77,6 +80,36 @@ class SubscriptionInfo {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      smsCapture: json['sms_capture'] != null
+          ? SmsCaptureInfo.fromJson(json['sms_capture'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+/// SMS capture usage information for free tier users.
+class SmsCaptureInfo {
+  const SmsCaptureInfo({
+    required this.used,
+    required this.limit,
+    required this.remaining,
+    required this.usagePercentage,
+    required this.isLimited,
+  });
+
+  final int used;
+  final int limit;
+  final int remaining;
+  final double usagePercentage;
+  final bool isLimited;
+
+  factory SmsCaptureInfo.fromJson(Map<String, dynamic> json) {
+    return SmsCaptureInfo(
+      used: (json['used'] as num?)?.toInt() ?? 0,
+      limit: (json['limit'] as num?)?.toInt() ?? 10,
+      remaining: (json['remaining'] as num?)?.toInt() ?? 10,
+      usagePercentage: (json['usage_percentage'] as num?)?.toDouble() ?? 0.0,
+      isLimited: json['is_limited'] == true,
     );
   }
 }

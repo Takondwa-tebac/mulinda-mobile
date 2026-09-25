@@ -190,7 +190,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _field(_firstName, 'auth.firstName'.tr(), validator: _required),
-              _field(_middleName, '${'auth.middleName'.tr()} (${'auth.optional'.tr()})'),
+              _field(_middleName, 'auth.middleName'.tr()),
               _field(_lastName, 'auth.lastName'.tr(), validator: _required),
             ],
           ),

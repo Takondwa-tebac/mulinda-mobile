@@ -28,6 +28,11 @@ class AdminRepository {
     await _dio.delete('/v1/admin/users/$userId');
   }
 
+  Future<Map<String, dynamic>> getUserDetail(String userId) async {
+    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/users/$userId');
+    return res.data ?? {};
+  }
+
   Future<Map<String, dynamic>> listAudits({int page = 1}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/v1/admin/audits',

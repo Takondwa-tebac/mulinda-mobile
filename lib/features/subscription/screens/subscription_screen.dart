@@ -113,68 +113,70 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('subscription.title'.tr())),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-          children: [
-            _StatusCard(sub: sub, onSubscribe: () => showPaywall(context)),
-            const SizedBox(height: 24),
-            Text(
-              'subscription.invoices'.tr(),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+            children: [
+              _StatusCard(sub: sub, onSubscribe: () => showPaywall(context)),
+              const SizedBox(height: 24),
+              Text(
+                'subscription.invoices'.tr(),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            invoicesAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => _ErrorBlock(
-                message: e is ApiException ? e.displayMessage : e.toString(),
-                onRetry: () => ref.invalidate(invoicesProvider),
-              ),
-              data: (invoices) => invoices.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Text(
-                        'subscription.noInvoices'.tr(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        ...invoices
-                            .map(
-                              (inv) => _InvoiceTile(
-                                invoice: inv,
-                                resuming: _resuming == inv.id,
-                                onTap: () => _onInvoiceTap(inv),
-                              ),
-                            )
-                            .toList(),
-                        if (_hasMorePages)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: _isLoadingMore
-                                ? const Center(
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : TextButton(
-                                    onPressed: _loadMoreInvoices,
-                                    child: Text('See More'),
-                                  ),
+              const SizedBox(height: 8),
+              invoicesAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => _ErrorBlock(
+                  message: e is ApiException ? e.displayMessage : e.toString(),
+                  onRetry: () => ref.invalidate(invoicesProvider),
+                ),
+                data: (invoices) => invoices.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Text(
+                          'subscription.noInvoices'.tr(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                      ],
-                    ),
-            ),
-          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          ...invoices
+                              .map(
+                                (inv) => _InvoiceTile(
+                                  invoice: inv,
+                                  resuming: _resuming == inv.id,
+                                  onTap: () => _onInvoiceTap(inv),
+                                ),
+                              )
+                              .toList(),
+                          if (_hasMorePages)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: _isLoadingMore
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : TextButton(
+                                      onPressed: _loadMoreInvoices,
+                                      child: Text('See More'),
+                                    ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -246,6 +248,11 @@ class _StatusCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            // SMS counter for free tier users
+            if (!sub.active) ...[
+              _SmsCounterCard(sub: sub),
+              const SizedBox(height: 16),
+            ],
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -267,6 +274,99 @@ class _StatusCard extends StatelessWidget {
   String _fmtDate(DateTime d) {
     final l = d.toLocal();
     return '${l.day}/${l.month}/${l.year}';
+  }
+}
+
+class _SmsCounterCard extends StatelessWidget {
+  const _SmsCounterCard({required this.sub});
+
+  final SubscriptionInfo sub;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final smsCapture = sub.smsCapture;
+
+    if (smsCapture == null || !smsCapture.isLimited) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: scheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.sms_outlined,
+                  color: scheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'SMS Auto-Capture',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: smsCapture.usagePercentage / 100,
+              backgroundColor: scheme.outlineVariant,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                smsCapture.usagePercentage >= 90
+                    ? scheme.error
+                    : scheme.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${smsCapture.used}/${smsCapture.limit} used',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '${smsCapture.usagePercentage.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: smsCapture.usagePercentage >= 90
+                        ? scheme.error
+                        : scheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            if (smsCapture.remaining <= 2) ...[
+              const SizedBox(height: 8),
+              Text(
+                smsCapture.remaining == 0
+                    ? 'SMS capture limit reached. Subscribe to continue.'
+                    : '${smsCapture.remaining} SMS capture${smsCapture.remaining == 1 ? '' : 's'} remaining.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: scheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
