@@ -30,6 +30,7 @@ abstract class Routes {
   static const scanReceipt = '/scan-receipt';
   static const inbox = '/inbox';
   static const bulkSmsImport = '/bulk-sms-import';
+  static const manualSmsScan = '/manual-sms-scan';
   static const review = '/review';
   static const exports = '/exports';
   static const dailySummaries = '/daily-summaries';

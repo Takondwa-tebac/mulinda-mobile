@@ -10,6 +10,7 @@ import '../../features/activity/screens/add_transaction_screen.dart';
 import '../../features/activity/screens/review_screen.dart';
 import '../../features/capture/screens/inbox_screen.dart';
 import '../../features/capture/screens/bulk_sms_import_screen.dart';
+import '../../features/capture/screens/manual_sms_scan_screen.dart';
 import '../../features/export/screens/export_screen.dart';
 import '../../features/summary/screens/daily_summaries_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
@@ -145,6 +146,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
       GoRoute(path: Routes.bulkSmsImport, builder: (_, _) => const BulkSmsImportScreen()),
+      GoRoute(path: Routes.manualSmsScan, builder: (_, _) => const ManualSmsScanScreen()),
       GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),

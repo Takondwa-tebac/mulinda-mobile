@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
 import 'user_detail_screen.dart';
 
-final _usersProvider =
-    FutureProvider.family<Map<String, dynamic>, String>((ref, search) {
+final _usersProvider = FutureProvider.family<Map<String, dynamic>, String>((
+  ref,
+  search,
+) {
   return ref.read(adminRepositoryProvider).listUsers(search: search);
 });
 
@@ -55,7 +58,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                       ),
                 isDense: true,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30)),
+                  borderRadius: BorderRadius.circular(30),
+                ),
                 filled: true,
               ),
               onSubmitted: (v) => setState(() => _query = v.trim()),
@@ -66,16 +70,17 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       ),
       body: SafeArea(
         child: async.when(
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.wifi_off_outlined, size: 48),
                 const SizedBox(height: 12),
-                Text(e is ApiException ? e.displayMessage : e.toString(),
-                    textAlign: TextAlign.center),
+                Text(
+                  e is ApiException ? e.displayMessage : e.toString(),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => ref.invalidate(_usersProvider(_query)),
@@ -96,36 +101,50 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               itemBuilder: (context, i) {
                 final u = users[i] as Map<String, dynamic>;
                 // Roles may arrive as plain name strings or as {name: ...} objects.
-                final roles = (u['roles'] as List?)
-                        ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
+                final roles =
+                    (u['roles'] as List?)
+                        ?.map(
+                          (r) => r is Map
+                              ? (r['name']?.toString() ?? '')
+                              : r.toString(),
+                        )
                         .where((r) => r.isNotEmpty)
                         .toList() ??
                     <String>[];
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer,
                     child: Text(
-                      _initials(u['full_name']?.toString() ??
-                          u['username']?.toString() ??
-                          '?'),
+                      _initials(
+                        u['full_name']?.toString() ??
+                            u['username']?.toString() ??
+                            '?',
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                   title: Text(
-                      u['full_name']?.toString() ??
-                          u['username']?.toString() ??
-                          '',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(u['email']?.toString() ?? '',
-                      style: const TextStyle(fontSize: 12)),
+                    u['full_name']?.toString() ??
+                        u['username']?.toString() ??
+                        '',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    u['email']?.toString() ?? '',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   trailing: roles.isEmpty
                       ? null
                       : Chip(
-                          label: Text(roles.first,
-                              style: const TextStyle(fontSize: 11)),
+                          label: Text(
+                            roles.first,
+                            style: const TextStyle(fontSize: 11),
+                          ),
                           padding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
                         ),
@@ -140,7 +159,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 
   void _showUserSheet(
-      BuildContext context, Map<String, dynamic> user, List roles) {
+    BuildContext context,
+    Map<String, dynamic> user,
+    List roles,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -150,7 +172,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           user: user,
           currentRoles: roles.map((r) => r.toString()).toList(),
           onChanged: () {
-            ref.invalidate(_usersProvider(_query));
+            ref.invalidate(_usersProvider(widget.key.toString()));
           },
         ),
       ),
@@ -158,7 +180,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   }
 
   String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
@@ -223,7 +249,9 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetCtx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+        ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -232,8 +260,10 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Gift a subscription',
-                      style: Theme.of(sheetCtx).textTheme.titleMedium),
+                  child: Text(
+                    'Gift a subscription',
+                    style: Theme.of(sheetCtx).textTheme.titleMedium,
+                  ),
                 ),
               ),
               for (final (value, label) in periods)
@@ -253,7 +283,9 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(adminRepositoryProvider).grantCredit(
+      await ref
+          .read(adminRepositoryProvider)
+          .grantCredit(
             userId: widget.user['id'].toString(),
             period: period,
             reason: 'Admin gift',
@@ -261,7 +293,9 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
       if (mounted) {
         Navigator.of(context).pop();
         widget.onChanged();
-        _snack('Premium gifted to ${widget.user['full_name'] ?? widget.user['username']}.');
+        _snack(
+          'Premium gifted to ${widget.user['full_name'] ?? widget.user['username']}.',
+        );
       }
     } on ApiException catch (e) {
       if (mounted) _snack(e.displayMessage, error: true);
@@ -276,16 +310,20 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
       builder: (c) => AlertDialog(
         title: const Text('Delete user?'),
         content: Text(
-            'This will permanently remove ${widget.user['full_name'] ?? widget.user['email']}. This cannot be undone.'),
+          'This will permanently remove ${widget.user['full_name'] ?? widget.user['email']}. This cannot be undone.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(c).colorScheme.error),
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Delete')),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(c).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -310,10 +348,12 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
   void _snack(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(msg),
-        backgroundColor: error ? Theme.of(context).colorScheme.error : null,
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: error ? Theme.of(context).colorScheme.error : null,
+        ),
+      );
   }
 
   @override
@@ -322,7 +362,9 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
     final busy = _saving || _deleting;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
@@ -333,36 +375,43 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
               widget.user['full_name']?.toString() ??
                   widget.user['username']?.toString() ??
                   'User',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
-            Text(widget.user['email']?.toString() ?? '',
-                style: TextStyle(color: scheme.onSurfaceVariant)),
+            Text(
+              widget.user['email']?.toString() ?? '',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 20),
-            Text('Roles',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary, fontWeight: FontWeight.w700)),
+            Text(
+              'Roles',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 8),
             Card(
               child: Column(
                 children: _allRoles
-                    .map((role) => CheckboxListTile(
-                          title: Text(role),
-                          value: _roles.contains(role),
-                          onChanged: busy
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    if (v == true) {
-                                      _roles.add(role);
-                                    } else {
-                                      _roles.remove(role);
-                                    }
-                                  });
-                                },
-                        ))
+                    .map(
+                      (role) => CheckboxListTile(
+                        title: Text(role),
+                        value: _roles.contains(role),
+                        onChanged: busy
+                            ? null
+                            : (v) {
+                                setState(() {
+                                  if (v == true) {
+                                    _roles.add(role);
+                                  } else {
+                                    _roles.remove(role);
+                                  }
+                                });
+                              },
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -385,7 +434,8 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
                         ? const SizedBox(
                             height: 16,
                             width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2))
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.delete_outline),
                     label: const Text('Delete'),
                     style: OutlinedButton.styleFrom(
@@ -402,7 +452,8 @@ class _UserSheetState extends ConsumerState<_UserSheet> {
                         ? const SizedBox(
                             height: 16,
                             width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2))
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.check),
                     label: const Text('Save roles'),
                   ),

@@ -106,6 +106,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         title: Text('inbox.title'.tr()),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push(Routes.manualSmsScan),
+            tooltip: 'Manual SMS Scan',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
               final result = await SmsManualScanner.instance.scanFinancialSms();

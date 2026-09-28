@@ -39,8 +39,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Router guard redirects to home on success.
     } on ApiException catch (e) {
       _showError(e.displayMessage);
-    } catch (_) {
-      _showError('common.comingSoon'.tr());
+    } catch (e) {
+      _showError('common.unexpectedError'.tr());
     } finally {
       if (mounted) setState(() => _loading = false);
     }

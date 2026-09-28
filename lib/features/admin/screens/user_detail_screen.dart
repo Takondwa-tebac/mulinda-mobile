@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
 
@@ -22,17 +21,22 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(_userDetailProvider(userId)),
+            onPressed: () => ref.invalidate(_userDetailProvider(widget.userId)),
           ),
         ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref.invalidate(_userDetailProvider(userId)),
+          // onRefresh: () async {
+          //   await ref.invalidate(_userDetailProvider(widget.userId));
+          // },
+          onRefresh: () {
+            ref.invalidate(_userDetailProvider(widget.userId));
+            return Future.value();
+          },
           child: Consumer(
             builder: (context, ref, _) {
-              final async = ref.watch(_userDetailProvider(userId));
-
+              final async = ref.watch(_userDetailProvider(widget.userId));
               return async.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
@@ -41,11 +45,14 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                     children: [
                       const Icon(Icons.error_outline, size: 48),
                       const SizedBox(height: 12),
-                      Text(e is ApiException ? e.displayMessage : e.toString(),
-                          textAlign: TextAlign.center),
+                      Text(
+                        e is ApiException ? e.displayMessage : e.toString(),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: () => ref.invalidate(_userDetailProvider(userId)),
+                        onPressed: () =>
+                            ref.invalidate(_userDetailProvider(widget.userId)),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -75,8 +82,11 @@ class _UserDetailContent extends StatelessWidget {
     final isSubscribed = subscription != null && subscription['active'] == true;
 
     // Extract roles
-    final roles = (user['roles'] as List?)
-            ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
+    final roles =
+        (user['roles'] as List?)
+            ?.map(
+              (r) => r is Map ? (r['name']?.toString() ?? '') : r.toString(),
+            )
             .where((r) => r.isNotEmpty)
             .toList() ??
         <String>[];
@@ -95,8 +105,15 @@ class _UserDetailContent extends StatelessWidget {
                   backgroundColor: scheme.primaryContainer,
                   foregroundColor: scheme.onPrimaryContainer,
                   child: Text(
-                    _initials(user['full_name']?.toString() ?? user['username']?.toString() ?? '?'),
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                    _initials(
+                      user['full_name']?.toString() ??
+                          user['username']?.toString() ??
+                          '?',
+                    ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -105,18 +122,29 @@ class _UserDetailContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user['full_name']?.toString() ?? user['username']?.toString() ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                        user['full_name']?.toString() ??
+                            user['username']?.toString() ??
+                            '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user['email']?.toString() ?? '',
-                        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user['username']?.toString() ?? '',
-                        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -133,8 +161,14 @@ class _UserDetailContent extends StatelessWidget {
           children: [
             _InfoRow('Joined', _formatDate(user['created_at'])),
             _InfoRow('Last Active', _formatDate(user['last_active_at'])),
-            _InfoRow('Phone', user['phone_number']?.toString() ?? 'Not provided'),
-            _InfoRow('Income Bracket', user['declared_income_bracket']?.toString() ?? 'Not set'),
+            _InfoRow(
+              'Phone',
+              user['phone_number']?.toString() ?? 'Not provided',
+            ),
+            _InfoRow(
+              'Income Bracket',
+              user['declared_income_bracket']?.toString() ?? 'Not set',
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -149,11 +183,16 @@ class _UserDetailContent extends StatelessWidget {
               status: isSubscribed ? 'active' : 'inactive',
             ),
             if (isSubscribed) ...[
-              _InfoRow('Plan', subscription['plan_label']?.toString() ?? 'Unknown'),
-              _InfoRow('Source', subscription['source']?.toString() ?? 'Unknown'),
+              _InfoRow(
+                'Plan',
+                subscription['plan_label']?.toString() ?? 'Unknown',
+              ),
+              _InfoRow(
+                'Source',
+                subscription['source']?.toString() ?? 'Unknown',
+              ),
               _InfoRow('Ends', _formatDate(subscription['ends_at'])),
-              if (subscription['is_trial'] == true)
-                _InfoRow('Type', 'Trial'),
+              if (subscription['is_trial'] == true) _InfoRow('Type', 'Trial'),
             ],
             if (!isSubscribed) ...[
               _InfoRow('SMS Capture Used', '${user['sms_capture_count'] ?? 0}'),
@@ -175,11 +214,15 @@ class _UserDetailContent extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: roles.map((role) => Chip(
-                  label: Text(role),
-                  backgroundColor: scheme.primaryContainer,
-                  labelStyle: TextStyle(color: scheme.onPrimaryContainer),
-                )).toList(),
+                children: roles
+                    .map(
+                      (role) => Chip(
+                        label: Text(role),
+                        backgroundColor: scheme.primaryContainer,
+                        labelStyle: TextStyle(color: scheme.onPrimaryContainer),
+                      ),
+                    )
+                    .toList(),
               ),
           ],
         ),
@@ -199,7 +242,11 @@ class _UserDetailContent extends StatelessWidget {
   }
 
   String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
@@ -288,6 +335,8 @@ class _InfoRow extends StatelessWidget {
 }
 
 // Provider for user detail data
-final _userDetailProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, userId) async {
-  return ref.read(adminRepositoryProvider).getUserDetail(userId);
-});
+final _userDetailProvider = FutureProvider.family<Map<String, dynamic>, String>(
+  (ref, userId) async {
+    return ref.read(adminRepositoryProvider).getUserDetail(userId);
+  },
+);

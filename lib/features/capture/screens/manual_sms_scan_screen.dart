@@ -1,21 +1,20 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:another_telephony/another_telephony.dart';
 import 'package:another_telephony/telephony.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/inbox_repository.dart';
 
-class BulkSmsImportScreen extends ConsumerStatefulWidget {
-  const BulkSmsImportScreen({super.key});
+class ManualSmsScanScreen extends ConsumerStatefulWidget {
+  const ManualSmsScanScreen({super.key});
 
   @override
-  ConsumerState<BulkSmsImportScreen> createState() =>
-      _BulkSmsImportScreenState();
+  ConsumerState<ManualSmsScanScreen> createState() => _ManualSmsScanScreenState();
 }
 
-class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
+class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
   final Telephony _telephony = Telephony.instance;
   bool _loading = false;
   bool _scanning = false;
@@ -126,31 +125,15 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
   bool _isFinancialSms(String body) {
     final b = body.toLowerCase();
     const keywords = [
-      'mwk',
-      'kwacha',
-      'airtel',
-      'mpamba',
-      'tnm',
-      'mo626',
-      'received',
-      'sent',
-      'withdrawn',
-      'deposited',
-      'payment',
-      'balance',
-      'transaction',
-      'national bank',
-      'standard bank',
-      'fdh',
-      'nbs',
-      'paid',
-      'debited',
-      'credited',
+      'mwk', 'kwacha', 'airtel', 'mpamba', 'tnm', 'mo626',
+      'received', 'sent', 'withdrawn', 'deposited', 'payment',
+      'balance', 'transaction', 'national bank', 'standard bank',
+      'fdh', 'nbs', 'paid', 'debited', 'credited',
     ];
     return keywords.any(b.contains);
   }
 
-  Future<void> _importSms() async {
+  Future<void> _importSelectedSms() async {
     final selectedSms = _filteredSms.asMap().entries
         .where((entry) => _selectedSmsIndices.contains(entry.key))
         .map((entry) => entry.value)
@@ -227,11 +210,11 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bulk SMS Import'),
+        title: Text('Manual SMS Scan'),
         actions: [
           if (_selectedSmsIndices.isNotEmpty)
             TextButton(
-              onPressed: _loading ? null : _importSms,
+              onPressed: _loading ? null : _importSelectedSms,
               child: _loading
                   ? SizedBox(
                       height: 16,
@@ -414,11 +397,6 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
         ),
       ),
     );
-  }
-
-  void _filterSms() {
-    // Filtering is now handled by the _filteredSms getter
-    setState(() {});
   }
 
   String _truncate(String text, int maxLength) {

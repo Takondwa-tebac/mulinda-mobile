@@ -117,18 +117,18 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
               ),
             ),
 
-            _PermissionCard(
-              icon: Icons.photo_library_outlined,
-              title: 'permissions.photosTitle'.tr(),
-              body: 'permissions.photosBody'.tr(),
-              child: _AllowButton(
-                granted: _photos,
-                onPressed: () async {
-                  final ok = await _perms.requestPhotos();
-                  if (mounted) setState(() => _photos = ok);
-                },
-              ),
-            ),
+            // _PermissionCard(
+            //   icon: Icons.photo_library_outlined,
+            //   title: 'permissions.photosTitle'.tr(),
+            //   body: 'permissions.photosBody'.tr(),
+            //   child: _AllowButton(
+            //     granted: _photos,
+            //     onPressed: () async {
+            //       final ok = await _perms.requestPhotos();
+            //       if (mounted) setState(() => _photos = ok);
+            //     },
+            //   ),
+            // ),
 
             _PermissionCard(
               icon: Icons.notifications_outlined,
