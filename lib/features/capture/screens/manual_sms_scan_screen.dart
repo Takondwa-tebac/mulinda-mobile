@@ -11,7 +11,8 @@ class ManualSmsScanScreen extends ConsumerStatefulWidget {
   const ManualSmsScanScreen({super.key});
 
   @override
-  ConsumerState<ManualSmsScanScreen> createState() => _ManualSmsScanScreenState();
+  ConsumerState<ManualSmsScanScreen> createState() =>
+      _ManualSmsScanScreenState();
 }
 
 class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
@@ -49,7 +50,7 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
       filtered = filtered.where((sms) {
         final smsDate = DateTime.parse(sms['received_at'] as String);
         return smsDate.isAfter(_fromDate!.subtract(const Duration(days: 1))) ||
-               smsDate.isAtSameMomentAs(_fromDate!);
+            smsDate.isAtSameMomentAs(_fromDate!);
       }).toList();
     }
 
@@ -57,7 +58,7 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
       filtered = filtered.where((sms) {
         final smsDate = DateTime.parse(sms['received_at'] as String);
         return smsDate.isBefore(_toDate!.add(const Duration(days: 1))) ||
-               smsDate.isAtSameMomentAs(_toDate!);
+            smsDate.isAtSameMomentAs(_toDate!);
       }).toList();
     }
 
@@ -108,9 +109,9 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('Found ${_allSms.length} financial SMS'),
-          ));
+          ..showSnackBar(
+            SnackBar(content: Text('Found ${_allSms.length} financial SMS')),
+          );
       }
     } catch (e) {
       if (mounted) {
@@ -125,16 +126,34 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
   bool _isFinancialSms(String body) {
     final b = body.toLowerCase();
     const keywords = [
-      'mwk', 'kwacha', 'airtel', 'mpamba', 'tnm', 'mo626',
-      'received', 'sent', 'withdrawn', 'deposited', 'payment',
-      'balance', 'transaction', 'national bank', 'standard bank',
-      'fdh', 'nbs', 'paid', 'debited', 'credited',
+      'mwk',
+      'kwacha',
+      'airtel',
+      'mpamba',
+      'tnm',
+      'mo626',
+      'received',
+      'sent',
+      'withdrawn',
+      'deposited',
+      'payment',
+      'balance',
+      'transaction',
+      'national bank',
+      'standard bank',
+      'fdh',
+      'nbs',
+      'paid',
+      'debited',
+      'credited',
     ];
     return keywords.any(b.contains);
   }
 
   Future<void> _importSelectedSms() async {
-    final selectedSms = _filteredSms.asMap().entries
+    final selectedSms = _filteredSms
+        .asMap()
+        .entries
         .where((entry) => _selectedSmsIndices.contains(entry.key))
         .map((entry) => entry.value)
         .toList();
@@ -199,7 +218,9 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
       setState(() => _selectedSmsIndices.clear());
     } else {
       setState(() {
-        _selectedSmsIndices = Set.from(List.generate(_filteredSms.length, (i) => i));
+        _selectedSmsIndices = Set.from(
+          List.generate(_filteredSms.length, (i) => i),
+        );
       });
     }
   }
@@ -314,84 +335,149 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
               child: _scanning
                   ? Center(child: CircularProgressIndicator())
                   : filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.sms_outlined,
-                                size: 64,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _allSms.isEmpty
-                                    ? 'No financial SMS found. Tap Scan to search.'
-                                    : 'No SMS match current filters.',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sms_outlined,
+                            size: 64,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final sms = filtered[index];
-                            final isSelected = _selectedSmsIndices.contains(index);
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: CheckboxListTile(
-                                value: isSelected,
-                                onChanged: (_) {
-                                  setState(() {
-                                    if (isSelected) {
-                                      _selectedSmsIndices.remove(index);
-                                    } else {
-                                      _selectedSmsIndices.add(index);
-                                    }
-                                  });
-                                },
-                                leading: Icon(
+                          const SizedBox(height: 16),
+                          Text(
+                            _allSms.isEmpty
+                                ? 'No financial SMS found. Tap Scan to search.'
+                                : 'No SMS match current filters.',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final sms = filtered[index];
+                        final isSelected = _selectedSmsIndices.contains(index);
+                        //   return Card(
+                        //     margin: const EdgeInsets.only(bottom: 8),
+                        //     child: CheckboxListTile(
+                        //       value: isSelected,
+                        //       onChanged: (_) {
+                        //         setState(() {
+                        //           if (isSelected) {
+                        //             _selectedSmsIndices.remove(index);
+                        //           } else {
+                        //             _selectedSmsIndices.add(index);
+                        //           }
+                        //         });
+                        //       },
+                        //       leading: Icon(
+                        //         Icons.sms,
+                        //         color: Theme.of(context).colorScheme.primary,
+                        //       ),
+                        //       title: Text(
+                        //         sms['sender'] ?? 'Unknown',
+                        //         style: TextStyle(fontWeight: FontWeight.w600),
+                        //       ),
+                        //       subtitle: Column(
+                        //         crossAxisAlignment: CrossAxisAlignment.start,
+                        //         children: [
+                        //           Text(
+                        //             _truncate(sms['body'] ?? '', 50),
+                        //             maxLines: 2,
+                        //             overflow: TextOverflow.ellipsis,
+                        //           ),
+                        //           const SizedBox(height: 4),
+                        //           Text(
+                        //             _formatDateTime(sms['received_at'] as String),
+                        //             style: TextStyle(
+                        //               fontSize: 11,
+                        //               color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        //             ),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //       trailing: Text(
+                        //         _formatAmount(sms['body'] ?? ''),
+                        //         style: TextStyle(
+                        //           color: Theme.of(context).colorScheme.primary,
+                        //           fontWeight: FontWeight.w700,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   );
+                        // },
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: isSelected,
+                                  onChanged: (_) {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedSmsIndices.remove(index);
+                                      } else {
+                                        _selectedSmsIndices.add(index);
+                                      }
+                                    });
+                                  },
+                                ),
+                                Icon(
                                   Icons.sms,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
-                                title: Text(
-                                  sms['sender'] ?? 'Unknown',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                              ],
+                            ),
+                            title: Text(
+                              sms['sender'] ?? 'Unknown',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _truncate(sms['body'] ?? '', 50),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _truncate(sms['body'] ?? '', 50),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _formatDateTime(sms['received_at'] as String),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: Text(
-                                  _formatAmount(sms['body'] ?? ''),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatDateTime(sms['received_at'] as String),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
+                              ],
+                            ),
+                            trailing: Text(
+                              _formatAmount(sms['body'] ?? ''),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

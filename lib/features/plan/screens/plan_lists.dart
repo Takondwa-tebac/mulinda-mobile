@@ -187,7 +187,7 @@ class InvestmentsListScreen extends ConsumerWidget {
         tile: (i) => _PlanTile(
           title: i.name,
           value: i.value.formatted,
-          sub: i.gain.formatted,
+          sub: '${'invest.type.${i.type}'.tr()} · ${i.gain.formatted}',
           subColor: i.gain.isNegative ? Colors.red : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
@@ -215,7 +215,10 @@ class ProjectsListScreen extends ConsumerWidget {
         tile: (p) => _PlanTile(
           title: p.name,
           value: p.spent.formatted,
+          valueLabel: 'project.spent'.tr(),
           sub: p.budget?.formatted,
+          subLabel: 'project.budget'.tr(),
+          progress: p.completionPercentage,
           onTap: () => context.push(Routes.projectDetail, extra: p),
           onEdit: () => context.push(Routes.projectForm, extra: p),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
@@ -229,7 +232,9 @@ class _PlanTile extends StatelessWidget {
   const _PlanTile({
     required this.title,
     required this.value,
+    this.valueLabel,
     this.sub,
+    this.subLabel,
     this.subColor,
     this.progress,
     this.danger = false,
@@ -241,7 +246,9 @@ class _PlanTile extends StatelessWidget {
 
   final String title;
   final String value;
+  final String? valueLabel;
   final String? sub;
+  final String? subLabel;
   final Color? subColor;
   final double? progress;
   final bool danger;
@@ -275,32 +282,69 @@ class _PlanTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    value,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: danger ? scheme.error : scheme.primary),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        value,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: danger ? scheme.error : scheme.primary),
+                      ),
+                      if (valueLabel != null)
+                        Text(
+                          valueLabel!,
+                          style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 11),
+                        ),
+                    ],
                   ),
                 ],
               ),
               if (sub != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(sub!,
-                      style: TextStyle(
-                          color: subColor ?? scheme.onSurfaceVariant,
-                          fontSize: 13)),
+                  child: Row(
+                    children: [
+                      if (subLabel != null)
+                        Text(
+                          '$subLabel: ',
+                          style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 11),
+                        ),
+                      Text(sub!,
+                          style: TextStyle(
+                              color: subColor ?? scheme.onSurfaceVariant,
+                              fontSize: 13)),
+                    ],
+                  ),
                 ),
               if (progress != null) ...[
                 const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: scheme.surfaceContainerHigh,
-                    color: danger ? scheme.error : scheme.primary,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: scheme.surfaceContainerHigh,
+                          color: danger ? scheme.error : scheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${(progress * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ],
             ],

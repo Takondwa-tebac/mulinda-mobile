@@ -218,6 +218,7 @@ class ProjectItem {
     this.targetDate,
     this.startedAt,
     this.completedAt,
+    this.completionPercentage,
   });
 
   final String id;
@@ -229,6 +230,7 @@ class ProjectItem {
   final String? targetDate;
   final String? startedAt;
   final String? completedAt;
+  final double? completionPercentage;
 
   factory ProjectItem.fromJson(Map<String, dynamic> j) => ProjectItem(
         id: j['id'].toString(),
@@ -240,5 +242,6 @@ class ProjectItem {
         targetDate: _str(j['target_date']),
         startedAt: _str(j['started_at']),
         completedAt: _str(j['completed_at']),
+        completionPercentage: _num(j['completion_percentage']),
       );
 }

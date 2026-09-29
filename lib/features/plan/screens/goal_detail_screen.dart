@@ -10,13 +10,18 @@ import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 import 'plan_forms.dart';
 
-class GoalDetailScreen extends ConsumerWidget {
+class GoalDetailScreen extends ConsumerStatefulWidget {
   const GoalDetailScreen({super.key, required this.goal});
 
   final GoalItem goal;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GoalDetailScreen> createState() => _GoalDetailScreenState();
+}
+
+class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final pct = (goal.progress * 100).toStringAsFixed(1);
@@ -37,107 +42,139 @@ class GoalDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        children: [
-          // Progress ring-style card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: scheme.primaryContainer,
-                        foregroundColor: scheme.onPrimaryContainer,
-                        child: const Icon(Icons.flag_outlined, size: 26),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(goal.name,
-                                style: text.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700)),
-                            Text(
-                              'goal.type.${goal.type}'.tr(),
-                              style: TextStyle(
-                                  color: scheme.onSurfaceVariant,
-                                  fontSize: 13),
-                            ),
-                          ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+          children: [
+            // Progress ring-style card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: scheme.primaryContainer,
+                          foregroundColor: scheme.onPrimaryContainer,
+                          child: const Icon(Icons.flag_outlined, size: 26),
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(goal.name,
+                                  style: text.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700)),
+                              Text(
+                                'goal.type.${goal.type}'.tr(),
+                                style: TextStyle(
+                                    color: scheme.onSurfaceVariant,
+                                    fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text('$pct%',
+                            style: text.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.primary)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: goal.progress,
+                        minHeight: 12,
+                        backgroundColor: scheme.surfaceContainerHigh,
+                        color: scheme.primary,
                       ),
-                      Text('$pct%',
-                          style: text.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: scheme.primary)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: goal.progress,
-                      minHeight: 12,
-                      backgroundColor: scheme.surfaceContainerHigh,
-                      color: scheme.primary,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _AmountCol(
-                          label: 'goal.saved'.tr(),
-                          value: goal.current.formatted,
-                          color: scheme.primary),
-                      _AmountCol(
-                          label: 'goal.target'.tr(),
-                          value: goal.target.formatted,
-                          color: scheme.onSurfaceVariant,
-                          align: CrossAxisAlignment.end),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _AmountCol(
+                            label: 'goal.saved'.tr(),
+                            value: goal.current.formatted,
+                            color: scheme.primary),
+                        _AmountCol(
+                            label: 'goal.target'.tr(),
+                            value: goal.target.formatted,
+                            color: scheme.onSurfaceVariant,
+                            align: CrossAxisAlignment.end),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Detail rows
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  if (goal.targetDate != null)
+            // Detail rows
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    if (goal.targetDate != null)
+                      _InfoRow(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'goal.targetDate'.tr(),
+                        value: goal.targetDate!,
+                      ),
+                    if (goal.monthlyContribution != null)
+                      _InfoRow(
+                        icon: Icons.repeat_outlined,
+                        label: 'goal.monthly'.tr(),
+                        value: goal.monthlyContribution!.formatted,
+                      ),
                     _InfoRow(
-                      icon: Icons.calendar_today_outlined,
-                      label: 'goal.targetDate'.tr(),
-                      value: goal.targetDate!,
+                      icon: Icons.savings_outlined,
+                      label: 'goal.remaining'.tr(),
+                      value: (goal.target.minorUnits - goal.current.minorUnits) > 0
+                          ? _remaining(goal)
+                          : 'goal.complete'.tr(),
                     ),
-                  if (goal.monthlyContribution != null)
-                    _InfoRow(
-                      icon: Icons.repeat_outlined,
-                      label: 'goal.monthly'.tr(),
-                      value: goal.monthlyContribution!.formatted,
-                    ),
-                  _InfoRow(
-                    icon: Icons.savings_outlined,
-                    label: 'goal.remaining'.tr(),
-                    value: (goal.target.minorUnits - goal.current.minorUnits) > 0
-                        ? _remaining(goal)
-                        : 'goal.complete'.tr(),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // Contributions section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('goal.contributions'.tr(),
+                            style: text.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.primary)),
+                        TextButton.icon(
+                          onPressed: () => showContributeSheet(context, ref, goal.id),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text('form.add'.tr()),
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _ContributionsList(goalId: goal.id),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showContributeSheet(context, ref, goal.id),
@@ -184,6 +221,35 @@ class GoalDetailScreen extends ConsumerWidget {
           ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
       }
     }
+  }
+}
+
+class _ContributionsList extends ConsumerWidget {
+  const _ContributionsList({required this.goalId});
+
+  final String goalId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    
+    // TODO: Fetch contributions from API when endpoint is available
+    // For now, show a placeholder
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.savings_outlined, 
+                size: 48, 
+                color: scheme.onSurfaceVariant.withOpacity(0.5)),
+            const SizedBox(height: 12),
+            Text('goal.noContributions'.tr(),
+                style: TextStyle(color: scheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
   }
 }
 

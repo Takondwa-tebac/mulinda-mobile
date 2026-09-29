@@ -42,52 +42,160 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
     _toDate = DateTime.now();
   }
 
+  // List<Map<String, dynamic>> get _filteredSms {
+  //   var filtered = _allSms;
+
+  //   // Filter by date range
+  //   if (_fromDate != null) {
+  //     filtered = filtered.where((sms) {
+  //       final smsDate = DateTime.parse(sms['received_at'] as String);
+  //       return smsDate.isAfter(_fromDate!.subtract(const Duration(days: 1))) ||
+  //           smsDate.isAtSameMomentAs(_fromDate!);
+  //     }).toList();
+  //   }
+
+  //   if (_toDate != null) {
+  //     filtered = filtered.where((sms) {
+  //       final smsDate = DateTime.parse(sms['received_at'] as String);
+  //       return smsDate.isBefore(_toDate!.add(const Duration(days: 1))) ||
+  //           smsDate.isAtSameMomentAs(_toDate!);
+  //     }).toList();
+  //   }
+
+  //   // Filter by vendor
+  //   if (_selectedVendor != null) {
+  //     filtered = filtered.where((sms) {
+  //       final sender = (sms['sender'] as String).toLowerCase();
+  //       return sender.contains(_selectedVendor!.toLowerCase());
+  //     }).toList();
+  //   }
+
+  //   return filtered;
+  // }
+
   List<Map<String, dynamic>> get _filteredSms {
     var filtered = _allSms;
 
     // Filter by date range
     if (_fromDate != null) {
       filtered = filtered.where((sms) {
-        final smsDate = DateTime.parse(sms['received_at'] as String);
-        return smsDate.isAfter(_fromDate!.subtract(const Duration(days: 1))) ||
-               smsDate.isAtSameMomentAs(_fromDate!);
+        final receivedAt = sms['received_at']?.toString();
+
+        if (receivedAt == null || receivedAt.isEmpty) {
+          return false;
+        }
+
+        final smsDate = DateTime.tryParse(receivedAt);
+
+        if (smsDate == null) {
+          return false;
+        }
+
+        return !smsDate.isBefore(_fromDate!);
       }).toList();
     }
 
     if (_toDate != null) {
       filtered = filtered.where((sms) {
-        final smsDate = DateTime.parse(sms['received_at'] as String);
-        return smsDate.isBefore(_toDate!.add(const Duration(days: 1))) ||
-               smsDate.isAtSameMomentAs(_toDate!);
+        final receivedAt = sms['received_at']?.toString();
+
+        if (receivedAt == null || receivedAt.isEmpty) {
+          return false;
+        }
+
+        final smsDate = DateTime.tryParse(receivedAt);
+
+        if (smsDate == null) {
+          return false;
+        }
+
+        return !smsDate.isAfter(_toDate!.add(const Duration(days: 1)));
       }).toList();
     }
 
     // Filter by vendor
     if (_selectedVendor != null) {
       filtered = filtered.where((sms) {
-        final sender = (sms['sender'] as String).toLowerCase();
-        return sender.contains(_selectedVendor!.toLowerCase());
+        final sender = sms['sender']?.toString() ?? '';
+
+        return sender.toLowerCase().contains(_selectedVendor!.toLowerCase());
       }).toList();
     }
 
     return filtered;
   }
 
+  // Future<void> _scanSms() async {
+  //   setState(() => _scanning = true);
+  //   try {
+  //     final granted = await _telephony.requestSmsPermissions ?? false;
+  //     if (!granted) {
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(context)
+  //           ..hideCurrentSnackBar()
+  //           ..showSnackBar(SnackBar(content: Text('SMS permission required')));
+  //       }
+  //       setState(() => _scanning = false);
+  //       return;
+  //     }
+
+  //     final messages = await _telephony.getInboxSms();
+  //     final financialSms = messages
+  //         .where((msg) => _isFinancialSms(msg.body ?? ''))
+  //         .toList();
+
+  //     setState(() {
+  //       _allSms = financialSms
+  //           .map(
+  //             (msg) => {
+  //               'body': msg.body ?? '',
+  //               'sender': msg.sender ?? '',
+  //               'received_at': msg.date ?? DateTime.now().toIso8601String(),
+  //             },
+  //           )
+  //           .toList();
+  //       _selectedSmsIndices.clear();
+  //       _scanning = false;
+  //     });
+
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context)
+  //         ..hideCurrentSnackBar()
+  //         ..showSnackBar(
+  //           SnackBar(content: Text('Found ${_allSms.length} financial SMS')),
+  //         );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context)
+  //         ..hideCurrentSnackBar()
+  //         ..showSnackBar(SnackBar(content: Text('Failed to scan SMS: $e')));
+  //     }
+  //     setState(() => _scanning = false);
+  //   }
+  // }
+
   Future<void> _scanSms() async {
     setState(() => _scanning = true);
+
     try {
       final granted = await _telephony.requestSmsPermissions ?? false;
+
       if (!granted) {
         if (mounted) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text('SMS permission required')));
+            ..showSnackBar(
+              const SnackBar(content: Text('SMS permission required')),
+            );
         }
+
         setState(() => _scanning = false);
         return;
       }
 
       final messages = await _telephony.getInboxSms();
+
       final financialSms = messages
           .where((msg) => _isFinancialSms(msg.body ?? ''))
           .toList();
@@ -98,10 +206,15 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
               (msg) => {
                 'body': msg.body ?? '',
                 'sender': msg.sender ?? '',
-                'received_at': msg.date ?? DateTime.now().toIso8601String(),
+                'received_at': msg.date != null
+                    ? DateTime.fromMillisecondsSinceEpoch(
+                        msg.date!,
+                      ).toIso8601String()
+                    : DateTime.now().toIso8601String(),
               },
             )
             .toList();
+
         _selectedSmsIndices.clear();
         _scanning = false;
       });
@@ -109,9 +222,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('Found ${_allSms.length} financial SMS'),
-          ));
+          ..showSnackBar(
+            SnackBar(content: Text('Found ${_allSms.length} financial SMS')),
+          );
       }
     } catch (e) {
       if (mounted) {
@@ -119,6 +232,7 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text('Failed to scan SMS: $e')));
       }
+
       setState(() => _scanning = false);
     }
   }
@@ -151,7 +265,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
   }
 
   Future<void> _importSms() async {
-    final selectedSms = _filteredSms.asMap().entries
+    final selectedSms = _filteredSms
+        .asMap()
+        .entries
         .where((entry) => _selectedSmsIndices.contains(entry.key))
         .map((entry) => entry.value)
         .toList();
@@ -216,7 +332,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
       setState(() => _selectedSmsIndices.clear());
     } else {
       setState(() {
-        _selectedSmsIndices = Set.from(List.generate(_filteredSms.length, (i) => i));
+        _selectedSmsIndices = Set.from(
+          List.generate(_filteredSms.length, (i) => i),
+        );
       });
     }
   }
@@ -331,84 +449,148 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
               child: _scanning
                   ? Center(child: CircularProgressIndicator())
                   : filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.sms_outlined,
-                                size: 64,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _allSms.isEmpty
-                                    ? 'No financial SMS found. Tap Scan to search.'
-                                    : 'No SMS match current filters.',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sms_outlined,
+                            size: 64,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final sms = filtered[index];
-                            final isSelected = _selectedSmsIndices.contains(index);
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: CheckboxListTile(
-                                value: isSelected,
-                                onChanged: (_) {
-                                  setState(() {
-                                    if (isSelected) {
-                                      _selectedSmsIndices.remove(index);
-                                    } else {
-                                      _selectedSmsIndices.add(index);
-                                    }
-                                  });
-                                },
-                                leading: Icon(
+                          const SizedBox(height: 16),
+                          Text(
+                            _allSms.isEmpty
+                                ? 'No financial SMS found. Tap Scan to search.'
+                                : 'No SMS match current filters.',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final sms = filtered[index];
+                        final isSelected = _selectedSmsIndices.contains(index);
+                        //   return Card(
+                        //     margin: const EdgeInsets.only(bottom: 8),
+                        //     child: CheckboxListTile(
+                        //       value: isSelected,
+                        //       onChanged: (_) {
+                        //         setState(() {
+                        //           if (isSelected) {
+                        //             _selectedSmsIndices.remove(index);
+                        //           } else {
+                        //             _selectedSmsIndices.add(index);
+                        //           }
+                        //         });
+                        //       },
+                        //       leading: Icon(
+                        //         Icons.sms,
+                        //         color: Theme.of(context).colorScheme.primary,
+                        //       ),
+                        //       title: Text(
+                        //         sms['sender'] ?? 'Unknown',
+                        //         style: TextStyle(fontWeight: FontWeight.w600),
+                        //       ),
+                        //       subtitle: Column(
+                        //         crossAxisAlignment: CrossAxisAlignment.start,
+                        //         children: [
+                        //           Text(
+                        //             _truncate(sms['body'] ?? '', 50),
+                        //             maxLines: 2,
+                        //             overflow: TextOverflow.ellipsis,
+                        //           ),
+                        //           const SizedBox(height: 4),
+                        //           Text(
+                        //             _formatDateTime(sms['received_at'] as String),
+                        //             style: TextStyle(
+                        //               fontSize: 11,
+                        //               color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        //             ),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //       trailing: Text(
+                        //         _formatAmount(sms['body'] ?? ''),
+                        //         style: TextStyle(
+                        //           color: Theme.of(context).colorScheme.primary,
+                        //           fontWeight: FontWeight.w700,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   );
+                        // },
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: isSelected,
+                                  onChanged: (_) {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedSmsIndices.remove(index);
+                                      } else {
+                                        _selectedSmsIndices.add(index);
+                                      }
+                                    });
+                                  },
+                                ),
+                                Icon(
                                   Icons.sms,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
-                                title: Text(
-                                  sms['sender'] ?? 'Unknown',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                              ],
+                            ),
+                            title: Text(
+                              sms['sender'] ?? 'Unknown',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _truncate(sms['body'] ?? '', 50),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _truncate(sms['body'] ?? '', 50),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _formatDateTime(sms['received_at'] as String),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: Text(
-                                  _formatAmount(sms['body'] ?? ''),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatDateTime(sms['received_at'] as String),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
+                              ],
+                            ),
+                            trailing: Text(
+                              _formatAmount(sms['body'] ?? ''),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

@@ -32,15 +32,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(authControllerProvider.notifier).login(
-            _username.text.trim(),
-            _password.text,
-          );
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(_username.text.trim(), _password.text);
       // Router guard redirects to home on success.
     } on ApiException catch (e) {
       _showError(e.displayMessage);
-    } catch (e) {
-      _showError('common.unexpectedError'.tr());
+    } catch (e, stackTrace) {
+       debugPrint('LOGIN ERROR: $e');
+       debugPrint('LOGIN STACK TRACE:\n$stackTrace');
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -82,17 +83,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('auth.signIn'.tr(),
-                      style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    'auth.signIn'.tr(),
+                    style: text.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('auth.signInSubtitle'.tr(),
-                      style: text.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  Text(
+                    'auth.signInSubtitle'.tr(),
+                    style: text.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: 28),
                   TextFormField(
                     controller: _username,
                     textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(labelText: 'auth.username'.tr()),
+                    decoration: InputDecoration(
+                      labelText: 'auth.username'.tr(),
+                    ),
                     validator: _required,
                   ),
                   const SizedBox(height: 16),
@@ -102,7 +112,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     decoration: InputDecoration(
                       labelText: 'auth.password'.tr(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
@@ -124,14 +136,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         : Text('auth.signIn'.tr()),
                   ),
                   const SizedBox(height: 16),
-                  Row(children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('auth.or'.tr()),
-                    ),
-                    const Expanded(child: Divider()),
-                  ]),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('auth.or'.tr()),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
                     onPressed: _loading ? null : _google,
