@@ -28,10 +28,27 @@ class AdminRepository {
     await _dio.delete('/v1/admin/users/$userId');
   }
 
+  // Future<Map<String, dynamic>> getUserDetail(String userId) async {
+  //   final res = await _dio.get<Map<String, dynamic>>('/v1/admin/users/$userId');
+  //   return res.data ?? {};
+    
+  // }
+
   Future<Map<String, dynamic>> getUserDetail(String userId) async {
-    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/users/$userId');
-    return res.data ?? {};
+  final res = await _dio.get<Map<String, dynamic>>(
+    '/v1/admin/users/$userId',
+  );
+
+  final response = res.data ?? {};
+
+  final data = response['data'];
+
+  if (data is Map) {
+    return data.cast<String, dynamic>();
   }
+
+  return response;
+}
 
   Future<Map<String, dynamic>> listAudits({int page = 1}) async {
     final res = await _dio.get<Map<String, dynamic>>(
@@ -39,6 +56,7 @@ class AdminRepository {
       queryParameters: {'page': page, 'per_page': 25},
     );
     return res.data ?? {};
+
   }
 
   /// Comp a user a subscription period (admin gift). [period] is a

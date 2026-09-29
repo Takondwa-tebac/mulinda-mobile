@@ -57,14 +57,14 @@ class SubscriptionInfo {
   bool can(String entitlement) => entitlements.contains(entitlement);
 
   const SubscriptionInfo.none()
-      : active = false,
-        period = null,
-        planLabel = null,
-        source = null,
-        endsAt = null,
-        isTrial = false,
-        entitlements = const [],
-        smsCapture = null;
+    : active = false,
+      period = null,
+      planLabel = null,
+      source = null,
+      endsAt = null,
+      isTrial = false,
+      entitlements = const [],
+      smsCapture = null;
 
   factory SubscriptionInfo.fromJson(Map<String, dynamic> json) {
     return SubscriptionInfo(
@@ -76,9 +76,8 @@ class SubscriptionInfo {
           ? DateTime.tryParse(json['ends_at'].toString())
           : null,
       isTrial: json['is_trial'] == true,
-      entitlements: (json['entitlements'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
+      entitlements:
+          (json['entitlements'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       smsCapture: json['sms_capture'] != null
           ? SmsCaptureInfo.fromJson(json['sms_capture'] as Map<String, dynamic>)
@@ -103,12 +102,24 @@ class SmsCaptureInfo {
   final double usagePercentage;
   final bool isLimited;
 
+  //   factory SmsCaptureInfo.fromJson(Map<String, dynamic> json) {
+  //     return SmsCaptureInfo(
+  //       used: (json['used'] as num?)?.toInt() ?? 0,
+  //       limit: (json['limit'] as num?)?.toInt() ?? 10,
+  //       remaining: (json['remaining'] as num?)?.toInt() ?? 10,
+  //       usagePercentage: (json['usage_percentage'] as num?)?.toDouble() ?? 0.0,
+  //       isLimited: json['is_limited'] == true,
+  //     );
+  //   }
+  // }
+
   factory SmsCaptureInfo.fromJson(Map<String, dynamic> json) {
     return SmsCaptureInfo(
-      used: (json['used'] as num?)?.toInt() ?? 0,
-      limit: (json['limit'] as num?)?.toInt() ?? 10,
-      remaining: (json['remaining'] as num?)?.toInt() ?? 10,
-      usagePercentage: (json['usage_percentage'] as num?)?.toDouble() ?? 0.0,
+      used: int.tryParse(json['used']?.toString() ?? '') ?? 0,
+      limit: int.tryParse(json['limit']?.toString() ?? '') ?? 10,
+      remaining: int.tryParse(json['remaining']?.toString() ?? '') ?? 10,
+      usagePercentage:
+          double.tryParse(json['usage_percentage']?.toString() ?? '') ?? 0.0,
       isLimited: json['is_limited'] == true,
     );
   }
@@ -137,7 +148,8 @@ class PlanOption {
       label: json['label']?.toString() ?? '',
       days: (json['days'] as num?)?.toInt() ?? 1,
       amount: MoneyView.fromJson(
-          (json['amount'] as Map?)?.cast<String, dynamic>() ?? const {}),
+        (json['amount'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ),
     );
   }
 }
@@ -183,7 +195,8 @@ class InvoiceModel {
       period: json['period']?.toString() ?? '',
       periodLabel: json['period_label']?.toString() ?? '',
       amount: MoneyView.fromJson(
-          (json['amount'] as Map?)?.cast<String, dynamic>() ?? const {}),
+        (json['amount'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ),
       currency: json['currency']?.toString() ?? 'MWK',
       status: json['status']?.toString() ?? 'pending',
       txRef: json['tx_ref']?.toString() ?? '',
