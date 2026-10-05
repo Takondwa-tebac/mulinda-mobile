@@ -9,7 +9,7 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart' show goalContributionsProvider;
-import 'plan_forms.dart';
+import 'plan_forms.dart' show showEditContributionSheet;
 
 
 class GoalDetailScreen extends ConsumerStatefulWidget {
@@ -332,10 +332,7 @@ class _ContributionsList extends ConsumerWidget {
   }
 
   void _editContribution(BuildContext context, WidgetRef ref, GoalContribution contribution) {
-    // TODO: Show edit dialog with amount, financial account, note
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('form.edit'.tr())),
-    );
+    showEditContributionSheet(context, ref, goalId, contribution);
   }
 
   void _deleteContribution(BuildContext context, WidgetRef ref, GoalContribution contribution) async {

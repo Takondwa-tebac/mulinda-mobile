@@ -12,7 +12,7 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart' show loanRepaymentsProvider;
-import 'plan_forms.dart';
+import 'plan_forms.dart' show showEditRepaymentSheet;
 
 // ---------------------------------------------------------------------------
 // Shared bits
@@ -584,10 +584,7 @@ class _RepaymentsList extends ConsumerWidget {
   }
 
   void _editRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) {
-    // TODO: Show edit dialog with amount, financial account, note
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('form.edit'.tr())),
-    );
+    showEditRepaymentSheet(context, ref, loanId, repayment);
   }
 
   void _deleteRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) async {

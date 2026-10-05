@@ -435,6 +435,27 @@ Future<void> showContributeSheet(BuildContext context, WidgetRef ref, String goa
       extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
     );
 
+/// Bottom sheet: edit a contribution.
+Future<void> showEditContributionSheet(
+  BuildContext context,
+  WidgetRef ref,
+  String goalId,
+  GoalContribution contribution,
+) =>
+    _amountSheet(
+      context,
+      ref,
+      title: 'form.editContribution'.tr(),
+      action: (data) => ref.read(planRepositoryProvider).updateGoalContribution(goalId, contribution.id, data),
+      listProvider: goalsProvider,
+      dateKey: 'contributed_at',
+      dateLabel: 'form.contributedAt'.tr(),
+      extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
+      initialAmount: contribution.amount.amount,
+      initialNote: contribution.note,
+      initialDate: contribution.contributedAt,
+    );
+
 /// Bottom sheet: record a repayment for [loanId].
 Future<void> showRepaySheet(BuildContext context, WidgetRef ref, String loanId) =>
     _amountSheet(
@@ -448,6 +469,27 @@ Future<void> showRepaySheet(BuildContext context, WidgetRef ref, String loanId) 
       extraInvalidate: (r) => r.invalidate(loanRepaymentsProvider(loanId)),
     );
 
+/// Bottom sheet: edit a repayment.
+Future<void> showEditRepaymentSheet(
+  BuildContext context,
+  WidgetRef ref,
+  String loanId,
+  LoanRepayment repayment,
+) =>
+    _amountSheet(
+      context,
+      ref,
+      title: 'form.editRepayment'.tr(),
+      action: (data) => ref.read(planRepositoryProvider).updateLoanRepayment(loanId, repayment.id, data),
+      listProvider: loansProvider,
+      dateKey: 'paid_at',
+      dateLabel: 'form.paidAt'.tr(),
+      extraInvalidate: (r) => r.invalidate(loanRepaymentsProvider(loanId)),
+      initialAmount: repayment.amount.amount,
+      initialNote: repayment.note,
+      initialDate: repayment.paidAt,
+    );
+
 Future<void> _amountSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -457,6 +499,9 @@ Future<void> _amountSheet(
   required String dateKey,
   required String dateLabel,
   void Function(WidgetRef)? extraInvalidate,
+  double? initialAmount,
+  String? initialNote,
+  String? initialDate,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -471,6 +516,9 @@ Future<void> _amountSheet(
         title: title, action: action, listProvider: listProvider,
         dateKey: dateKey, dateLabel: dateLabel, ref: ref,
         extraInvalidate: extraInvalidate,
+        initialAmount: initialAmount,
+        initialNote: initialNote,
+        initialDate: initialDate,
       ),
     ),
   );
@@ -485,6 +533,9 @@ class _AmountSheetBody extends StatefulWidget {
     required this.dateLabel,
     required this.ref,
     this.extraInvalidate,
+    this.initialAmount,
+    this.initialNote,
+    this.initialDate,
   });
 
   final String title;
@@ -494,6 +545,9 @@ class _AmountSheetBody extends StatefulWidget {
   final String dateLabel;
   final WidgetRef ref;
   final void Function(WidgetRef)? extraInvalidate;
+  final double? initialAmount;
+  final String? initialNote;
+  final String? initialDate;
 
   @override
   State<_AmountSheetBody> createState() => _AmountSheetBodyState();
@@ -501,10 +555,20 @@ class _AmountSheetBody extends StatefulWidget {
 
 class _AmountSheetBodyState extends State<_AmountSheetBody> {
   final _formKey = GlobalKey<FormState>();
-  final _amount = TextEditingController();
-  final _note = TextEditingController();
+  late final _amount = TextEditingController(
+    text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
+  );
+  late final _note = TextEditingController(text: widget.initialNote ?? '');
   DateTime? _date;
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDate != null) {
+      _date = apiToDate(widget.initialDate);
+    }
+  }
 
   @override
   void dispose() {
