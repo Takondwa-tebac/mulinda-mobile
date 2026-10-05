@@ -223,6 +223,31 @@ class _UserDetailContent extends StatelessWidget {
                     )
                     .toList(),
               ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _editRoles(context, ref, roles),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Edit Roles'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(40),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Subscription Actions
+        _Section(
+          title: 'Subscription Actions',
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => _giftSubscription(context, ref),
+              icon: const Icon(Icons.card_giftcard_outlined, size: 18),
+              label: const Text('Gift Subscription'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(40),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -259,6 +284,151 @@ class _UserDetailContent extends StatelessWidget {
     } catch (_) {
       return 'Invalid date';
     }
+  }
+
+  void _editRoles(BuildContext context, WidgetRef ref, List<String> currentRoles) {
+    final availableRoles = ['admin', 'user', 'moderator'];
+    final selectedRoles = Set<String>.from(currentRoles);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Roles'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: availableRoles.map((role) {
+              return CheckboxListTile(
+                title: Text(role),
+                value: selectedRoles.contains(role),
+                onChanged: (checked) {
+                  setDialogState(() {
+                    if (checked == true) {
+                      selectedRoles.add(role);
+                    } else {
+                      selectedRoles.remove(role);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                try {
+                  await ref.read(adminRepositoryProvider).updateUserRoles(
+                    user['id'].toString(),
+                    selectedRoles.toList(),
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Roles updated successfully')),
+                    );
+                    ref.invalidate(_userDetailProvider(user['id'].toString()));
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          e is ApiException ? e.displayMessage : 'Failed to update roles',
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _giftSubscription(BuildContext context, WidgetRef ref) {
+    final periodController = TextEditingController(text: 'month');
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Gift Subscription'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Period:'),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: 'month',
+              items: const [
+                DropdownMenuItem(value: 'day', child: Text('Day')),
+                DropdownMenuItem(value: 'three_day', child: Text('3 Days')),
+                DropdownMenuItem(value: 'week', child: Text('Week')),
+                DropdownMenuItem(value: 'month', child: Text('Month')),
+              ],
+              onChanged: (value) {
+                periodController.text = value ?? 'month';
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text('Reason (optional):'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                hintText: 'e.g. Gift for loyal user',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await ref.read(adminRepositoryProvider).grantCredit(
+                  userId: user['id'].toString(),
+                  period: periodController.text,
+                  reason: reasonController.text.trim().isEmpty
+                      ? null
+                      : reasonController.text.trim(),
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Subscription gifted successfully')),
+                  );
+                  ref.invalidate(_userDetailProvider(user['id'].toString()));
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        e is ApiException ? e.displayMessage : 'Failed to gift subscription',
+                      ),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Gift'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
