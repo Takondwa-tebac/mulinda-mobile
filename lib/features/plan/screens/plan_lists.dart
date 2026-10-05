@@ -67,7 +67,9 @@ Future<void> _delete(
   Future<void> Function() del,
   ProviderOrFamily provider,
 ) async {
-  if (!await _confirmDelete(context)) return;
+  final confirmed = await _confirmDelete(context);
+  if (!confirmed || !context.mounted) return;
+
   try {
     await del();
     ref.invalidate(provider);
@@ -131,7 +133,7 @@ class BudgetsListScreen extends ConsumerWidget {
         tile: (b) => _PlanTile(
           title: b.name,
           value: '${b.spent.formatted} / ${b.limit.formatted}',
-          progress: (b.percentage / 100).clamp(0, 1).toDouble(),
+          progress: b.percentage / 100,
           danger: b.isExceeded,
           onTap: () => context.push(Routes.budgetDetail, extra: b),
           onEdit: () => context.push(Routes.budgetForm, extra: b),
@@ -260,13 +262,15 @@ class _PlanTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final clampedProgress = progress?.clamp(0.0, 1.0);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap ?? onEdit,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -288,16 +292,42 @@ class _PlanTile extends StatelessWidget {
                       Text(
                         value,
                         style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: danger ? scheme.error : scheme.primary),
+                          fontWeight: FontWeight.w700,
+                          color: danger ? scheme.error : scheme.primary,
+                        ),
                       ),
                       if (valueLabel != null)
                         Text(
                           valueLabel!,
                           style: TextStyle(
-                              color: scheme.onSurfaceVariant,
-                              fontSize: 11),
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
                         ),
+                    ],
+                  ),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (action) {
+                      if (action == 'extra' && extra != null) extra!.$2();
+                      if (action == 'edit') onEdit();
+                      if (action == 'delete') onDelete();
+                    },
+                    itemBuilder: (context) => [
+                      if (extra != null)
+                        PopupMenuItem(
+                          value: 'extra',
+                          child: Text(extra!.$1),
+                        ),
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('form.edit'.tr()),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('form.delete'.tr()),
+                      ),
                     ],
                   ),
                 ],
@@ -311,40 +341,48 @@ class _PlanTile extends StatelessWidget {
                         Text(
                           '$subLabel: ',
                           style: TextStyle(
-                              color: scheme.onSurfaceVariant,
-                              fontSize: 11),
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
                         ),
-                      Text(sub!,
-                          style: TextStyle(
-                              color: subColor ?? scheme.onSurfaceVariant,
-                              fontSize: 13)),
+                      Text(
+                        sub!,
+                        style: TextStyle(
+                          color: subColor ?? scheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              if (progress != null) ...[
+              if (clampedProgress != null) ...[
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 8,
-                          backgroundColor: scheme.surfaceContainerHigh,
-                          color: danger ? scheme.error : scheme.primary,
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: clampedProgress,
+                            minHeight: 8,
+                            backgroundColor: scheme.surfaceContainerHigh,
+                            color: danger ? scheme.error : scheme.primary,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${(progress * 100).toStringAsFixed(0)}%',
-                      style: TextStyle(
+                      const SizedBox(width: 8),
+                      Text(
+                        '${(clampedProgress * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
                           color: scheme.onSurfaceVariant,
                           fontSize: 12,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],

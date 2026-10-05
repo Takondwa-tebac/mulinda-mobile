@@ -245,3 +245,81 @@ class ProjectItem {
         completionPercentage: _num(j['completion_percentage']),
       );
 }
+
+class GoalContribution {
+  const GoalContribution({
+    required this.id,
+    required this.goalId,
+    required this.amount,
+    required this.currency,
+    this.financialAccountId,
+    this.transactionId,
+    this.contributedAt,
+    this.note,
+    this.financialAccount,
+    this.transaction,
+  });
+
+  final String id;
+  final String goalId;
+  final Money amount;
+  final String currency;
+  final String? financialAccountId;
+  final String? transactionId;
+  final String? contributedAt;
+  final String? note;
+  final Map<String, dynamic>? financialAccount;
+  final Map<String, dynamic>? transaction;
+
+  factory GoalContribution.fromJson(Map<String, dynamic> j) => GoalContribution(
+        id: j['id'].toString(),
+        goalId: j['goal_id'].toString(),
+        amount: Money.parse(j['amount']),
+        currency: j['currency']?.toString() ?? 'MWK',
+        financialAccountId: _str(j['financial_account_id']),
+        transactionId: _str(j['transaction_id']),
+        contributedAt: _str(j['contributed_at']),
+        note: _str(j['note']),
+        financialAccount: j['financial_account'] as Map<String, dynamic>?,
+        transaction: j['transaction'] as Map<String, dynamic>?,
+  );
+}
+
+class LoanRepayment {
+  const LoanRepayment({
+    required this.id,
+    required this.loanId,
+    required this.amount,
+    required this.currency,
+    this.financialAccountId,
+    this.transactionId,
+    this.paidAt,
+    this.note,
+    this.financialAccount,
+    this.transaction,
+  });
+
+  final String id;
+  final String loanId;
+  final Money amount;
+  final String currency;
+  final String? financialAccountId;
+  final String? transactionId;
+  final String? paidAt;
+  final String? note;
+  final Map<String, dynamic>? financialAccount;
+  final Map<String, dynamic>? transaction;
+
+  factory LoanRepayment.fromJson(Map<String, dynamic> j) => LoanRepayment(
+        id: j['id'].toString(),
+        loanId: j['loan_id'].toString(),
+        amount: Money.parse(j['amount']),
+        currency: j['currency']?.toString() ?? 'MWK',
+        financialAccountId: _str(j['financial_account_id']),
+        transactionId: _str(j['transaction_id']),
+        paidAt: _str(j['paid_at']),
+        note: _str(j['note']),
+        financialAccount: j['financial_account'] as Map<String, dynamic>?,
+        transaction: j['transaction'] as Map<String, dynamic>?,
+  );
+}

@@ -7,7 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../activity/data/activity_repository.dart' show categoriesProvider;
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
-import '../data/plan_repository.dart';
+import '../data/plan_repository.dart' show goalContributionsProvider, loanRepaymentsProvider;
 import '../widgets/plan_form_kit.dart';
 
 const _goalTypes = ['emergency', 'house', 'car', 'business', 'education', 'vacation', 'custom'];
@@ -432,6 +432,7 @@ Future<void> showContributeSheet(BuildContext context, WidgetRef ref, String goa
       listProvider: goalsProvider,
       dateKey: 'contributed_at',
       dateLabel: 'form.contributedAt'.tr(),
+      extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
     );
 
 /// Bottom sheet: record a repayment for [loanId].
@@ -444,6 +445,7 @@ Future<void> showRepaySheet(BuildContext context, WidgetRef ref, String loanId) 
       listProvider: loansProvider,
       dateKey: 'paid_at',
       dateLabel: 'form.paidAt'.tr(),
+      extraInvalidate: (r) => r.invalidate(loanRepaymentsProvider(loanId)),
     );
 
 Future<void> _amountSheet(
@@ -454,6 +456,7 @@ Future<void> _amountSheet(
   required ProviderOrFamily listProvider,
   required String dateKey,
   required String dateLabel,
+  void Function(WidgetRef)? extraInvalidate,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -467,6 +470,7 @@ Future<void> _amountSheet(
       child: _AmountSheetBody(
         title: title, action: action, listProvider: listProvider,
         dateKey: dateKey, dateLabel: dateLabel, ref: ref,
+        extraInvalidate: extraInvalidate,
       ),
     ),
   );
@@ -480,6 +484,7 @@ class _AmountSheetBody extends StatefulWidget {
     required this.dateKey,
     required this.dateLabel,
     required this.ref,
+    this.extraInvalidate,
   });
 
   final String title;
@@ -488,6 +493,7 @@ class _AmountSheetBody extends StatefulWidget {
   final String dateKey;
   final String dateLabel;
   final WidgetRef ref;
+  final void Function(WidgetRef)? extraInvalidate;
 
   @override
   State<_AmountSheetBody> createState() => _AmountSheetBodyState();
@@ -517,6 +523,9 @@ class _AmountSheetBodyState extends State<_AmountSheetBody> {
       await widget.action(data);
       widget.ref.invalidate(widget.listProvider);
       widget.ref.invalidate(dashboardProvider);
+      if (widget.extraInvalidate != null) {
+        widget.extraInvalidate!(widget.ref);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

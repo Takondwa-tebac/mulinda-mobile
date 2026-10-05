@@ -30,7 +30,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           // onRefresh: () async {
           //   await ref.invalidate(_userDetailProvider(widget.userId));
           // },
-          onRefresh: () {
+          onRefresh: () async {
              await ref.refresh(_userDetailProvider(widget.userId).future);
           },
           child: Consumer(

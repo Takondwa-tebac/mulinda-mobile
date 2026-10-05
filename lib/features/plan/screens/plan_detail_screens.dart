@@ -9,8 +9,9 @@ import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../activity/screens/add_transaction_screen.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
-import '../data/plan_repository.dart';
+import '../data/plan_repository.dart' show loanRepaymentsProvider;
 import 'plan_forms.dart';
 
 // ---------------------------------------------------------------------------
@@ -513,23 +514,118 @@ class _RepaymentsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    
-    // TODO: Fetch repayments from API when endpoint is available
-    // For now, show a placeholder
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.payments_outlined, 
-                size: 48, 
-                color: scheme.onSurfaceVariant.withOpacity(0.5)),
-            const SizedBox(height: 12),
-            Text('loan.noRepayments'.tr(),
-                style: TextStyle(color: scheme.onSurfaceVariant)),
-          ],
+    final text = Theme.of(context).textTheme;
+
+    final repaymentsAsync = ref.watch(loanRepaymentsProvider(loanId));
+
+    return repaymentsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text('loan.repaymentsError'.tr(),
+              style: TextStyle(color: scheme.error)),
         ),
       ),
+      data: (repayments) {
+        if (repayments.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.payments_outlined,
+                      size: 48,
+                      color: scheme.onSurfaceVariant.withOpacity(0.5)),
+                  const SizedBox(height: 12),
+                  Text('loan.noRepayments'.tr(),
+                      style: TextStyle(color: scheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: repayments.map((r) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: scheme.primaryContainer,
+                foregroundColor: scheme.onPrimaryContainer,
+                child: const Icon(Icons.payments_outlined, size: 18),
+              ),
+              title: Text(r.amount.formatted,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: r.paidAt != null
+                  ? Text(r.paidAt!)
+                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: () => _editRepayment(context, ref, r),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    onPressed: () => _deleteRepayment(context, ref, r),
+                  ),
+                ],
+              ),
+            ),
+          )).toList(),
+        );
+      },
     );
+  }
+
+  void _editRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) {
+    // TODO: Show edit dialog with amount, financial account, note
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('form.edit'.tr())),
+    );
+  }
+
+  void _deleteRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('form.confirmDeleteTitle'.tr()),
+        content: Text('form.confirmDeleteBody'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text('form.cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text('form.delete'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    try {
+      await ref.read(planRepositoryProvider).deleteLoanRepayment(loanId, repayment.id);
+      ref.invalidate(loanRepaymentsProvider(loanId));
+      ref.invalidate(loansProvider);
+      ref.invalidate(dashboardProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('form.deleted'.tr())));
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    }
   }
 }
