@@ -250,6 +250,134 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
   }
 }
 
+/// One contribution, laid out so long amounts never wrap: the amount takes the
+/// flexible space (and scales down if it still does not fit) while the actions
+/// collapse into a single overflow menu instead of two fixed-width buttons.
+class _ContributionCard extends StatelessWidget {
+  const _ContributionCard({
+    required this.contribution,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final GoalContribution contribution;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  String? get _date {
+    final raw = contribution.contributedAt;
+    if (raw == null || raw.isEmpty) return null;
+    final d = DateTime.tryParse(raw);
+    if (d == null) return raw;
+    return '${d.day} ${_months[d.month - 1]} ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final note = contribution.note;
+    final hasNote = note != null && note.trim().isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.savings_outlined, size: 20, color: scheme.onPrimaryContainer),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    contribution.amount.formatted,
+                    maxLines: 1,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                  ),
+                ),
+                if (_date != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.event_outlined, size: 13, color: scheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _date!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (hasNote) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    note.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.3),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            padding: EdgeInsets.zero,
+            icon: Icon(Icons.more_vert, size: 20, color: scheme.onSurfaceVariant),
+            onSelected: (action) {
+              if (action == 'edit') onEdit();
+              if (action == 'delete') onDelete();
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(children: [
+                  const Icon(Icons.edit_outlined, size: 18),
+                  const SizedBox(width: 10),
+                  Text('form.edit'.tr()),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(children: [
+                  Icon(Icons.delete_outline, size: 18, color: scheme.error),
+                  const SizedBox(width: 10),
+                  Text('form.delete'.tr(), style: TextStyle(color: scheme.error)),
+                ]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ContributionsList extends ConsumerWidget {
   const _ContributionsList({required this.goalId});
 
@@ -298,34 +426,14 @@ class _ContributionsList extends ConsumerWidget {
         }
 
         return Column(
-          children: contributions.map((c) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: scheme.primaryContainer,
-                foregroundColor: scheme.onPrimaryContainer,
-                child: const Icon(Icons.savings_outlined, size: 18),
+          children: [
+            for (final c in contributions)
+              _ContributionCard(
+                contribution: c,
+                onEdit: () => _editContribution(context, ref, c),
+                onDelete: () => _deleteContribution(context, ref, c),
               ),
-              title: Text(c.amount.formatted,
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: c.contributedAt != null
-                  ? Text(c.contributedAt!)
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: () => _editContribution(context, ref, c),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    onPressed: () => _deleteContribution(context, ref, c),
-                  ),
-                ],
-              ),
-            ),
-          )).toList(),
+          ],
         );
       },
     );
