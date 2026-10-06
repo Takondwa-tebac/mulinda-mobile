@@ -210,10 +210,28 @@
     "retry": "Yesaninso"
   },
   "insights": {
-    "title": "Zindikiritso",
-    "empty": "Palibe zindikiritso. Bweraninso pamene Mulinda ikuphunzira ndalama zanu.",
-    "loadError": "Sitinathe kutsegula zindikiritso.",
-    "retry": "Yesaninso"
+    "title": "Zidziwitso",
+    "empty": "Palibe zidziwitso panobe. Nkhani zochokera ku Mulinda ziziwoneka apa.",
+    "loadError": "Sitinathe kutsegula zidziwitso.",
+    "retry": "Yesaninso",
+    "detailTitle": "Chidziwitso",
+    "notFound": "Chidziwitsochi sichikupezekanso.",
+    "moreDetails": "Zambiri",
+    "about": "Za chidziwitsochi",
+    "received": "Chinafika",
+    "typeLabel": "Mtundu",
+    "status": "Mkhalidwe",
+    "read": "Chawerengedwa",
+    "unread": "Sichinawerengedwe",
+    "type": {
+      "announcement": "Chilengezo",
+      "savings_opportunity": "Upangiri wosunga",
+      "spending_spike": "Chenjezo la ndalama",
+      "budget_alert": "Chenjezo la bajeti",
+      "bill_due": "Bilu yoyenera kulipidwa",
+      "loan_repayment_due": "Kubweza ngongole",
+      "summary": "Chidule"
+    }
   },
   "coach": {
     "title": "Funsani Mulinda",
@@ -359,7 +377,10 @@
       "active": "Yogwira",
       "on_hold": "Yoima",
       "completed": "Yamalizidwa"
-    }
+    },
+    "add": "Onjezani",
+    "editContribution": "Sinthani thandizo",
+    "editRepayment": "Sinthani kubweza"
   },
   "goal": {
     "saved": "Zasungidwa",
@@ -376,7 +397,10 @@
       "education": "Maphunziro",
       "vacation": "Tchuthi",
       "custom": "Zanu"
-    }
+    },
+    "contributions": "Zopereka",
+    "contributionsError": "Zopereka sizinatsegulidwe.",
+    "noContributions": "Palibe zopereka panobe."
   },
   "profile": {
     "account": "Akaunti",
@@ -482,7 +506,8 @@
     "allowed": "Zaloledwa",
     "footer": "Mumakhalabe ndi ulamuliro. Zilolezo zitha kusinthidwa nthawi iliyonse mu Profile, kapena mu zoikamo za foni yanu. Sitigulitsa deta yanu.",
     "continue": "Pitirizani",
-    "done": "Zatha"
+    "done": "Zatha",
+    "openSettings": "Tsegulani zosintha kuti mulole"
   },
   "legal": {
     "title": "Zalamulo",
@@ -511,7 +536,9 @@
       "business": "Bizinesi",
       "property": "Katundu",
       "other": "Zina"
-    }
+    },
+    "gain": "Phindu",
+    "estimated": "Kuyerekeza"
   },
   "currency": {
     "select": "Sankhani ndalama",
@@ -527,5 +554,38 @@
     "enableBody": "Onjezani chitetezo - gwiritsani ntchito chala kapena nkhope kutsegula Mulinda. Mutha kusintha nthawi iliyonse mu Preferences.",
     "enable": "Yatsani",
     "notNow": "Osati pakadali pano"
+  },
+  "loan": {
+    "repayments": "Zobweza",
+    "repaymentsError": "Zobweza sizinatsegulidwe.",
+    "noRepayments": "Palibe zobweza panobe."
+  },
+  "project": {
+    "budget": "Bajeti",
+    "spent": "Zowonongedwa"
+  },
+  "admin": {
+    "giftTitle": "Patsani umembala",
+    "giftPeriod": "Nthawi",
+    "giftReason": "Chifukwa (posankha)",
+    "giftReasonHint": "mwachitsanzo: Mphatso kwa wokhulupirika",
+    "giftAction": "Patsani",
+    "giftDone": "Umembala wapatsidwa bwino",
+    "giftFailed": "Sitinathe kupereka umembala",
+    "rolesTitle": "Sinthani maudindo",
+    "rolesSave": "Sungani maudindo",
+    "rolesDone": "Maudindo asinthidwa bwino",
+    "rolesFailed": "Sitinathe kusintha maudindo",
+    "deleteTitle": "Chotsani wogwiritsa ntchito?",
+    "deleteBody": "Izi zichotsa {} kwamuyaya. Sizingabwezeretsedwe.",
+    "deleteAction": "Chotsani wogwiritsa ntchito",
+    "deleted": "Wogwiritsa ntchito wachotsedwa",
+    "deleteFailed": "Sitinathe kuchotsa wogwiritsa ntchito",
+    "period": {
+      "day": "Tsiku limodzi",
+      "three_day": "Masiku atatu",
+      "week": "Sabata limodzi",
+      "month": "Mwezi umodzi"
+    }
   }
-}
+}

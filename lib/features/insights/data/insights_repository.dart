@@ -12,6 +12,8 @@ class Insight {
     required this.body,
     required this.isRead,
     this.createdAt,
+    this.imageUrl,
+    this.details = const {},
   });
 
   final String id;
@@ -20,6 +22,12 @@ class Insight {
   final String body;
   final bool isRead;
   final String? createdAt;
+
+  /// Image attached to an admin announcement, if any.
+  final String? imageUrl;
+
+  /// Extra structured fields sent with the notification.
+  final Map<String, dynamic> details;
 
   String get date => (createdAt ?? '').split('T').first;
 
@@ -30,6 +38,8 @@ class Insight {
         body: j['body']?.toString() ?? '',
         isRead: j['is_read'] == true,
         createdAt: j['created_at']?.toString(),
+        imageUrl: (j['details'] is Map) ? (j['details'] as Map)['image_url']?.toString() : null,
+        details: (j['details'] is Map) ? (j['details'] as Map).cast<String, dynamic>() : const {},
       );
 }
 

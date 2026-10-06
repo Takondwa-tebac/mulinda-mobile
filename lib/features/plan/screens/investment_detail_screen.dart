@@ -18,21 +18,22 @@ class InvestmentDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final inv = ref.watch(investmentsListProvider).maybeWhen(
-          data: (list) => list.firstWhere((e) => e.id == investment.id, orElse: () => investment),
+    final inv = ref
+        .watch(investmentsListProvider)
+        .maybeWhen(
+          data: (list) => list.firstWhere(
+            (e) => e.id == investment.id,
+            orElse: () => investment,
+          ),
           orElse: () => investment,
         );
 
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    final start = DateTime.tryParse(inv.startedAt ?? '');
     final maturity = DateTime.tryParse(inv.maturityDate ?? '');
     final rate = inv.expectedReturn; // annual, as a fraction (e.g. 0.0575)
-    final principal = inv.amountInvested.amount;
-    final currency = inv.amountInvested.currency;
-    final hasProjection =
-        start != null && maturity != null && rate != null && maturity.isAfter(start);
+    final accrual = inv.accrual; // computed by the API
 
     return Scaffold(
       appBar: AppBar(
@@ -50,72 +51,122 @@ class InvestmentDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: [
-          // Current value card
-          Card(
-            color: scheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('invest.type.${inv.type}'.tr(),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          children: [
+            // Current value card
+            Card(
+              color: scheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'invest.type.${inv.type}'.tr(),
                       style: TextStyle(
-                          color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 13)),
-                  const SizedBox(height: 6),
-                  Text(inv.value.formatted,
+                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      inv.value.formatted,
                       style: text.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer)),
-                  const SizedBox(height: 2),
-                  Text('invest.currentValue'.tr(),
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      inv.isEstimated
+                          ? '${'invest.currentValue'.tr()} · ${'invest.estimated'.tr()}'
+                          : 'invest.currentValue'.tr(),
                       style: TextStyle(
-                          color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 12)),
+                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (inv.isEstimated) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${'invest.interestSoFar'.tr()}: ${inv.gain.formatted}',
+                        style: TextStyle(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            if (accrual != null)
+              _ProjectionCard(accrual: accrual, maturity: maturity),
+
+            const SizedBox(height: 16),
+            Card(
+              child: Column(
+                children: [
+                  _InfoRow(
+                    icon: Icons.savings_outlined,
+                    label: 'invest.amountInvested'.tr(),
+                    value: inv.amountInvested.formatted,
+                  ),
+                  if (rate != null)
+                    _InfoRow(
+                      icon: Icons.percent,
+                      label: 'invest.annualRate'.tr(),
+                      value: '${(rate * 100).toStringAsFixed(2)}%',
+                    ),
+                  if (inv.startedAt != null)
+                    _InfoRow(
+                      icon: Icons.event_outlined,
+                      label: 'invest.started'.tr(),
+                      value: inv.startedAt!,
+                    ),
+                  if (inv.maturityDate != null)
+                    _InfoRow(
+                      icon: Icons.event_available_outlined,
+                      label: 'invest.maturity'.tr(),
+                      value: inv.maturityDate!,
+                    ),
+                  _InfoRow(
+                    icon: Icons.flag_outlined,
+                    label: 'form.status'.tr(),
+                    value: 'form.investStatus.${inv.status}'.tr(),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          if (hasProjection)
-            _ProjectionCard(
-              principal: principal,
-              rate: rate,
-              start: start,
-              maturity: maturity,
-              currency: currency,
-            ),
-
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                _InfoRow(icon: Icons.savings_outlined, label: 'invest.amountInvested'.tr(), value: inv.amountInvested.formatted),
-                if (rate != null)
-                  _InfoRow(icon: Icons.percent, label: 'invest.annualRate'.tr(), value: '${(rate * 100).toStringAsFixed(2)}%'),
-                if (inv.startedAt != null)
-                  _InfoRow(icon: Icons.event_outlined, label: 'invest.started'.tr(), value: inv.startedAt!),
-                if (inv.maturityDate != null)
-                  _InfoRow(icon: Icons.event_available_outlined, label: 'invest.maturity'.tr(), value: inv.maturityDate!),
-                _InfoRow(icon: Icons.flag_outlined, label: 'form.status'.tr(), value: 'form.investStatus.${inv.status}'.tr()),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref, InvestmentItem inv) async {
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    InvestmentItem inv,
+  ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: Text('form.confirmDeleteTitle'.tr()),
         content: Text('form.confirmDeleteBody'.tr()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('form.cancel'.tr())),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('form.delete'.tr())),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text('form.cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text('form.delete'.tr()),
+          ),
         ],
       ),
     );
@@ -136,39 +187,16 @@ class InvestmentDetailScreen extends ConsumerWidget {
 }
 
 class _ProjectionCard extends StatelessWidget {
-  const _ProjectionCard({
-    required this.principal,
-    required this.rate,
-    required this.start,
-    required this.maturity,
-    required this.currency,
-  });
+  const _ProjectionCard({required this.accrual, required this.maturity});
 
-  final double principal;
-  final double rate;
-  final DateTime start;
-  final DateTime maturity;
-  final String currency;
+  /// Interest figures calculated by the API (same numbers as the list card).
+  final InvestmentAccrual accrual;
+  final DateTime? maturity;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final now = DateTime.now();
-
-    final totalDays = maturity.difference(start).inDays;
-    final elapsedDays = now.difference(start).inDays.clamp(0, totalDays);
-    final progress = totalDays > 0 ? elapsedDays / totalDays : 1.0;
-    final years = totalDays / 365.0;
-    final elapsedYears = elapsedDays / 365.0;
-
-    // Simple interest accrual.
-    final maturityValue = principal * (1 + rate * years);
-    final todayValue = principal * (1 + rate * elapsedYears);
-    final interestSoFar = todayValue - principal;
-    final totalInterest = maturityValue - principal;
-
-    final matured = !now.isBefore(maturity);
-    final daysToGo = maturity.difference(now).inDays;
+    final progress = accrual.progress.clamp(0.0, 1.0);
 
     return Card(
       child: Padding(
@@ -180,44 +208,53 @@ class _ProjectionCard extends StatelessWidget {
               children: [
                 Icon(Icons.trending_up, color: scheme.primary),
                 const SizedBox(width: 8),
-                Text('invest.maturityProjection'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                Text(
+                  'invest.maturityProjection'.tr(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 6),
             Text(
-              matured
+              accrual.matured || maturity == null
                   ? 'invest.matured'.tr()
-                  : 'invest.maturesOn'.tr(args: [_fmtDate(maturity), '$daysToGo']),
+                  : 'invest.maturesOn'.tr(
+                      args: [_fmtDate(maturity!), '${accrual.daysToMaturity}'],
+                    ),
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 14),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: progress.toDouble().clamp(0, 1),
+                value: progress,
                 minHeight: 12,
                 backgroundColor: scheme.surfaceContainerHigh,
                 color: scheme.primary,
               ),
             ),
             const SizedBox(height: 4),
-            Text('${(progress * 100).toStringAsFixed(0)}%',
-                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}%',
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+            ),
             const SizedBox(height: 16),
 
             // Today vs maturity estimates.
             _EstRow(
               label: 'invest.estToday'.tr(),
-              value: _money(todayValue, currency),
-              sub: '${'invest.interestSoFar'.tr()}: ${_money(interestSoFar, currency)}',
+              value: accrual.estimatedValue.formatted,
+              sub: '${'invest.interestSoFar'.tr()}: ${accrual.interestSoFar.formatted}',
               highlight: true,
             ),
             const Divider(height: 24),
             _EstRow(
               label: 'invest.atMaturity'.tr(),
-              value: _money(maturityValue, currency),
-              sub: '${'invest.totalInterest'.tr()}: ${_money(totalInterest, currency)}',
+              value: accrual.maturityValue.formatted,
+              sub: '${'invest.totalInterest'.tr()}: ${accrual.totalInterest.formatted}',
             ),
           ],
         ),
@@ -229,7 +266,12 @@ class _ProjectionCard extends StatelessWidget {
 }
 
 class _EstRow extends StatelessWidget {
-  const _EstRow({required this.label, required this.value, required this.sub, this.highlight = false});
+  const _EstRow({
+    required this.label,
+    required this.value,
+    required this.sub,
+    this.highlight = false,
+  });
   final String label;
   final String value;
   final String sub;
@@ -247,22 +289,32 @@ class _EstRow extends StatelessWidget {
             children: [
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(sub, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+              Text(
+                sub,
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+              ),
             ],
           ),
         ),
-        Text(value,
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                color: highlight ? scheme.primary : scheme.onSurface)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: highlight ? scheme.primary : scheme.onSurface,
+          ),
+        ),
       ],
     );
   }
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -272,18 +324,14 @@ class _InfoRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-      title: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
-      trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(
+        label,
+        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+      ),
+      trailing: Text(
+        value,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
     );
   }
-}
-
-String _money(double major, String currency) {
-  const symbols = {'MWK': 'MK', 'USD': '\$', 'ZAR': 'R', 'KES': 'KSh', 'NGN': '₦'};
-  final symbol = symbols[currency] ?? currency;
-  final whole = major.truncateToDouble() == major;
-  final s = major.toStringAsFixed(whole ? 0 : 2);
-  final parts = s.split('.');
-  final grouped = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-  return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
 }

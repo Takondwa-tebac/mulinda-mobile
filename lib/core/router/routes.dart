@@ -21,6 +21,8 @@ abstract class Routes {
 
   static const coach = '/coach';
   static const insights = '/insights';
+  static const notificationDetail = '/notifications/:id';
+  static String notificationDetailFor(String id) => '/notifications/$id';
 
   // Capture / activity
   static const addTransaction = '/add-transaction';
@@ -30,6 +32,7 @@ abstract class Routes {
   static const scanReceipt = '/scan-receipt';
   static const inbox = '/inbox';
   static const bulkSmsImport = '/bulk-sms-import';
+  static const manualSmsScan = '/manual-sms-scan';
   static const review = '/review';
   static const exports = '/exports';
   static const dailySummaries = '/daily-summaries';
@@ -68,4 +71,5 @@ abstract class Routes {
   static const adminUsers = '/admin/users';
   static const adminUserDetail = '/admin/users/:userId';
   static const adminAudit = '/admin/audit';
+  static const adminAnalytics = '/admin/analytics';
 }

@@ -29,8 +29,13 @@ class PushService {
       // Foreground: show local notification and refresh the relevant provider.
       FirebaseMessaging.onMessage.listen((m) {
         final n = m.notification;
-        if (n != null)
-          NotificationService.show(n.title ?? 'Mulinda', n.body ?? '');
+        if (n != null) {
+          NotificationService.show(
+            n.title ?? 'Mulinda',
+            n.body ?? '',
+            imageUrl: n.android?.imageUrl ?? n.apple?.imageUrl,
+          );
+        }
         _refreshFromData(ref, m.data);
       });
 
@@ -74,6 +79,7 @@ class PushService {
       ref.invalidate(pendingReceiptsProvider);
     } else {
       ref.invalidate(unreadInsightsCountProvider);
+      ref.invalidate(insightsProvider);
     }
   }
 
@@ -96,6 +102,10 @@ class PushService {
           type == 'subscription_expiration') {
         // Show subscription screen for SMS capture limit or expiration reminders
         router.go(Routes.subscription);
+      } else if (type == 'announcement' && data['insight_id'] != null) {
+        // Admin broadcast: open the list, then the notification itself.
+        router.go(Routes.insights);
+        router.push(Routes.notificationDetailFor(data['insight_id'].toString()));
       } else {
         router.go(Routes.insights);
       }

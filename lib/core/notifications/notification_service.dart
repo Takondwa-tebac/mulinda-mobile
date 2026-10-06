@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:path_provider/path_provider.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 /// Local-notifications setup. Initialises the plugin and a reminders channel so
@@ -102,9 +106,20 @@ class NotificationService {
     } catch (_) {}
   }
 
-  /// Show a notification now (used to surface foreground FCM messages).
-  static Future<void> show(String title, String body) async {
+  /// Show a notification now (used to surface foreground FCM messages). When
+  /// [imageUrl] is given the image is downloaded and shown as a big picture;
+  /// if the download fails the plain notification is still shown.
+  static Future<void> show(String title, String body, {String? imageUrl}) async {
     try {
+      final imagePath = await _downloadImage(imageUrl);
+      final style = imagePath == null
+          ? null
+          : BigPictureStyleInformation(
+              FilePathAndroidBitmap(imagePath),
+              hideExpandedLargeIcon: true,
+              contentTitle: title,
+              summaryText: body,
+            );
       await _plugin.show(
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
         title,
@@ -116,9 +131,42 @@ class NotificationService {
             channelDescription: _channel.description,
             importance: Importance.high,
             priority: Priority.high,
+            styleInformation: style,
           ),
         ),
       );
     } catch (_) {}
+  }
+
+  /// Local notice (works with no connection) when a captured SMS had to be
+  /// queued because the device is offline. Safe from the background isolate:
+  /// initialises the plugin first.
+  static Future<void> showSmsQueued(String smsBody) async {
+    await init();
+    final m = RegExp(r'(?:MWK|MK)\s?([\d,]+(?:\.\d+)?)', caseSensitive: false)
+        .firstMatch(smsBody);
+    final amount = m == null ? null : 'MK ${m.group(1)}';
+    await show(
+      'SMS saved offline',
+      amount == null
+          ? "We saved this message and will record it as soon as you're back online."
+          : 'We saved $amount and will record it as soon as you\'re back online.',
+    );
+  }
+
+  static Future<String?> _downloadImage(String? url) async {
+    if (url == null || url.isEmpty) return null;
+    try {
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/push_${url.hashCode}.img';
+      await Dio().download(
+        url,
+        path,
+        options: Options(receiveTimeout: const Duration(seconds: 10)),
+      );
+      return File(path).existsSync() ? path : null;
+    } catch (_) {
+      return null;
+    }
   }
 }

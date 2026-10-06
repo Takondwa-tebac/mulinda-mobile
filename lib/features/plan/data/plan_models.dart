@@ -50,6 +50,7 @@ class GoalItem {
     required this.current,
     this.targetDate,
     this.monthlyContribution,
+    this.pending = false,
   });
 
   final String id;
@@ -59,6 +60,9 @@ class GoalItem {
   final Money current;
   final String? targetDate;
   final Money? monthlyContribution;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   double get progress => target.minorUnits > 0
       ? (current.minorUnits / target.minorUnits).clamp(0, 1).toDouble()
@@ -72,6 +76,7 @@ class GoalItem {
         current: Money.parse(j['current']),
         targetDate: _str(j['target_date']),
         monthlyContribution: j['monthly_contribution'] == null ? null : Money.parse(j['monthly_contribution']),
+        pending: j['_pending'] == true,
       );
 }
 
@@ -130,6 +135,7 @@ class LoanItem {
     required this.disbursedAt,
     this.firstPaymentDate,
     required this.outstanding,
+    this.pending = false,
   });
 
   final String id;
@@ -143,6 +149,9 @@ class LoanItem {
   final String? disbursedAt;
   final String? firstPaymentDate;
   final Money outstanding;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   factory LoanItem.fromJson(Map<String, dynamic> j) {
     final progress = (j['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -158,8 +167,41 @@ class LoanItem {
       disbursedAt: _str(j['disbursed_at']),
       firstPaymentDate: _str(j['first_payment_date']),
       outstanding: Money.parse(progress['outstanding']),
+      pending: j['_pending'] == true,
     );
   }
+}
+
+/// Interest accrued so far on a term investment, computed by the API so the
+/// list card and the detail screen always agree.
+class InvestmentAccrual {
+  const InvestmentAccrual({
+    required this.interestSoFar,
+    required this.estimatedValue,
+    required this.totalInterest,
+    required this.maturityValue,
+    required this.progress,
+    required this.daysToMaturity,
+    required this.matured,
+  });
+
+  final Money interestSoFar;
+  final Money estimatedValue;
+  final Money totalInterest;
+  final Money maturityValue;
+  final double progress;
+  final int daysToMaturity;
+  final bool matured;
+
+  factory InvestmentAccrual.fromJson(Map<String, dynamic> j) => InvestmentAccrual(
+        interestSoFar: Money.parse(j['interest_so_far']),
+        estimatedValue: Money.parse(j['estimated_value']),
+        totalInterest: Money.parse(j['total_interest']),
+        maturityValue: Money.parse(j['maturity_value']),
+        progress: _num(j['progress']) ?? 0,
+        daysToMaturity: (j['days_to_maturity'] as num?)?.toInt() ?? 0,
+        matured: j['matured'] == true,
+      );
 }
 
 class InvestmentItem {
@@ -176,6 +218,8 @@ class InvestmentItem {
     this.startedAt,
     this.maturityDate,
     this.notes,
+    this.accrual,
+    this.valueSource = 'recorded',
   });
 
   final String id;
@@ -191,6 +235,15 @@ class InvestmentItem {
   final String? maturityDate;
   final String? notes;
 
+  /// Interest accrued so far / at maturity; null when no term or rate is set.
+  final InvestmentAccrual? accrual;
+
+  /// recorded | estimated | invested — how [value] was arrived at.
+  final String valueSource;
+
+  /// True when [value] is the interest-accrued estimate, not a recorded value.
+  bool get isEstimated => valueSource == 'estimated';
+
   factory InvestmentItem.fromJson(Map<String, dynamic> j) => InvestmentItem(
         id: j['id'].toString(),
         name: j['name']?.toString() ?? '',
@@ -204,6 +257,10 @@ class InvestmentItem {
         startedAt: _str(j['started_at']),
         maturityDate: _str(j['maturity_date']),
         notes: _str(j['notes']),
+        accrual: j['accrual'] is Map
+            ? InvestmentAccrual.fromJson((j['accrual'] as Map).cast<String, dynamic>())
+            : null,
+        valueSource: j['value_source']?.toString() ?? 'recorded',
       );
 }
 
@@ -218,6 +275,7 @@ class ProjectItem {
     this.targetDate,
     this.startedAt,
     this.completedAt,
+    this.completionPercentage,
   });
 
   final String id;
@@ -229,6 +287,7 @@ class ProjectItem {
   final String? targetDate;
   final String? startedAt;
   final String? completedAt;
+  final double? completionPercentage;
 
   factory ProjectItem.fromJson(Map<String, dynamic> j) => ProjectItem(
         id: j['id'].toString(),
@@ -240,5 +299,84 @@ class ProjectItem {
         targetDate: _str(j['target_date']),
         startedAt: _str(j['started_at']),
         completedAt: _str(j['completed_at']),
+        completionPercentage: _num(j['completion_percentage']),
       );
+}
+
+class GoalContribution {
+  const GoalContribution({
+    required this.id,
+    required this.goalId,
+    required this.amount,
+    required this.currency,
+    this.financialAccountId,
+    this.transactionId,
+    this.contributedAt,
+    this.note,
+    this.financialAccount,
+    this.transaction,
+  });
+
+  final String id;
+  final String goalId;
+  final Money amount;
+  final String currency;
+  final String? financialAccountId;
+  final String? transactionId;
+  final String? contributedAt;
+  final String? note;
+  final Map<String, dynamic>? financialAccount;
+  final Map<String, dynamic>? transaction;
+
+  factory GoalContribution.fromJson(Map<String, dynamic> j) => GoalContribution(
+        id: j['id'].toString(),
+        goalId: j['goal_id'].toString(),
+        amount: Money.parse(j['amount']),
+        currency: j['currency']?.toString() ?? 'MWK',
+        financialAccountId: _str(j['financial_account_id']),
+        transactionId: _str(j['transaction_id']),
+        contributedAt: _str(j['contributed_at']),
+        note: _str(j['note']),
+        financialAccount: j['financial_account'] as Map<String, dynamic>?,
+        transaction: j['transaction'] as Map<String, dynamic>?,
+  );
+}
+
+class LoanRepayment {
+  const LoanRepayment({
+    required this.id,
+    required this.loanId,
+    required this.amount,
+    required this.currency,
+    this.financialAccountId,
+    this.transactionId,
+    this.paidAt,
+    this.note,
+    this.financialAccount,
+    this.transaction,
+  });
+
+  final String id;
+  final String loanId;
+  final Money amount;
+  final String currency;
+  final String? financialAccountId;
+  final String? transactionId;
+  final String? paidAt;
+  final String? note;
+  final Map<String, dynamic>? financialAccount;
+  final Map<String, dynamic>? transaction;
+
+  factory LoanRepayment.fromJson(Map<String, dynamic> j) => LoanRepayment(
+        id: j['id'].toString(),
+        loanId: j['loan_id'].toString(),
+        amount: Money.parse(j['amount']),
+        currency: j['currency']?.toString() ?? 'MWK',
+        financialAccountId: _str(j['financial_account_id']),
+        transactionId: _str(j['transaction_id']),
+        paidAt: _str(j['paid_at']),
+        note: _str(j['note']),
+        financialAccount: j['financial_account'] as Map<String, dynamic>?,
+        transaction: j['transaction'] as Map<String, dynamic>?,
+  );
 }

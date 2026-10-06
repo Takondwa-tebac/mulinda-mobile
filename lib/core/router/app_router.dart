@@ -10,6 +10,7 @@ import '../../features/activity/screens/add_transaction_screen.dart';
 import '../../features/activity/screens/review_screen.dart';
 import '../../features/capture/screens/inbox_screen.dart';
 import '../../features/capture/screens/bulk_sms_import_screen.dart';
+import '../../features/capture/screens/manual_sms_scan_screen.dart';
 import '../../features/export/screens/export_screen.dart';
 import '../../features/summary/screens/daily_summaries_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
@@ -22,7 +23,9 @@ import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
 import '../../features/legal/screens/legal_page_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
+import '../../features/insights/data/insights_repository.dart' show Insight;
 import '../../features/insights/screens/insights_screen.dart';
+import '../../features/insights/screens/notification_detail_screen.dart';
 import '../../features/onboarding/onboarding_prefs.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
 import '../../features/plan/data/plan_models.dart';
@@ -40,6 +43,7 @@ import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/plan/screens/plan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/admin/screens/admin_analytics_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/audit_trail_screen.dart';
 import '../../features/admin/screens/push_notification_screen.dart';
@@ -145,6 +149,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
       GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
       GoRoute(path: Routes.bulkSmsImport, builder: (_, _) => const BulkSmsImportScreen()),
+      GoRoute(path: Routes.manualSmsScan, builder: (_, _) => const ManualSmsScanScreen()),
       GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),
@@ -157,6 +162,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.personalData, builder: (_, _) => const PersonalDataScreen()),
       GoRoute(path: Routes.preferences, builder: (_, _) => const PreferencesScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
+      GoRoute(
+        path: Routes.notificationDetail,
+        builder: (_, s) => NotificationDetailScreen(
+          notificationId: s.pathParameters['id'] ?? '',
+          initial: s.extra is Insight ? s.extra as Insight : null,
+        ),
+      ),
       GoRoute(
         path: Routes.transactionDetail,
         builder: (_, s) => TransactionDetailScreen(txnId: s.extra as String),
@@ -203,6 +215,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => UserDetailScreen(userId: s.pathParameters['userId'] ?? ''),
       ),
       GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
+      GoRoute(path: Routes.adminAnalytics, builder: (_, _) => const AdminAnalyticsScreen()),
 
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),

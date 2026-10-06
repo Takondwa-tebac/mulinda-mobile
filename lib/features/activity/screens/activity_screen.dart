@@ -301,7 +301,9 @@ class _TxnTile extends StatelessWidget {
         child: Icon(txn.isIncome ? Icons.south_west : Icons.north_east, size: 18),
       ),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text([txn.categoryName, txn.date].where((e) => e != null && e.isNotEmpty).join(' · ')),
+      subtitle: Text([txn.categoryName, txn.date, if (txn.pending) 'Waiting to sync']
+          .where((e) => e != null && e.isNotEmpty)
+          .join(' · ')),
       trailing: Text(
         '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
         style: TextStyle(

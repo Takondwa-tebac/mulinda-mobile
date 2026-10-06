@@ -51,6 +51,8 @@ class User {
 
   bool get isAdmin => roles.contains('admin') || roles.contains('super-admin');
 
+  bool get isSuperAdmin => roles.contains('super-admin');
+
   /// Whether the user currently holds a premium entitlement (see [Entitlements]).
   bool can(String entitlement) => subscription.can(entitlement);
 

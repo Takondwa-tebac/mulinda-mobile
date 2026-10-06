@@ -9,9 +9,10 @@ import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../activity/screens/add_transaction_screen.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
-import 'plan_forms.dart';
+import 'plan_forms.dart' show showEditRepaymentSheet, showRepaySheet;
 
 // ---------------------------------------------------------------------------
 // Shared bits
@@ -293,46 +294,66 @@ class LoanDetailScreen extends ConsumerWidget {
               icon: const Icon(Icons.payments_outlined),
               label: Text('form.repay'.tr()),
             ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        children: [
-          _ProgressCard(
-            icon: Icons.account_balance_outlined,
-            title: l.name,
-            subtitle: 'form.loanStatus.${l.status}'.tr(),
-            progress: progress.toDouble(),
-            leftLabel: 'detail.outstanding'.tr(),
-            leftValue: l.outstanding.formatted,
-            rightLabel: 'detail.principal'.tr(),
-            rightValue: l.principal.formatted,
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                if (l.lender != null && l.lender!.isNotEmpty)
-                  _InfoRow(icon: Icons.store_outlined, label: 'form.lender'.tr(), value: l.lender!),
-                _InfoRow(
-                  icon: Icons.percent,
-                  label: 'form.interestRate'.tr(),
-                  value: '${(l.annualInterestRate * 100).toStringAsFixed(1)}%',
-                ),
-                _InfoRow(
-                  icon: Icons.tune,
-                  label: 'form.interestType'.tr(),
-                  value: 'form.interestTypes.${l.interestType}'.tr(),
-                ),
-                _InfoRow(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'form.termMonths'.tr(),
-                  value: '${l.termMonths}',
-                ),
-                if (l.disbursedAt != null)
-                  _InfoRow(icon: Icons.event_outlined, label: 'form.disbursedAt'.tr(), value: l.disbursedAt!),
-              ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+          children: [
+            _ProgressCard(
+              icon: Icons.account_balance_outlined,
+              title: l.name,
+              subtitle: 'form.loanStatus.${l.status}'.tr(),
+              progress: progress.toDouble(),
+              leftLabel: 'detail.outstanding'.tr(),
+              leftValue: l.outstanding.formatted,
+              rightLabel: 'detail.principal'.tr(),
+              rightValue: l.principal.formatted,
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Card(
+              child: Column(
+                children: [
+                  if (l.lender != null && l.lender!.isNotEmpty)
+                    _InfoRow(icon: Icons.store_outlined, label: 'form.lender'.tr(), value: l.lender!),
+                  _InfoRow(
+                    icon: Icons.percent,
+                    label: 'form.interestRate'.tr(),
+                    value: '${(l.annualInterestRate * 100).toStringAsFixed(1)}%',
+                  ),
+                  _InfoRow(
+                    icon: Icons.tune,
+                    label: 'form.interestType'.tr(),
+                    value: 'form.interestTypes.${l.interestType}'.tr(),
+                  ),
+                  _InfoRow(
+                    icon: Icons.calendar_month_outlined,
+                    label: 'form.termMonths'.tr(),
+                    value: '${l.termMonths}',
+                  ),
+                  if (l.disbursedAt != null)
+                    _InfoRow(icon: Icons.event_outlined, label: 'form.disbursedAt'.tr(), value: l.disbursedAt!),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Repayments section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('loan.repayments'.tr(),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.primary)),
+                    const SizedBox(height: 12),
+                    _RepaymentsList(loanId: l.id),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -381,65 +402,67 @@ class ProjectDetailScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: Text('detail.recordSpend'.tr()),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        children: [
-          if (p.budget != null)
-            _ProgressCard(
-              icon: Icons.home_work_outlined,
-              title: p.name,
-              subtitle: 'form.projectStatus.${p.status}'.tr(),
-              progress: progress,
-              danger: p.spent.minorUnits > budgetMinor && budgetMinor > 0,
-              leftLabel: 'detail.spent'.tr(),
-              leftValue: p.spent.formatted,
-              rightLabel: 'detail.budget'.tr(),
-              rightValue: p.budget!.formatted,
-            )
-          else
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.home_work_outlined),
-                title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('form.projectStatus.${p.status}'.tr()),
-                trailing: Text(p.spent.formatted,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+          children: [
+            if (p.budget != null)
+              _ProgressCard(
+                icon: Icons.home_work_outlined,
+                title: p.name,
+                subtitle: 'form.projectStatus.${p.status}'.tr(),
+                progress: progress,
+                danger: p.spent.minorUnits > budgetMinor && budgetMinor > 0,
+                leftLabel: 'detail.spent'.tr(),
+                leftValue: p.spent.formatted,
+                rightLabel: 'detail.budget'.tr(),
+                rightValue: p.budget!.formatted,
+              )
+            else
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.home_work_outlined),
+                  title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('form.projectStatus.${p.status}'.tr()),
+                  trailing: Text(p.spent.formatted,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+                ),
               ),
-            ),
-          if (p.description != null && p.description!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(p.description!),
+            if (p.description != null && p.description!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(p.description!),
+                ),
               ),
+            ],
+            const SizedBox(height: 20),
+            Text('detail.transactions'.tr(),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            txns.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, _) => Text('activity.loadError'.tr()),
+              data: (list) {
+                final projectTxns = list.where((t) => t.projectId == p.id).toList();
+                if (projectTxns.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text('detail.noProjectTxns'.tr(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  );
+                }
+                return Column(children: projectTxns.map((t) => _ProjectTxnTile(txn: t)).toList());
+              },
             ),
           ],
-          const SizedBox(height: 20),
-          Text('detail.transactions'.tr(),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          txns.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (_, _) => Text('activity.loadError'.tr()),
-            data: (list) {
-              final projectTxns = list.where((t) => t.projectId == p.id).toList();
-              if (projectTxns.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Text('detail.noProjectTxns'.tr(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                );
-              }
-              return Column(children: projectTxns.map((t) => _ProjectTxnTile(txn: t)).toList());
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -455,19 +478,151 @@ class _ProjectTxnTile extends StatelessWidget {
     final title = txn.merchant?.isNotEmpty == true ? txn.merchant! : (txn.categoryName ?? txn.type);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: txn.isIncome ? scheme.primaryContainer : scheme.surfaceContainerHigh,
-          foregroundColor: txn.isIncome ? scheme.onPrimaryContainer : scheme.onSurface,
-          child: Icon(txn.isIncome ? Icons.south_west : Icons.north_east, size: 18),
-        ),
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(txn.date),
-        trailing: Text(
-          '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
-          style: TextStyle(fontWeight: FontWeight.w700, color: txn.isIncome ? scheme.primary : scheme.onSurface),
+      child: InkWell(
+        onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
+        borderRadius: BorderRadius.circular(8),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: txn.isIncome ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+            foregroundColor: txn.isIncome ? scheme.onPrimaryContainer : scheme.onSurface,
+            child: Icon(txn.isIncome ? Icons.south_west : Icons.north_east, size: 18),
+          ),
+          title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text(txn.date),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
+                style: TextStyle(fontWeight: FontWeight.w700, color: txn.isIncome ? scheme.primary : scheme.onSurface),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, size: 18, color: scheme.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+class _RepaymentsList extends ConsumerWidget {
+  const _RepaymentsList({required this.loanId});
+
+  final String loanId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
+    final repaymentsAsync = ref.watch(loanRepaymentsProvider(loanId));
+
+    return repaymentsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text('loan.repaymentsError'.tr(),
+              style: TextStyle(color: scheme.error)),
+        ),
+      ),
+      data: (repayments) {
+        if (repayments.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.payments_outlined,
+                      size: 48,
+                      color: scheme.onSurfaceVariant.withOpacity(0.5)),
+                  const SizedBox(height: 12),
+                  Text('loan.noRepayments'.tr(),
+                      style: TextStyle(color: scheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: repayments.map((r) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: scheme.primaryContainer,
+                foregroundColor: scheme.onPrimaryContainer,
+                child: const Icon(Icons.payments_outlined, size: 18),
+              ),
+              title: Text(r.amount.formatted,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: r.paidAt != null
+                  ? Text(r.paidAt!)
+                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: () => _editRepayment(context, ref, r),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    onPressed: () => _deleteRepayment(context, ref, r),
+                  ),
+                ],
+              ),
+            ),
+          )).toList(),
+        );
+      },
+    );
+  }
+
+  void _editRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) {
+    showEditRepaymentSheet(context, ref, loanId, repayment);
+  }
+
+  void _deleteRepayment(BuildContext context, WidgetRef ref, LoanRepayment repayment) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('form.confirmDeleteTitle'.tr()),
+        content: Text('form.confirmDeleteBody'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text('form.cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text('form.delete'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    try {
+      await ref.read(planRepositoryProvider).deleteLoanRepayment(loanId, repayment.id);
+      ref.invalidate(loanRepaymentsProvider(loanId));
+      ref.invalidate(loansProvider);
+      ref.invalidate(dashboardProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('form.deleted'.tr())));
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    }
   }
 }

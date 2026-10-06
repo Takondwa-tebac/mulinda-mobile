@@ -1,12 +1,12 @@
 import 'dart:developer' as developer;
 
 import 'package:another_telephony/telephony.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/env/app_env.dart';
+import '../../../core/notifications/notification_service.dart';
+import 'sms_background_sync.dart';
+import 'sms_outbox.dart';
 
 /// Debug-only trace of the SMS-capture pipeline. Shows in `flutter run` and
 /// `adb logcat` under the `sms_capture` tag so a headed test can see exactly
@@ -21,7 +21,7 @@ void smsCaptureLog(String message) {
 @pragma('vm:entry-point')
 Future<void> mulindaSmsBackgroundHandler(SmsMessage message) async {
   smsCaptureLog('background SMS received from ${message.address}');
-  await SmsAutoCapture.ingestIfFinancial(message.body, message.address);
+  await SmsAutoCapture.ingestIfFinancial(message.body, message.address, dateMs: message.date);
 }
 
 /// Opt-in automatic capture of *financial* SMS into the inbox for review.
@@ -35,8 +35,6 @@ class SmsAutoCapture {
   static final SmsAutoCapture instance = SmsAutoCapture._();
 
   static const _prefKey = 'sms_auto_capture_enabled';
-  // Must match TokenStorage._tokenKey — the background isolate has no Riverpod.
-  static const _tokenKey = 'mulinda_auth_token';
 
   final Telephony _telephony = Telephony.instance;
 
@@ -52,7 +50,10 @@ class SmsAutoCapture {
 
   /// Start listening if the user has enabled the feature (called at launch).
   Future<void> maybeStart() async {
-    if (await isEnabled()) await _startListening();
+    if (await isEnabled()) {
+      await _startListening();
+      await SmsBackgroundSync.startPeriodic();
+    }
   }
 
   /// Request SMS permission, enable, and start listening. Returns false if the
@@ -62,18 +63,22 @@ class SmsAutoCapture {
     if (!granted) return false;
     await _setEnabled(true);
     await _startListening();
+    await SmsBackgroundSync.startPeriodic();
     return true;
   }
 
   /// Turn the feature off. Listeners are not re-registered on the next launch.
-  Future<void> disable() => _setEnabled(false);
+  Future<void> disable() async {
+    await _setEnabled(false);
+    await SmsBackgroundSync.stop();
+  }
 
   Future<void> _startListening() async {
     try {
       _telephony.listenIncomingSms(
         onNewMessage: (SmsMessage m) {
           smsCaptureLog('foreground SMS received from ${m.address}');
-          ingestIfFinancial(m.body, m.address);
+          ingestIfFinancial(m.body, m.address, dateMs: m.date);
         },
         onBackgroundMessage: mulindaSmsBackgroundHandler,
         listenInBackground: true,
@@ -85,10 +90,19 @@ class SmsAutoCapture {
     }
   }
 
-  /// Send an SMS to the ingest endpoint only if it looks financial. Used by
-  /// both the foreground and background handlers; standalone (no Riverpod) so
-  /// it works in the background isolate.
-  static Future<void> ingestIfFinancial(String? body, String? sender) async {
+  /// Capture an SMS only if it looks financial: queue it durably, then sync.
+  /// Used by both the foreground and background handlers; standalone (no
+  /// Riverpod) so it works in the background isolate.
+  ///
+  /// Online this is one round trip (instant, as before). Offline the SMS stays
+  /// in the outbox, the user gets a local notification, and it syncs — exactly
+  /// once, the server is idempotent — as soon as a trigger fires with a
+  /// connection (next SMS, app open/resume, or the foreground retry timer).
+  static Future<void> ingestIfFinancial(
+    String? body,
+    String? sender, {
+    int? dateMs,
+  }) async {
     final text = (body ?? '').trim();
     if (text.isEmpty) return;
 
@@ -97,26 +111,21 @@ class SmsAutoCapture {
     if (!financial) return; // personal SMS stay on-device
 
     try {
-      const storage = FlutterSecureStorage();
-      final token = await storage.read(key: _tokenKey);
-      if (token == null || token.isEmpty) {
-        smsCaptureLog('skipped: not signed in (no auth token)');
-        return;
-      }
-
-      final dio = Dio(BaseOptions(
-        baseUrl: AppEnv.apiBaseUrl,
-        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-        connectTimeout: const Duration(seconds: 15),
-        sendTimeout: const Duration(seconds: 15),
-      ));
-      final res = await dio.post('/v1/sms', data: {
-        'body': text,
-        if (sender != null && sender.isNotEmpty) 'sender': sender,
-      });
-      smsCaptureLog('POST /v1/sms → ${res.statusCode} (status=${res.data is Map ? (res.data['data']?['status']) : '?'})');
-    } on DioException catch (e) {
-      smsCaptureLog('POST /v1/sms failed: ${e.response?.statusCode} ${e.message}');
+      await SmsOutbox.instance.enqueue(
+        body: text,
+        sender: sender,
+        receivedAtMs: dateMs ?? DateTime.now().millisecondsSinceEpoch,
+        origin: SmsOrigin.live,
+      );
+      final result = await SmsOutbox.instance.flush();
+      smsCaptureLog(
+        'flush: created=${result.created} dup=${result.duplicates} '
+        'pending=${result.pending} offline=${result.offline}',
+      );
+      if (result.offline) await NotificationService.showSmsQueued(text);
+      // Anything left in the outbox syncs as soon as the phone is online,
+      // even if the app stays closed.
+      if (result.pending > 0) await SmsBackgroundSync.syncWhenOnline();
     } catch (e) {
       // Best-effort: never crash on a background message.
       smsCaptureLog('capture error: $e');

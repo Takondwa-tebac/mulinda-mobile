@@ -28,9 +28,37 @@ class AdminRepository {
     await _dio.delete('/v1/admin/users/$userId');
   }
 
+  // Future<Map<String, dynamic>> getUserDetail(String userId) async {
+  //   final res = await _dio.get<Map<String, dynamic>>('/v1/admin/users/$userId');
+  //   return res.data ?? {};
+    
+  // }
+
   Future<Map<String, dynamic>> getUserDetail(String userId) async {
-    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/users/$userId');
-    return res.data ?? {};
+  final res = await _dio.get<Map<String, dynamic>>(
+    '/v1/admin/users/$userId',
+  );
+
+  final response = res.data ?? {};
+
+  final data = response['data'];
+
+  if (data is Map) {
+    return data.cast<String, dynamic>();
+  }
+
+  return response;
+}
+
+  /// Platform analytics (users, subscribers, revenue, usage). The API caches
+  /// the result for a few minutes; [refresh] forces a recompute.
+  Future<Map<String, dynamic>> analytics({bool refresh = false}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/v1/admin/analytics',
+      queryParameters: {if (refresh) 'refresh': 1},
+    );
+    final data = res.data?['data'];
+    return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
   }
 
   Future<Map<String, dynamic>> listAudits({int page = 1}) async {
@@ -39,6 +67,7 @@ class AdminRepository {
       queryParameters: {'page': page, 'per_page': 25},
     );
     return res.data ?? {};
+
   }
 
   /// Comp a user a subscription period (admin gift). [period] is a
@@ -62,14 +91,22 @@ class AdminRepository {
     String? imageUrl,
     List<String>? userIds,
   }) async {
+    final specific = userIds != null && userIds.isNotEmpty;
     final form = FormData.fromMap({
       'title': title,
       'body': body,
+      // Explicit audience so a targeted send can never fall back to everyone.
+      'audience': specific ? 'specific' : 'all',
       if (imagePath != null && imagePath.isNotEmpty)
         'image': await MultipartFile.fromFile(imagePath),
       if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
-      if (userIds != null && userIds.isNotEmpty) 'user_ids': userIds,
     });
+    if (specific) {
+      // Laravel reads repeated `user_ids[]` fields as an array.
+      for (final id in userIds) {
+        form.fields.add(MapEntry('user_ids[]', id));
+      }
+    }
 
     final res = await _dio.post<Map<String, dynamic>>(
       '/v1/admin/notifications/broadcast',

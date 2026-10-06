@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../../core/offline/offline_status.dart';
 import '../../core/widgets/app_update_banner.dart';
 import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
@@ -62,8 +63,27 @@ class _AppShellState extends ConsumerState<AppShell> {
     return Scaffold(
       body: Column(
         children: [
-          const AppUpdateBanner(),
-          Expanded(child: navigationShell),
+          // Offline mode: "showing saved data" bar. It handles the status-bar
+          // inset itself, so the content below drops its own top padding.
+          const OfflineBanner(),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: ref.watch(offlineBannerVisibleProvider),
+              child: Stack(
+                children: [
+                  navigationShell,
+                  // Floats over the content so it never shifts the layout.
+                  const SafeArea(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: AppUpdateBanner(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
       // Hide the capture FAB on the Profile tab (index 3) — it only clutters

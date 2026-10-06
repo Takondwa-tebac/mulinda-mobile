@@ -67,7 +67,9 @@ Future<void> _delete(
   Future<void> Function() del,
   ProviderOrFamily provider,
 ) async {
-  if (!await _confirmDelete(context)) return;
+  final confirmed = await _confirmDelete(context);
+  if (!confirmed || !context.mounted) return;
+
   try {
     await del();
     ref.invalidate(provider);
@@ -102,6 +104,7 @@ class GoalsListScreen extends ConsumerWidget {
         },
         tile: (g) => _PlanTile(
           title: g.name,
+          pending: g.pending,
           value: '${g.current.formatted} / ${g.target.formatted}',
           progress: g.progress,
           onTap: () => context.push(Routes.goalDetail, extra: g),
@@ -131,7 +134,7 @@ class BudgetsListScreen extends ConsumerWidget {
         tile: (b) => _PlanTile(
           title: b.name,
           value: '${b.spent.formatted} / ${b.limit.formatted}',
-          progress: (b.percentage / 100).clamp(0, 1).toDouble(),
+          progress: b.percentage / 100,
           danger: b.isExceeded,
           onTap: () => context.push(Routes.budgetDetail, extra: b),
           onEdit: () => context.push(Routes.budgetForm, extra: b),
@@ -158,6 +161,7 @@ class LoansListScreen extends ConsumerWidget {
         },
         tile: (l) => _PlanTile(
           title: l.name,
+          pending: l.pending,
           value: l.outstanding.formatted,
           sub: 'form.loanStatus.${l.status}'.tr(),
           onTap: () => context.push(Routes.loanDetail, extra: l),
@@ -187,7 +191,10 @@ class InvestmentsListScreen extends ConsumerWidget {
         tile: (i) => _PlanTile(
           title: i.name,
           value: i.value.formatted,
-          sub: i.gain.formatted,
+          // Term investments show the interest earned so far (estimated by the
+          // API from the rate and elapsed days); others show the plain gain.
+          sub: '${'invest.type.${i.type}'.tr()} · '
+              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}',
           subColor: i.gain.isNegative ? Colors.red : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
@@ -215,7 +222,10 @@ class ProjectsListScreen extends ConsumerWidget {
         tile: (p) => _PlanTile(
           title: p.name,
           value: p.spent.formatted,
+          valueLabel: 'project.spent'.tr(),
           sub: p.budget?.formatted,
+          subLabel: 'project.budget'.tr(),
+          progress: p.completionPercentage,
           onTap: () => context.push(Routes.projectDetail, extra: p),
           onEdit: () => context.push(Routes.projectForm, extra: p),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
@@ -229,7 +239,9 @@ class _PlanTile extends StatelessWidget {
   const _PlanTile({
     required this.title,
     required this.value,
+    this.valueLabel,
     this.sub,
+    this.subLabel,
     this.subColor,
     this.progress,
     this.danger = false,
@@ -237,11 +249,14 @@ class _PlanTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.extra,
+    this.pending = false,
   });
 
   final String title;
   final String value;
+  final String? valueLabel;
   final String? sub;
+  final String? subLabel;
   final Color? subColor;
   final double? progress;
   final bool danger;
@@ -250,16 +265,21 @@ class _PlanTile extends StatelessWidget {
   final VoidCallback onDelete;
   final (String, VoidCallback)? extra;
 
+  /// Made offline and not synced yet.
+  final bool pending;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final clampedProgress = progress?.clamp(0.0, 1.0);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap ?? onEdit,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -267,39 +287,123 @@ class _PlanTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      title,
+                    child: Text.rich(
+                      TextSpan(children: [
+                        if (pending)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Tooltip(
+                                message: 'Waiting to sync',
+                                child: Icon(Icons.cloud_upload_outlined, size: 16, color: scheme.tertiary),
+                              ),
+                            ),
+                          ),
+                        TextSpan(text: title),
+                      ]),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    value,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: danger ? scheme.error : scheme.primary),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: danger ? scheme.error : scheme.primary,
+                        ),
+                      ),
+                      if (valueLabel != null)
+                        Text(
+                          valueLabel!,
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
+                  ),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (action) {
+                      if (action == 'extra' && extra != null) extra!.$2();
+                      if (action == 'edit') onEdit();
+                      if (action == 'delete') onDelete();
+                    },
+                    itemBuilder: (context) => [
+                      if (extra != null)
+                        PopupMenuItem(
+                          value: 'extra',
+                          child: Text(extra!.$1),
+                        ),
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('form.edit'.tr()),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('form.delete'.tr()),
+                      ),
+                    ],
                   ),
                 ],
               ),
               if (sub != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(sub!,
-                      style: TextStyle(
+                  child: Row(
+                    children: [
+                      if (subLabel != null)
+                        Text(
+                          '$subLabel: ',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                        ),
+                      Text(
+                        sub!,
+                        style: TextStyle(
                           color: subColor ?? scheme.onSurfaceVariant,
-                          fontSize: 13)),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              if (progress != null) ...[
+              if (clampedProgress != null) ...[
                 const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: scheme.surfaceContainerHigh,
-                    color: danger ? scheme.error : scheme.primary,
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: clampedProgress,
+                            minHeight: 8,
+                            backgroundColor: scheme.surfaceContainerHigh,
+                            color: danger ? scheme.error : scheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${(clampedProgress * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -5,6 +5,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/offline/cache_store.dart';
+import '../../capture/data/sms_outbox.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
 import '../data/user.dart';
@@ -52,7 +54,14 @@ class AuthController extends Notifier<AuthState> {
       state = const AuthState(status: AuthStatus.unauthenticated);
       return;
     }
-    state = const AuthState(status: AuthStatus.authenticated);
+
+    // Start with the remembered profile (name, plan, entitlements) so the app is
+    // usable immediately and with no connection; refresh it in the background.
+    final cached = await _repo.cachedUser().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => null,
+    );
+    state = AuthState(status: AuthStatus.authenticated, user: cached);
     unawaited(_loadUser());
   }
 
@@ -65,6 +74,8 @@ class AuthController extends Notifier<AuthState> {
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         await _tokens.clear();
+        await _repo.clearCachedUser();
+        await _clearOfflineData();
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
     } catch (_) {
@@ -81,6 +92,13 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Keep current state; entitlements refresh on the next successful load.
     }
+  }
+
+  /// Saved offline data belongs to the signed-in account only.
+  Future<void> _clearOfflineData() async {
+    try {
+      await EncryptedCacheStore.instance.clearAll();
+    } catch (_) {}
   }
 
   /// Once a user has authenticated they should never see onboarding again,
@@ -187,6 +205,8 @@ class AuthController extends Notifier<AuthState> {
   Future<void> deleteAccount(String confirmation) async {
     await _repo.deleteAccount(confirmation);
     await _tokens.clear();
+    await _repo.clearCachedUser();
+    await _clearOfflineData();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -197,6 +217,9 @@ class AuthController extends Notifier<AuthState> {
       // Even if the API call fails, clear locally.
     }
     await _tokens.clear();
+    await _repo.clearCachedUser();
+    await _clearOfflineData();
+    await SmsOutbox.instance.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

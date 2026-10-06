@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
-import 'user_detail_screen.dart';
-
-final _usersProvider =
-    FutureProvider.family<Map<String, dynamic>, String>((ref, search) {
-  return ref.read(adminRepositoryProvider).listUsers(search: search);
-});
 
 class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
@@ -20,18 +15,105 @@ class UserManagementScreen extends ConsumerStatefulWidget {
 
 class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   final _search = TextEditingController();
+  final _scroll = ScrollController();
   String _query = '';
+  int _page = 1;
+  int? _lastPage;
+  bool _loading = true;
+  bool _loadingMore = false;
+  String? _error;
+  final List<Map<String, dynamic>> _users = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    _scroll.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
     _search.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        (_lastPage == null || _page < _lastPage!)) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _users.clear();
+      _page = 1;
+    });
+    try {
+      final data = await ref
+          .read(adminRepositoryProvider)
+          .listUsers(page: 1, search: _query);
+      if (!mounted) return;
+      final items = (data['data'] as List?) ?? [];
+      final meta = data['meta'] as Map<String, dynamic>?;
+      setState(() {
+        _users.addAll(items.cast<Map<String, dynamic>>());
+        _lastPage = (meta?['last_page'] as num?)?.toInt();
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.displayMessage;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    try {
+      final next = _page + 1;
+      final data = await ref
+          .read(adminRepositoryProvider)
+          .listUsers(page: next, search: _query);
+      if (!mounted) return;
+      final items = (data['data'] as List?) ?? [];
+      setState(() {
+        _page = next;
+        _users.addAll(items.cast<Map<String, dynamic>>());
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  void _runSearch(String value) {
+    _query = value.trim();
+    _load();
+  }
+
+  Future<void> _openDetail(String userId) async {
+    // The detail screen can change roles or delete the user — refresh on return.
+    await context.push('/admin/users/$userId');
+    if (mounted) _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(_usersProvider(_query));
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Users'),
@@ -50,368 +132,125 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _search.clear();
-                          setState(() => _query = '');
+                          _runSearch('');
                         },
                       ),
                 isDense: true,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30)),
+                  borderRadius: BorderRadius.circular(30),
+                ),
                 filled: true,
               ),
-              onSubmitted: (v) => setState(() => _query = v.trim()),
+              onSubmitted: _runSearch,
               textInputAction: TextInputAction.search,
             ),
           ),
         ),
       ),
       body: SafeArea(
-        child: async.when(
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.wifi_off_outlined, size: 48),
-                const SizedBox(height: 12),
-                Text(e is ApiException ? e.displayMessage : e.toString(),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => ref.invalidate(_usersProvider(_query)),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-          data: (data) {
-            final users = (data['data'] as List?) ?? [];
-            if (users.isEmpty) {
-              return const Center(child: Text('No users found.'));
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: users.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final u = users[i] as Map<String, dynamic>;
-                // Roles may arrive as plain name strings or as {name: ...} objects.
-                final roles = (u['roles'] as List?)
-                        ?.map((r) => r is Map ? (r['name']?.toString() ?? '') : r.toString())
-                        .where((r) => r.isNotEmpty)
-                        .toList() ??
-                    <String>[];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onPrimaryContainer,
-                    child: Text(
-                      _initials(u['full_name']?.toString() ??
-                          u['username']?.toString() ??
-                          '?'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wifi_off_outlined, size: 48),
+                    const SizedBox(height: 12),
+                    Text(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _load,
+                      child: const Text('Retry'),
                     ),
-                  ),
-                  title: Text(
-                      u['full_name']?.toString() ??
-                          u['username']?.toString() ??
-                          '',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(u['email']?.toString() ?? '',
-                      style: const TextStyle(fontSize: 12)),
-                  trailing: roles.isEmpty
-                      ? null
-                      : Chip(
-                          label: Text(roles.first,
-                              style: const TextStyle(fontSize: 11)),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                  onTap: () => context.push('/admin/users/${u['id']}'),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showUserSheet(
-      BuildContext context, Map<String, dynamic> user, List roles) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: _UserSheet(
-          user: user,
-          currentRoles: roles.map((r) => r.toString()).toList(),
-          onChanged: () {
-            ref.invalidate(_usersProvider(_query));
-          },
-        ),
-      ),
-    );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return (parts.first[0] + parts.last[0]).toUpperCase();
-  }
-}
-
-class _UserSheet extends ConsumerStatefulWidget {
-  const _UserSheet({
-    required this.user,
-    required this.currentRoles,
-    required this.onChanged,
-  });
-
-  final Map<String, dynamic> user;
-  final List<String> currentRoles;
-  final VoidCallback onChanged;
-
-  @override
-  ConsumerState<_UserSheet> createState() => _UserSheetState();
-}
-
-class _UserSheetState extends ConsumerState<_UserSheet> {
-  late List<String> _roles;
-  bool _saving = false;
-  bool _deleting = false;
-
-  static const _allRoles = ['user', 'admin', 'super-admin'];
-
-  @override
-  void initState() {
-    super.initState();
-    _roles = List.from(widget.currentRoles);
-  }
-
-  Future<void> _saveRoles() async {
-    setState(() => _saving = true);
-    try {
-      await ref
-          .read(adminRepositoryProvider)
-          .updateUserRoles(widget.user['id'].toString(), _roles);
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onChanged();
-      }
-    } on ApiException catch (e) {
-      if (mounted) _snack(e.displayMessage, error: true);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<void> _giftPremium() async {
-    const periods = [
-      ('day', 'Day Pass'),
-      ('three_day', '3-Day Pass'),
-      ('week', 'Weekly'),
-      ('month', 'Monthly'),
-    ];
-
-    final period = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheetCtx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Gift a subscription',
-                      style: Theme.of(sheetCtx).textTheme.titleMedium),
+                  ],
+                ),
+              )
+            : _users.isEmpty
+            ? const Center(child: Text('No users found.'))
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView.separated(
+                  controller: _scroll,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: _users.length + (_loadingMore ? 1 : 0),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    if (i == _users.length) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    return _UserTile(
+                      user: _users[i],
+                      onTap: () => _openDetail(_users[i]['id'].toString()),
+                    );
+                  },
                 ),
               ),
-              for (final (value, label) in periods)
-                ListTile(
-                  leading: const Icon(Icons.card_giftcard),
-                  title: Text(label),
-                  onTap: () => Navigator.of(sheetCtx).pop(value),
-                ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
       ),
     );
-
-    if (period == null || !mounted) return;
-
-    setState(() => _saving = true);
-    try {
-      await ref.read(adminRepositoryProvider).grantCredit(
-            userId: widget.user['id'].toString(),
-            period: period,
-            reason: 'Admin gift',
-          );
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onChanged();
-        _snack('Premium gifted to ${widget.user['full_name'] ?? widget.user['username']}.');
-      }
-    } on ApiException catch (e) {
-      if (mounted) _snack(e.displayMessage, error: true);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
   }
+}
 
-  Future<void> _deleteUser() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Delete user?'),
-        content: Text(
-            'This will permanently remove ${widget.user['full_name'] ?? widget.user['email']}. This cannot be undone.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancel')),
-          FilledButton(
-              style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(c).colorScheme.error),
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Delete')),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
+class _UserTile extends StatelessWidget {
+  const _UserTile({required this.user, required this.onTap});
 
-    setState(() => _deleting = true);
-    try {
-      await ref
-          .read(adminRepositoryProvider)
-          .deleteUser(widget.user['id'].toString());
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onChanged();
-      }
-    } on ApiException catch (e) {
-      if (mounted) _snack(e.displayMessage, error: true);
-    } finally {
-      if (mounted) setState(() => _deleting = false);
-    }
-  }
-
-  void _snack(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(msg),
-        backgroundColor: error ? Theme.of(context).colorScheme.error : null,
-      ));
-  }
+  final Map<String, dynamic> user;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final busy = _saving || _deleting;
+    final name = user['full_name']?.toString() ?? user['username']?.toString();
+    // Roles may arrive as plain name strings or as {name: ...} objects.
+    final roles =
+        (user['roles'] as List?)
+            ?.map(
+              (r) => r is Map ? (r['name']?.toString() ?? '') : r.toString(),
+            )
+            .where((r) => r.isNotEmpty)
+            .toList() ??
+        <String>[];
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.user['full_name']?.toString() ??
-                  widget.user['username']?.toString() ??
-                  'User',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            Text(widget.user['email']?.toString() ?? '',
-                style: TextStyle(color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            Text('Roles',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Card(
-              child: Column(
-                children: _allRoles
-                    .map((role) => CheckboxListTile(
-                          title: Text(role),
-                          value: _roles.contains(role),
-                          onChanged: busy
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    if (v == true) {
-                                      _roles.add(role);
-                                    } else {
-                                      _roles.remove(role);
-                                    }
-                                  });
-                                },
-                        ))
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: busy ? null : _giftPremium,
-                icon: const Icon(Icons.card_giftcard),
-                label: const Text('Gift premium'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: busy ? null : _deleteUser,
-                    icon: _deleting
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.delete_outline),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: scheme.error,
-                      side: BorderSide(color: scheme.error),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: busy ? null : _saveRoles,
-                    icon: _saving
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.check),
-                    label: const Text('Save roles'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.onPrimaryContainer,
+        child: Text(
+          _initials(name ?? '?'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
+      title: Text(
+        name ?? '',
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        user['email']?.toString() ?? '',
+        style: const TextStyle(fontSize: 12),
+      ),
+      trailing: roles.isEmpty
+          ? null
+          : Chip(
+              label: Text(roles.first, style: const TextStyle(fontSize: 11)),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+            ),
+      onTap: onTap,
     );
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 }

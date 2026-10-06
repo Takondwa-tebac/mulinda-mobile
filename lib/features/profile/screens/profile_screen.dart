@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/income/income_bands.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/security/screenshot_protection.dart';
 import '../../auth/providers/auth_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -157,6 +158,21 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: const Text('Users, notifications, audit trail'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(Routes.admin),
+              ),
+            ),
+          ],
+          if (user?.isSuperAdmin == true) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.screenshot_monitor_outlined),
+                title: const Text('Block screenshots'),
+                subtitle: const Text(
+                  'Stops screenshots and screen recording in the app for your account. Only super-admins can turn this off.',
+                ),
+                value: ref.watch(screenshotProtectionProvider),
+                onChanged: (v) =>
+                    ref.read(screenshotProtectionProvider.notifier).setProtected(v),
               ),
             ),
           ],
