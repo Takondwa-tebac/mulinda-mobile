@@ -518,7 +518,9 @@
       "business": "Business",
       "property": "Property",
       "other": "Other"
-    }
+    },
+    "gain": "Gain",
+    "estimated": "Estimated"
   },
   "currency": {
     "select": "Select currency",

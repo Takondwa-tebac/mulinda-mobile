@@ -31,16 +31,9 @@ class InvestmentDetailScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
-    final start = DateTime.tryParse(inv.startedAt ?? '');
     final maturity = DateTime.tryParse(inv.maturityDate ?? '');
     final rate = inv.expectedReturn; // annual, as a fraction (e.g. 0.0575)
-    final principal = inv.amountInvested.amount;
-    final currency = inv.amountInvested.currency;
-    final hasProjection =
-        start != null &&
-        maturity != null &&
-        rate != null &&
-        maturity.isAfter(start);
+    final accrual = inv.accrual; // computed by the API
 
     return Scaffold(
       appBar: AppBar(
@@ -87,26 +80,32 @@ class InvestmentDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'invest.currentValue'.tr(),
+                      inv.isEstimated
+                          ? '${'invest.currentValue'.tr()} · ${'invest.estimated'.tr()}'
+                          : 'invest.currentValue'.tr(),
                       style: TextStyle(
                         color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
+                    if (inv.isEstimated) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${'invest.interestSoFar'.tr()}: ${inv.gain.formatted}',
+                        style: TextStyle(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            if (hasProjection)
-              _ProjectionCard(
-                principal: principal,
-                rate: rate,
-                start: start,
-                maturity: maturity,
-                currency: currency,
-              ),
+            if (accrual != null)
+              _ProjectionCard(accrual: accrual, maturity: maturity),
 
             const SizedBox(height: 16),
             Card(
@@ -188,39 +187,16 @@ class InvestmentDetailScreen extends ConsumerWidget {
 }
 
 class _ProjectionCard extends StatelessWidget {
-  const _ProjectionCard({
-    required this.principal,
-    required this.rate,
-    required this.start,
-    required this.maturity,
-    required this.currency,
-  });
+  const _ProjectionCard({required this.accrual, required this.maturity});
 
-  final double principal;
-  final double rate;
-  final DateTime start;
-  final DateTime maturity;
-  final String currency;
+  /// Interest figures calculated by the API (same numbers as the list card).
+  final InvestmentAccrual accrual;
+  final DateTime? maturity;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final now = DateTime.now();
-
-    final totalDays = maturity.difference(start).inDays;
-    final elapsedDays = now.difference(start).inDays.clamp(0, totalDays);
-    final progress = totalDays > 0 ? elapsedDays / totalDays : 1.0;
-    final years = totalDays / 365.0;
-    final elapsedYears = elapsedDays / 365.0;
-
-    // Simple interest accrual.
-    final maturityValue = principal * (1 + rate * years);
-    final todayValue = principal * (1 + rate * elapsedYears);
-    final interestSoFar = todayValue - principal;
-    final totalInterest = maturityValue - principal;
-
-    final matured = !now.isBefore(maturity);
-    final daysToGo = maturity.difference(now).inDays;
+    final progress = accrual.progress.clamp(0.0, 1.0);
 
     return Card(
       child: Padding(
@@ -243,10 +219,10 @@ class _ProjectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              matured
+              accrual.matured || maturity == null
                   ? 'invest.matured'.tr()
                   : 'invest.maturesOn'.tr(
-                      args: [_fmtDate(maturity), '$daysToGo'],
+                      args: [_fmtDate(maturity!), '${accrual.daysToMaturity}'],
                     ),
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
             ),
@@ -254,7 +230,7 @@ class _ProjectionCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: progress.toDouble().clamp(0, 1),
+                value: progress,
                 minHeight: 12,
                 backgroundColor: scheme.surfaceContainerHigh,
                 color: scheme.primary,
@@ -270,17 +246,15 @@ class _ProjectionCard extends StatelessWidget {
             // Today vs maturity estimates.
             _EstRow(
               label: 'invest.estToday'.tr(),
-              value: _money(todayValue, currency),
-              sub:
-                  '${'invest.interestSoFar'.tr()}: ${_money(interestSoFar, currency)}',
+              value: accrual.estimatedValue.formatted,
+              sub: '${'invest.interestSoFar'.tr()}: ${accrual.interestSoFar.formatted}',
               highlight: true,
             ),
             const Divider(height: 24),
             _EstRow(
               label: 'invest.atMaturity'.tr(),
-              value: _money(maturityValue, currency),
-              sub:
-                  '${'invest.totalInterest'.tr()}: ${_money(totalInterest, currency)}',
+              value: accrual.maturityValue.formatted,
+              sub: '${'invest.totalInterest'.tr()}: ${accrual.totalInterest.formatted}',
             ),
           ],
         ),
@@ -360,23 +334,4 @@ class _InfoRow extends StatelessWidget {
       ),
     );
   }
-}
-
-String _money(double major, String currency) {
-  const symbols = {
-    'MWK': 'MK',
-    'USD': '\$',
-    'ZAR': 'R',
-    'KES': 'KSh',
-    'NGN': '₦',
-  };
-  final symbol = symbols[currency] ?? currency;
-  final whole = major.truncateToDouble() == major;
-  final s = major.toStringAsFixed(whole ? 0 : 2);
-  final parts = s.split('.');
-  final grouped = parts[0].replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (m) => ',',
-  );
-  return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
 }

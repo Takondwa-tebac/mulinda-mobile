@@ -518,7 +518,9 @@
       "business": "Bizinesi",
       "property": "Katundu",
       "other": "Zina"
-    }
+    },
+    "gain": "Phindu",
+    "estimated": "Kuyerekeza"
   },
   "currency": {
     "select": "Sankhani ndalama",

@@ -162,6 +162,38 @@ class LoanItem {
   }
 }
 
+/// Interest accrued so far on a term investment, computed by the API so the
+/// list card and the detail screen always agree.
+class InvestmentAccrual {
+  const InvestmentAccrual({
+    required this.interestSoFar,
+    required this.estimatedValue,
+    required this.totalInterest,
+    required this.maturityValue,
+    required this.progress,
+    required this.daysToMaturity,
+    required this.matured,
+  });
+
+  final Money interestSoFar;
+  final Money estimatedValue;
+  final Money totalInterest;
+  final Money maturityValue;
+  final double progress;
+  final int daysToMaturity;
+  final bool matured;
+
+  factory InvestmentAccrual.fromJson(Map<String, dynamic> j) => InvestmentAccrual(
+        interestSoFar: Money.parse(j['interest_so_far']),
+        estimatedValue: Money.parse(j['estimated_value']),
+        totalInterest: Money.parse(j['total_interest']),
+        maturityValue: Money.parse(j['maturity_value']),
+        progress: _num(j['progress']) ?? 0,
+        daysToMaturity: (j['days_to_maturity'] as num?)?.toInt() ?? 0,
+        matured: j['matured'] == true,
+      );
+}
+
 class InvestmentItem {
   const InvestmentItem({
     required this.id,
@@ -176,6 +208,8 @@ class InvestmentItem {
     this.startedAt,
     this.maturityDate,
     this.notes,
+    this.accrual,
+    this.valueSource = 'recorded',
   });
 
   final String id;
@@ -191,6 +225,15 @@ class InvestmentItem {
   final String? maturityDate;
   final String? notes;
 
+  /// Interest accrued so far / at maturity; null when no term or rate is set.
+  final InvestmentAccrual? accrual;
+
+  /// recorded | estimated | invested — how [value] was arrived at.
+  final String valueSource;
+
+  /// True when [value] is the interest-accrued estimate, not a recorded value.
+  bool get isEstimated => valueSource == 'estimated';
+
   factory InvestmentItem.fromJson(Map<String, dynamic> j) => InvestmentItem(
         id: j['id'].toString(),
         name: j['name']?.toString() ?? '',
@@ -204,6 +247,10 @@ class InvestmentItem {
         startedAt: _str(j['started_at']),
         maturityDate: _str(j['maturity_date']),
         notes: _str(j['notes']),
+        accrual: j['accrual'] is Map
+            ? InvestmentAccrual.fromJson((j['accrual'] as Map).cast<String, dynamic>())
+            : null,
+        valueSource: j['value_source']?.toString() ?? 'recorded',
       );
 }
 

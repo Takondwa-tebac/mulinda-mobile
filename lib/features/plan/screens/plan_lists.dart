@@ -189,7 +189,10 @@ class InvestmentsListScreen extends ConsumerWidget {
         tile: (i) => _PlanTile(
           title: i.name,
           value: i.value.formatted,
-          sub: '${'invest.type.${i.type}'.tr()} · ${i.gain.formatted}',
+          // Term investments show the interest earned so far (estimated by the
+          // API from the rate and elapsed days); others show the plain gain.
+          sub: '${'invest.type.${i.type}'.tr()} · '
+              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}',
           subColor: i.gain.isNegative ? Colors.red : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
