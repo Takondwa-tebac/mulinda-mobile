@@ -210,10 +210,28 @@
     "retry": "Retry"
   },
   "insights": {
-    "title": "Insights",
-    "empty": "No insights yet. Check back as Mulinda learns your money.",
-    "loadError": "Couldn't load insights.",
-    "retry": "Retry"
+    "title": "Notifications",
+    "empty": "No notifications yet. Updates from Mulinda will show up here.",
+    "loadError": "Couldn't load notifications.",
+    "retry": "Retry",
+    "detailTitle": "Notification",
+    "notFound": "This notification is no longer available.",
+    "moreDetails": "More details",
+    "about": "About this notification",
+    "received": "Received",
+    "typeLabel": "Type",
+    "status": "Status",
+    "read": "Read",
+    "unread": "Unread",
+    "type": {
+      "announcement": "Announcement",
+      "savings_opportunity": "Savings tip",
+      "spending_spike": "Spending alert",
+      "budget_alert": "Budget alert",
+      "bill_due": "Bill due",
+      "loan_repayment_due": "Loan repayment",
+      "summary": "Summary"
+    }
   },
   "coach": {
     "title": "Ask Mulinda",

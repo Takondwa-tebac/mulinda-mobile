@@ -13,6 +13,7 @@ class Insight {
     required this.isRead,
     this.createdAt,
     this.imageUrl,
+    this.details = const {},
   });
 
   final String id;
@@ -25,6 +26,9 @@ class Insight {
   /// Image attached to an admin announcement, if any.
   final String? imageUrl;
 
+  /// Extra structured fields sent with the notification.
+  final Map<String, dynamic> details;
+
   String get date => (createdAt ?? '').split('T').first;
 
   factory Insight.fromJson(Map<String, dynamic> j) => Insight(
@@ -35,6 +39,7 @@ class Insight {
         isRead: j['is_read'] == true,
         createdAt: j['created_at']?.toString(),
         imageUrl: (j['details'] is Map) ? (j['details'] as Map)['image_url']?.toString() : null,
+        details: (j['details'] is Map) ? (j['details'] as Map).cast<String, dynamic>() : const {},
       );
 }
 

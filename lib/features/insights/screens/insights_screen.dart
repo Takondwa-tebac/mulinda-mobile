@@ -2,8 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/routes.dart';
 import '../data/insights_repository.dart';
+import 'notification_detail_screen.dart' show iconForInsightType;
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -62,13 +65,8 @@ class _InsightCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       color: insight.isRead ? null : scheme.primaryContainer.withValues(alpha: 0.35),
       child: InkWell(
-        onTap: insight.isRead
-            ? null
-            : () async {
-                await ref.read(insightsRepositoryProvider).markRead(insight.id);
-                ref.invalidate(insightsProvider);
-                ref.invalidate(unreadInsightsCountProvider);
-              },
+        // The detail screen marks it as read when it opens.
+        onTap: () => context.push(Routes.notificationDetailFor(insight.id), extra: insight),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -87,13 +85,18 @@ class _InsightCard extends StatelessWidget {
               leading: CircleAvatar(
                 backgroundColor: scheme.primaryContainer,
                 foregroundColor: scheme.onPrimaryContainer,
-                child: Icon(_iconFor(insight.type), size: 18),
+                child: Icon(iconForInsightType(insight.type), size: 18),
               ),
-              title: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(
+                insight.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: insight.isRead ? FontWeight.w500 : FontWeight.w700),
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(insight.body),
+                  Text(insight.body, maxLines: 2, overflow: TextOverflow.ellipsis),
                   if (insight.date.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
@@ -118,16 +121,6 @@ class _InsightCard extends StatelessWidget {
       ),
     );
   }
-
-  IconData _iconFor(String type) => switch (type) {
-        'savings_opportunity' => Icons.lightbulb_outline,
-        'spending_spike' => Icons.trending_up,
-        'budget_alert' => Icons.warning_amber_rounded,
-        'bill_due' => Icons.event_outlined,
-        'loan_repayment_due' => Icons.account_balance_outlined,
-        'announcement' => Icons.campaign_outlined,
-        _ => Icons.insights_outlined,
-      };
 }
 
 class _Fill extends StatelessWidget {

@@ -21,6 +21,8 @@ abstract class Routes {
 
   static const coach = '/coach';
   static const insights = '/insights';
+  static const notificationDetail = '/notifications/:id';
+  static String notificationDetailFor(String id) => '/notifications/$id';
 
   // Capture / activity
   static const addTransaction = '/add-transaction';

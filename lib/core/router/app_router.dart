@@ -23,7 +23,9 @@ import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/coach/screens/coach_screen.dart';
 import '../../features/legal/screens/legal_page_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
+import '../../features/insights/data/insights_repository.dart' show Insight;
 import '../../features/insights/screens/insights_screen.dart';
+import '../../features/insights/screens/notification_detail_screen.dart';
 import '../../features/onboarding/onboarding_prefs.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
 import '../../features/plan/data/plan_models.dart';
@@ -160,6 +162,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.personalData, builder: (_, _) => const PersonalDataScreen()),
       GoRoute(path: Routes.preferences, builder: (_, _) => const PreferencesScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
+      GoRoute(
+        path: Routes.notificationDetail,
+        builder: (_, s) => NotificationDetailScreen(
+          notificationId: s.pathParameters['id'] ?? '',
+          initial: s.extra is Insight ? s.extra as Insight : null,
+        ),
+      ),
       GoRoute(
         path: Routes.transactionDetail,
         builder: (_, s) => TransactionDetailScreen(txnId: s.extra as String),

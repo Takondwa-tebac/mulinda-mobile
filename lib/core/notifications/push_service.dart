@@ -102,6 +102,10 @@ class PushService {
           type == 'subscription_expiration') {
         // Show subscription screen for SMS capture limit or expiration reminders
         router.go(Routes.subscription);
+      } else if (type == 'announcement' && data['insight_id'] != null) {
+        // Admin broadcast: open the list, then the notification itself.
+        router.go(Routes.insights);
+        router.push(Routes.notificationDetailFor(data['insight_id'].toString()));
       } else {
         router.go(Routes.insights);
       }
