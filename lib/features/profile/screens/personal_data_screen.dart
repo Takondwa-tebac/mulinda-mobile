@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/routes.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../widgets/delete_account_dialog.dart';
+import '../widgets/offline_sync_section.dart';
 
 /// One place for everything to do with the user's data: export it, review the
 /// daily summaries built from it, read exactly what's captured and how it's
@@ -39,6 +40,8 @@ class PersonalDataScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 _tile(context, Icons.insights_outlined, 'Daily summaries',
                     'The day-by-day recaps built from your activity', () => context.push(Routes.dailySummaries)),
+                const Divider(height: 1),
+                const OfflineSyncSection(),
               ],
             ),
           ),

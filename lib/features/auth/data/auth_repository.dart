@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
@@ -12,6 +15,34 @@ class AuthRepository {
 
   final Dio _dio;
   final TokenStorage _tokens;
+
+  static const _userCacheKey = 'mulinda_cached_user';
+  static const _secure = FlutterSecureStorage();
+
+  /// Parses the API user and remembers it (secure storage) so the app can start
+  /// with the right name, plan and entitlements even with no connection.
+  User _parse(dynamic data) {
+    final json = (data as Map).cast<String, dynamic>();
+    _secure.write(key: _userCacheKey, value: jsonEncode(json)).catchError((_) {});
+    return User.fromJson(json);
+  }
+
+  /// The last user the API returned, or null (never signed in / signed out).
+  Future<User?> cachedUser() async {
+    try {
+      final raw = await _secure.read(key: _userCacheKey);
+      if (raw == null) return null;
+      return User.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearCachedUser() async {
+    try {
+      await _secure.delete(key: _userCacheKey);
+    } catch (_) {}
+  }
 
   Future<User> login(String username, String password) {
     return _authRequest('/v1/auth/login', {
@@ -56,7 +87,7 @@ class AuthRepository {
   Future<User> acceptTerms() async {
     try {
       final res = await _dio.post('/v1/auth/accept-terms');
-      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+      return _parse(res.data['data']);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -67,7 +98,7 @@ class AuthRepository {
   Future<User> updateProfile(Map<String, dynamic> fields) async {
     try {
       final res = await _dio.patch('/v1/auth/profile', data: fields);
-      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+      return _parse(res.data['data']);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -80,7 +111,7 @@ class AuthRepository {
         'avatar': await MultipartFile.fromFile(filePath),
       });
       final res = await _dio.post('/v1/auth/avatar', data: form);
-      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+      return _parse(res.data['data']);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -89,7 +120,7 @@ class AuthRepository {
   Future<User> me() async {
     try {
       final res = await _dio.get('/v1/auth/me');
-      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+      return _parse(res.data['data']);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
@@ -146,7 +177,7 @@ class AuthRepository {
       final res = await _dio.post(path, data: body);
       final token = res.data['token'] as String;
       await _tokens.save(token);
-      return User.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+      return _parse(res.data['data']);
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }

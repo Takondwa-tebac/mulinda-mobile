@@ -6,6 +6,9 @@ abstract class Entitlements {
   static const coachHistory = 'coach.history';
   static const advancedInsights = 'insights.advanced';
   static const receiptScan = 'capture.ai';
+
+  /// Offline mode: 3-day, weekly, monthly plans and the trial (not Day Pass).
+  static const offlineMode = 'offline.mode';
 }
 
 /// A monetary amount as serialized by the API's Money value object.
@@ -43,6 +46,7 @@ class SubscriptionInfo {
     this.isTrial = false,
     this.entitlements = const [],
     this.smsCapture,
+    this.offlineModeUntil,
   });
 
   final bool active;
@@ -54,6 +58,10 @@ class SubscriptionInfo {
   final List<String> entitlements;
   final SmsCaptureInfo? smsCapture;
 
+  /// When offline-mode access ends (latest expiry of a plan that grants it).
+  /// Kept on the device so entitlement can be checked with no connection.
+  final DateTime? offlineModeUntil;
+
   bool can(String entitlement) => entitlements.contains(entitlement);
 
   const SubscriptionInfo.none()
@@ -64,7 +72,8 @@ class SubscriptionInfo {
       endsAt = null,
       isTrial = false,
       entitlements = const [],
-      smsCapture = null;
+      smsCapture = null,
+      offlineModeUntil = null;
 
   factory SubscriptionInfo.fromJson(Map<String, dynamic> json) {
     return SubscriptionInfo(
@@ -81,6 +90,9 @@ class SubscriptionInfo {
           const [],
       smsCapture: json['sms_capture'] != null
           ? SmsCaptureInfo.fromJson(json['sms_capture'] as Map<String, dynamic>)
+          : null,
+      offlineModeUntil: json['offline_mode'] is Map
+          ? DateTime.tryParse(((json['offline_mode'] as Map)['until'] ?? '').toString())
           : null,
     );
   }

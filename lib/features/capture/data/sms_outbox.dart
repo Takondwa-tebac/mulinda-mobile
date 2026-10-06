@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/env/app_env.dart';
 import 'sms_auto_capture.dart' show smsCaptureLog;
@@ -24,6 +25,7 @@ class FlushResult {
     this.failed = 0,
     this.offline = false,
     this.pending = 0,
+    this.busy = false,
   });
 
   final int created;
@@ -37,6 +39,55 @@ class FlushResult {
 
   /// Items still waiting in the outbox after this flush.
   final int pending;
+
+  /// Another sync (e.g. the background job) was already running, so nothing was
+  /// sent by this call.
+  final bool busy;
+}
+
+/// Outcome of the most recent sync, kept so the UI can show "last synced".
+class SyncStatus {
+  const SyncStatus({
+    required this.at,
+    this.created = 0,
+    this.duplicates = 0,
+    this.skipped = 0,
+    this.limitReached = 0,
+    this.failed = 0,
+    this.pending = 0,
+    this.offline = false,
+  });
+
+  final DateTime at;
+  final int created;
+  final int duplicates;
+  final int skipped;
+  final int limitReached;
+  final int failed;
+  final int pending;
+  final bool offline;
+
+  Map<String, dynamic> toJson() => {
+        'at': at.millisecondsSinceEpoch,
+        'created': created,
+        'duplicates': duplicates,
+        'skipped': skipped,
+        'limit': limitReached,
+        'failed': failed,
+        'pending': pending,
+        'offline': offline,
+      };
+
+  factory SyncStatus.fromJson(Map<String, dynamic> j) => SyncStatus(
+        at: DateTime.fromMillisecondsSinceEpoch((j['at'] as num?)?.toInt() ?? 0),
+        created: (j['created'] as num?)?.toInt() ?? 0,
+        duplicates: (j['duplicates'] as num?)?.toInt() ?? 0,
+        skipped: (j['skipped'] as num?)?.toInt() ?? 0,
+        limitReached: (j['limit'] as num?)?.toInt() ?? 0,
+        failed: (j['failed'] as num?)?.toInt() ?? 0,
+        pending: (j['pending'] as num?)?.toInt() ?? 0,
+        offline: j['offline'] == true,
+      );
 }
 
 /// Durable, idempotent queue for captured SMS.
@@ -58,6 +109,7 @@ class SmsOutbox {
   static const _lockStale = Duration(seconds: 90);
   static const _limitBackoff = Duration(hours: 6);
   static const _maxAttempts = 8;
+  static const _statusKey = 'sms_last_sync_status';
 
   /// Stable, content-derived id so capturing the same SMS twice (live listener
   /// and inbox scan) yields one outbox entry and one server record.
@@ -153,6 +205,27 @@ class SmsOutbox {
     }
   }
 
+  /// The outcome of the last sync attempt, or null if none has run yet.
+  Future<SyncStatus?> lastStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // The background isolate may have written it since this isolate cached.
+      await prefs.reload();
+      final raw = prefs.getString(_statusKey);
+      if (raw == null) return null;
+      return SyncStatus.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveStatus(SyncStatus status) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_statusKey, jsonEncode(status.toJson()));
+    } catch (_) {}
+  }
+
   // ---- Lock (best-effort, avoids two isolates flushing at once) ------------
 
   Future<bool> _acquireLock() async {
@@ -177,10 +250,10 @@ class SmsOutbox {
   /// Send everything that is due. Safe to call from any trigger, any isolate,
   /// any number of times: the server is idempotent, so the worst case is a
   /// redundant request.
-  Future<FlushResult> flush() async {
+  Future<FlushResult> flush({void Function(int done, int total)? onProgress}) async {
     final token = await _token();
     if (token == null) return FlushResult(pending: await pendingCount());
-    if (!await _acquireLock()) return FlushResult(pending: await pendingCount());
+    if (!await _acquireLock()) return FlushResult(pending: await pendingCount(), busy: true);
 
     var created = 0, duplicates = 0, skipped = 0, limit = 0, failed = 0;
     var offline = false;
@@ -200,6 +273,7 @@ class SmsOutbox {
         }
       }
       due.sort((a, b) => ((a['created_ms'] as num?) ?? 0).compareTo((b['created_ms'] as num?) ?? 0));
+      onProgress?.call(0, due.length);
 
       for (var i = 0; i < due.length && !offline; i += _batchSize) {
         final chunk = due.sublist(i, math.min(i + _batchSize, due.length));
@@ -239,6 +313,7 @@ class SmsOutbox {
                 await _reschedule(item, _backoff(item));
             }
           }
+          onProgress?.call(math.min(i + _batchSize, due.length), due.length);
         } on DioException catch (e) {
           final status = e.response?.statusCode;
           if (status == null) {
@@ -259,6 +334,18 @@ class SmsOutbox {
       await _releaseLock();
     }
 
+    final pending = await pendingCount();
+    await _saveStatus(SyncStatus(
+      at: DateTime.now(),
+      created: created,
+      duplicates: duplicates,
+      skipped: skipped,
+      limitReached: limit,
+      failed: failed,
+      pending: pending,
+      offline: offline,
+    ));
+
     return FlushResult(
       created: created,
       duplicates: duplicates,
@@ -266,7 +353,7 @@ class SmsOutbox {
       limitReached: limit,
       failed: failed,
       offline: offline,
-      pending: await pendingCount(),
+      pending: pending,
     );
   }
 
