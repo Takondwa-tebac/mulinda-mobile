@@ -506,19 +506,24 @@ Future<void> _amountSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
-    builder: (sheetContext) => Padding(
-      padding: EdgeInsets.only(
-        left: 20, right: 20, top: 4,
-        bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-      ),
-      child: _AmountSheetBody(
-        title: title, action: action, listProvider: listProvider,
-        dateKey: dateKey, dateLabel: dateLabel, ref: ref,
-        extraInvalidate: extraInvalidate,
-        initialAmount: initialAmount,
-        initialNote: initialNote,
-        initialDate: initialDate,
+    builder: (sheetContext) => SafeArea(
+      // Lift above the keyboard and the system navigation bar, and scroll when
+      // the form is taller than what is left on small screens.
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 4,
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+        ),
+        child: _AmountSheetBody(
+          title: title, action: action, listProvider: listProvider,
+          dateKey: dateKey, dateLabel: dateLabel, ref: ref,
+          extraInvalidate: extraInvalidate,
+          initialAmount: initialAmount,
+          initialNote: initialNote,
+          initialDate: initialDate,
+        ),
       ),
     ),
   );

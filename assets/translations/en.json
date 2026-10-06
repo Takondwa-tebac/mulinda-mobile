@@ -359,7 +359,10 @@
       "active": "Active",
       "on_hold": "On hold",
       "completed": "Completed"
-    }
+    },
+    "add": "Add",
+    "editContribution": "Edit contribution",
+    "editRepayment": "Edit repayment"
   },
   "goal": {
     "saved": "Saved",
@@ -376,7 +379,10 @@
       "education": "Education",
       "vacation": "Vacation",
       "custom": "Custom"
-    }
+    },
+    "contributions": "Contributions",
+    "contributionsError": "Could not load contributions.",
+    "noContributions": "No contributions yet."
   },
   "profile": {
     "account": "Account",
@@ -482,7 +488,8 @@
     "allowed": "Allowed",
     "footer": "You stay in control. Permissions can be changed any time in Profile, or in your phone settings. We never sell your data.",
     "continue": "Continue",
-    "done": "Done"
+    "done": "Done",
+    "openSettings": "Open settings to allow"
   },
   "legal": {
     "title": "Legal",
@@ -527,5 +534,38 @@
     "enableBody": "Add a layer of security - use your fingerprint or face to open Mulinda. You can change this anytime in Preferences.",
     "enable": "Enable",
     "notNow": "Not now"
+  },
+  "loan": {
+    "repayments": "Repayments",
+    "repaymentsError": "Could not load repayments.",
+    "noRepayments": "No repayments yet."
+  },
+  "project": {
+    "budget": "Budget",
+    "spent": "Spent"
+  },
+  "admin": {
+    "giftTitle": "Gift a subscription",
+    "giftPeriod": "Period",
+    "giftReason": "Reason (optional)",
+    "giftReasonHint": "e.g. Gift for a loyal user",
+    "giftAction": "Gift",
+    "giftDone": "Subscription gifted successfully",
+    "giftFailed": "Failed to gift subscription",
+    "rolesTitle": "Edit roles",
+    "rolesSave": "Save roles",
+    "rolesDone": "Roles updated successfully",
+    "rolesFailed": "Failed to update roles",
+    "deleteTitle": "Delete user?",
+    "deleteBody": "This will permanently remove {}. This cannot be undone.",
+    "deleteAction": "Delete user",
+    "deleted": "User deleted",
+    "deleteFailed": "Failed to delete user",
+    "period": {
+      "day": "1 day",
+      "three_day": "3 days",
+      "week": "1 week",
+      "month": "1 month"
+    }
   }
-}
+}

@@ -359,7 +359,10 @@
       "active": "Yogwira",
       "on_hold": "Yoima",
       "completed": "Yamalizidwa"
-    }
+    },
+    "add": "Onjezani",
+    "editContribution": "Sinthani thandizo",
+    "editRepayment": "Sinthani kubweza"
   },
   "goal": {
     "saved": "Zasungidwa",
@@ -376,7 +379,10 @@
       "education": "Maphunziro",
       "vacation": "Tchuthi",
       "custom": "Zanu"
-    }
+    },
+    "contributions": "Zopereka",
+    "contributionsError": "Zopereka sizinatsegulidwe.",
+    "noContributions": "Palibe zopereka panobe."
   },
   "profile": {
     "account": "Akaunti",
@@ -482,7 +488,8 @@
     "allowed": "Zaloledwa",
     "footer": "Mumakhalabe ndi ulamuliro. Zilolezo zitha kusinthidwa nthawi iliyonse mu Profile, kapena mu zoikamo za foni yanu. Sitigulitsa deta yanu.",
     "continue": "Pitirizani",
-    "done": "Zatha"
+    "done": "Zatha",
+    "openSettings": "Tsegulani zosintha kuti mulole"
   },
   "legal": {
     "title": "Zalamulo",
@@ -527,5 +534,38 @@
     "enableBody": "Onjezani chitetezo - gwiritsani ntchito chala kapena nkhope kutsegula Mulinda. Mutha kusintha nthawi iliyonse mu Preferences.",
     "enable": "Yatsani",
     "notNow": "Osati pakadali pano"
+  },
+  "loan": {
+    "repayments": "Zobweza",
+    "repaymentsError": "Zobweza sizinatsegulidwe.",
+    "noRepayments": "Palibe zobweza panobe."
+  },
+  "project": {
+    "budget": "Bajeti",
+    "spent": "Zowonongedwa"
+  },
+  "admin": {
+    "giftTitle": "Patsani umembala",
+    "giftPeriod": "Nthawi",
+    "giftReason": "Chifukwa (posankha)",
+    "giftReasonHint": "mwachitsanzo: Mphatso kwa wokhulupirika",
+    "giftAction": "Patsani",
+    "giftDone": "Umembala wapatsidwa bwino",
+    "giftFailed": "Sitinathe kupereka umembala",
+    "rolesTitle": "Sinthani maudindo",
+    "rolesSave": "Sungani maudindo",
+    "rolesDone": "Maudindo asinthidwa bwino",
+    "rolesFailed": "Sitinathe kusintha maudindo",
+    "deleteTitle": "Chotsani wogwiritsa ntchito?",
+    "deleteBody": "Izi zichotsa {} kwamuyaya. Sizingabwezeretsedwe.",
+    "deleteAction": "Chotsani wogwiritsa ntchito",
+    "deleted": "Wogwiritsa ntchito wachotsedwa",
+    "deleteFailed": "Sitinathe kuchotsa wogwiritsa ntchito",
+    "period": {
+      "day": "Tsiku limodzi",
+      "three_day": "Masiku atatu",
+      "week": "Sabata limodzi",
+      "month": "Mwezi umodzi"
+    }
   }
-}
+}

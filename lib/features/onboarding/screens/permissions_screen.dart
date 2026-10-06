@@ -23,18 +23,45 @@ class PermissionsScreen extends ConsumerStatefulWidget {
   ConsumerState<PermissionsScreen> createState() => _PermissionsScreenState();
 }
 
-class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
+class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
+    with WidgetsBindingObserver {
   bool _smsBusy = false;
   bool _smsOn = false;
-  bool _camera = false;
-  bool _photos = false;
-  bool _notifications = false;
+  PermState _camera = PermState.denied;
+  PermState _notifications = PermState.denied;
 
   @override
   void initState() {
     super.initState();
-    SmsAutoCapture.isEnabled().then((v) {
-      if (mounted) setState(() => _smsOn = v);
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Coming back from system settings: re-read what the OS now says.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  /// Load the real state — the OS permissions and the saved auto-capture
+  /// choice — so toggles never show "off" for something already granted.
+  Future<void> _refresh() async {
+    final camera = await _perms.cameraStatus();
+    final notifications = await _perms.notificationsStatus();
+    final sms = await _perms.smsStatus();
+    final smsPref = await SmsAutoCapture.isEnabled();
+    if (!mounted) return;
+    setState(() {
+      _camera = camera;
+      _notifications = notifications;
+      // Auto-capture only counts as on while the SMS permission is still held.
+      _smsOn = smsPref && sms == PermState.granted;
     });
   }
 
@@ -109,11 +136,12 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
               title: 'permissions.cameraTitle'.tr(),
               body: 'permissions.cameraBody'.tr(),
               child: _AllowButton(
-                granted: _camera,
-                onPressed: () async {
-                  final ok = await _perms.requestCamera();
-                  if (mounted) setState(() => _camera = ok);
+                state: _camera,
+                onRequest: () async {
+                  final result = await _perms.requestCameraState();
+                  if (mounted) setState(() => _camera = result);
                 },
+                onOpenSettings: _perms.openSettings,
               ),
             ),
 
@@ -135,11 +163,12 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
               title: 'permissions.notifTitle'.tr(),
               body: 'permissions.notifBody'.tr(),
               child: _AllowButton(
-                granted: _notifications,
-                onPressed: () async {
-                  final ok = await _perms.requestNotifications();
-                  if (mounted) setState(() => _notifications = ok);
+                state: _notifications,
+                onRequest: () async {
+                  final result = await _perms.requestNotificationsState();
+                  if (mounted) setState(() => _notifications = result);
                 },
+                onOpenSettings: _perms.openSettings,
               ),
             ),
 
@@ -210,13 +239,19 @@ class _PermissionCard extends StatelessWidget {
 }
 
 class _AllowButton extends StatelessWidget {
-  const _AllowButton({required this.granted, required this.onPressed});
-  final bool granted;
-  final VoidCallback onPressed;
+  const _AllowButton({
+    required this.state,
+    required this.onRequest,
+    required this.onOpenSettings,
+  });
+
+  final PermState state;
+  final VoidCallback onRequest;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
-    if (granted) {
+    if (state == PermState.granted) {
       return Align(
         alignment: Alignment.centerLeft,
         child: Row(
@@ -230,9 +265,13 @@ class _AllowButton extends StatelessWidget {
         ),
       );
     }
+    final blocked = state == PermState.blocked;
     return Align(
       alignment: Alignment.centerLeft,
-      child: OutlinedButton(onPressed: onPressed, child: Text('permissions.allow'.tr())),
+      child: OutlinedButton(
+        onPressed: blocked ? onOpenSettings : onRequest,
+        child: Text(blocked ? 'permissions.openSettings'.tr() : 'permissions.allow'.tr()),
+      ),
     );
   }
 }

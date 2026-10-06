@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
@@ -300,94 +301,11 @@ class _UserDetailContent extends ConsumerWidget {
     }
   }
 
-  void _editRoles(BuildContext context, WidgetRef ref, List<String> currentRoles) {
-    final availableRoles = ['user', 'admin', 'super-admin'];
-    final selectedRoles = Set<String>.from(currentRoles);
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Roles'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: availableRoles.map((role) {
-              return CheckboxListTile(
-                title: Text(role),
-                value: selectedRoles.contains(role),
-                onChanged: (checked) {
-                  setDialogState(() {
-                    if (checked == true) {
-                      selectedRoles.add(role);
-                    } else {
-                      selectedRoles.remove(role);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                try {
-                  await ref.read(adminRepositoryProvider).updateUserRoles(
-                    user['id'].toString(),
-                    selectedRoles.toList(),
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Roles updated successfully')),
-                    );
-                    ref.invalidate(_userDetailProvider(user['id'].toString()));
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          e is ApiException ? e.displayMessage : 'Failed to update roles',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _deleteUser(BuildContext context, WidgetRef ref) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Delete user?'),
-        content: Text(
-          'This will permanently remove ${user['full_name'] ?? user['email']}. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(c).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final name = (user['full_name'] ?? user['email'] ?? '').toString();
+    final ok = await _showUserSheet<bool>(
+      context,
+      (sheetContext) => _ConfirmDeleteSheet(name: name),
     );
     if (ok != true || !context.mounted) return;
 
@@ -395,7 +313,7 @@ class _UserDetailContent extends ConsumerWidget {
       await ref.read(adminRepositoryProvider).deleteUser(user['id'].toString());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User deleted')),
+          SnackBar(content: Text('admin.deleted'.tr())),
         );
         Navigator.of(context).pop();
       }
@@ -404,7 +322,7 @@ class _UserDetailContent extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is ApiException ? e.displayMessage : 'Failed to delete user',
+              e is ApiException ? e.displayMessage : 'admin.deleteFailed'.tr(),
             ),
           ),
         );
@@ -412,82 +330,238 @@ class _UserDetailContent extends ConsumerWidget {
     }
   }
 
-  void _giftSubscription(BuildContext context, WidgetRef ref) {
-    final periodController = TextEditingController(text: 'month');
-    final reasonController = TextEditingController();
+  Future<void> _editRoles(BuildContext context, WidgetRef ref, List<String> currentRoles) async {
+    final selected = await _showUserSheet<List<String>>(
+      context,
+      (sheetContext) => _RolesSheet(initialRoles: currentRoles),
+    );
+    if (selected == null || !context.mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Gift Subscription'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    try {
+      await ref.read(adminRepositoryProvider).updateUserRoles(user['id'].toString(), selected);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('admin.rolesDone'.tr())),
+        );
+        ref.invalidate(_userDetailProvider(user['id'].toString()));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is ApiException ? e.displayMessage : 'admin.rolesFailed'.tr(),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _giftSubscription(BuildContext context, WidgetRef ref) async {
+    final gift = await _showUserSheet<({String period, String? reason})>(
+      context,
+      (sheetContext) => const _GiftSheet(),
+    );
+    if (gift == null || !context.mounted) return;
+
+    try {
+      await ref.read(adminRepositoryProvider).grantCredit(
+        userId: user['id'].toString(),
+        period: gift.period,
+        reason: gift.reason,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('admin.giftDone'.tr())),
+        );
+        ref.invalidate(_userDetailProvider(user['id'].toString()));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is ApiException ? e.displayMessage : 'admin.giftFailed'.tr(),
+            ),
+          ),
+        );
+      }
+    }
+  }
+}
+
+/// Modal bottom sheet that stays inside the safe area, scrolls when the form is
+/// taller than the space left, and lifts above the keyboard.
+Future<T?> _showUserSheet<T>(BuildContext context, WidgetBuilder builder) {
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          4,
+          20,
+          MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+        ),
+        child: builder(sheetContext),
+      ),
+    ),
+  );
+}
+
+class _SheetTitle extends StatelessWidget {
+  const _SheetTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Text(text, style: Theme.of(context).textTheme.titleLarge),
+      );
+}
+
+class _GiftSheet extends StatefulWidget {
+  const _GiftSheet();
+
+  @override
+  State<_GiftSheet> createState() => _GiftSheetState();
+}
+
+class _GiftSheetState extends State<_GiftSheet> {
+  static const _periods = ['day', 'three_day', 'week', 'month'];
+
+  final _reason = TextEditingController();
+  String _period = 'month';
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SheetTitle('admin.giftTitle'.tr()),
+        Text('admin.giftPeriod'.tr(), style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            const Text('Period:'),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: 'month',
-              items: const [
-                DropdownMenuItem(value: 'day', child: Text('Day')),
-                DropdownMenuItem(value: 'three_day', child: Text('3 Days')),
-                DropdownMenuItem(value: 'week', child: Text('Week')),
-                DropdownMenuItem(value: 'month', child: Text('Month')),
-              ],
-              onChanged: (value) {
-                periodController.text = value ?? 'month';
-              },
-            ),
-            const SizedBox(height: 16),
-            const Text('Reason (optional):'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Gift for loyal user',
-                border: OutlineInputBorder(),
+            for (final p in _periods)
+              ChoiceChip(
+                label: Text('admin.period.$p'.tr()),
+                selected: _period == p,
+                onSelected: (_) => setState(() => _period = p),
               ),
-            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _reason,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: 'admin.giftReason'.tr(),
+            hintText: 'admin.giftReasonHint'.tr(),
+            border: const OutlineInputBorder(),
           ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              try {
-                await ref.read(adminRepositoryProvider).grantCredit(
-                  userId: user['id'].toString(),
-                  period: periodController.text,
-                  reason: reasonController.text.trim().isEmpty
-                      ? null
-                      : reasonController.text.trim(),
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Subscription gifted successfully')),
-                  );
-                  ref.invalidate(_userDetailProvider(user['id'].toString()));
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e is ApiException ? e.displayMessage : 'Failed to gift subscription',
-                      ),
-                    ),
-                  );
-                }
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: () {
+            final reason = _reason.text.trim();
+            Navigator.pop(context, (period: _period, reason: reason.isEmpty ? null : reason));
+          },
+          icon: const Icon(Icons.card_giftcard_outlined, size: 18),
+          label: Text('admin.giftAction'.tr()),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+        ),
+      ],
+    );
+  }
+}
+
+class _RolesSheet extends StatefulWidget {
+  const _RolesSheet({required this.initialRoles});
+  final List<String> initialRoles;
+
+  @override
+  State<_RolesSheet> createState() => _RolesSheetState();
+}
+
+class _RolesSheetState extends State<_RolesSheet> {
+  static const _allRoles = ['user', 'admin', 'super-admin'];
+
+  late final Set<String> _selected = {...widget.initialRoles};
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SheetTitle('admin.rolesTitle'.tr()),
+        for (final role in _allRoles)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(role),
+            value: _selected.contains(role),
+            onChanged: (checked) => setState(() {
+              if (checked == true) {
+                _selected.add(role);
+              } else {
+                _selected.remove(role);
               }
-            },
-            child: const Text('Gift'),
+            }),
           ),
-        ],
-      ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _selected.toList()),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          child: Text('admin.rolesSave'.tr()),
+        ),
+      ],
+    );
+  }
+}
+
+class _ConfirmDeleteSheet extends StatelessWidget {
+  const _ConfirmDeleteSheet({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SheetTitle('admin.deleteTitle'.tr()),
+        Text('admin.deleteBody'.tr(args: [name])),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: FilledButton.styleFrom(
+            backgroundColor: scheme.error,
+            foregroundColor: scheme.onError,
+            minimumSize: const Size.fromHeight(48),
+          ),
+          child: Text('admin.deleteAction'.tr()),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('form.cancel'.tr()),
+        ),
+      ],
     );
   }
 }
