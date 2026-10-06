@@ -9,6 +9,7 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
+import '../widgets/amount_record_card.dart';
 import 'plan_forms.dart' show showContributeSheet, showEditContributionSheet;
 
 
@@ -250,135 +251,6 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
   }
 }
 
-/// One contribution, laid out so long amounts never wrap: the amount takes the
-/// flexible space (and scales down if it still does not fit) while the actions
-/// collapse into a single overflow menu instead of two fixed-width buttons.
-class _ContributionCard extends StatelessWidget {
-  const _ContributionCard({
-    required this.contribution,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final GoalContribution contribution;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-
-  String? get _date {
-    final raw = contribution.contributedAt;
-    if (raw == null || raw.isEmpty) return null;
-    final d = DateTime.tryParse(raw);
-    if (d == null) return raw;
-    return '${d.day} ${_months[d.month - 1]} ${d.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final note = contribution.note;
-    final hasNote = note != null && note.trim().isNotEmpty;
-    final date = contribution.pending ? [_date, 'Waiting to sync'].whereType<String>().join(' · ') : _date;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.savings_outlined, size: 20, color: scheme.onPrimaryContainer),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    contribution.amount.formatted,
-                    maxLines: 1,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                  ),
-                ),
-                if (date != null) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.event_outlined, size: 13, color: scheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          date,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (hasNote) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    note.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.3),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          PopupMenuButton<String>(
-            padding: EdgeInsets.zero,
-            icon: Icon(Icons.more_vert, size: 20, color: scheme.onSurfaceVariant),
-            onSelected: (action) {
-              if (action == 'edit') onEdit();
-              if (action == 'delete') onDelete();
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'edit',
-                child: Row(children: [
-                  const Icon(Icons.edit_outlined, size: 18),
-                  const SizedBox(width: 10),
-                  Text('form.edit'.tr()),
-                ]),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(children: [
-                  Icon(Icons.delete_outline, size: 18, color: scheme.error),
-                  const SizedBox(width: 10),
-                  Text('form.delete'.tr(), style: TextStyle(color: scheme.error)),
-                ]),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ContributionsList extends ConsumerWidget {
   const _ContributionsList({required this.goalId});
 
@@ -387,7 +259,6 @@ class _ContributionsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
 
     final contributionsAsync = ref.watch(goalContributionsProvider(goalId));
 
@@ -396,7 +267,7 @@ class _ContributionsList extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => Container(
+      error: (_, _) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
           child: Text('goal.contributionsError'.tr(),
@@ -413,7 +284,7 @@ class _ContributionsList extends ConsumerWidget {
                   Icon(
                     Icons.savings_outlined,
                     size: 48,
-                    color: scheme.onSurfaceVariant.withOpacity(0.5),
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -429,8 +300,12 @@ class _ContributionsList extends ConsumerWidget {
         return Column(
           children: [
             for (final c in contributions)
-              _ContributionCard(
-                contribution: c,
+              AmountRecordCard(
+                amount: c.amount.formatted,
+                rawDate: c.contributedAt,
+                note: c.note,
+                pending: c.pending,
+                icon: Icons.savings_outlined,
                 onEdit: () => _editContribution(context, ref, c),
                 onDelete: () => _deleteContribution(context, ref, c),
               ),

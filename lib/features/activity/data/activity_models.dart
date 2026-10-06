@@ -8,6 +8,8 @@ class Account {
     required this.currency,
     required this.currentBalance,
     required this.isActive,
+    this.pending = false,
+    this.balanceEstimated = false,
   });
 
   final String id;
@@ -17,6 +19,12 @@ class Account {
   final Money currentBalance;
   final bool isActive;
 
+  /// Created or edited on this phone and waiting to sync.
+  final bool pending;
+
+  /// The balance includes changes still waiting to sync, so it is an estimate.
+  final bool balanceEstimated;
+
   factory Account.fromJson(Map<String, dynamic> json) {
     return Account(
       id: json['id'].toString(),
@@ -25,6 +33,8 @@ class Account {
       currency: json['currency']?.toString() ?? 'MWK',
       currentBalance: Money.parse(json['current_balance']),
       isActive: json['is_active'] != false,
+      pending: json['_pending'] == true,
+      balanceEstimated: json['balance_estimated'] == true,
     );
   }
 }

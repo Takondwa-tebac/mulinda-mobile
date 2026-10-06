@@ -140,7 +140,12 @@ class _BalanceCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer)),
             const SizedBox(height: 2),
-            Text('account.balance'.tr(),
+            Text(
+                account.pending
+                    ? '${'account.balance'.tr()} · Waiting to sync'
+                    : account.balanceEstimated
+                        ? '${'account.balance'.tr()} · Estimated until synced'
+                        : 'account.balance'.tr(),
                 style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 12)),
           ],
         ),

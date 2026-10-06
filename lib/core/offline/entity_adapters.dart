@@ -287,6 +287,65 @@ class LoanAdapter extends EntityAdapter {
   }
 }
 
+/// How much a transaction moves its account's balance, in minor units:
+/// income adds, expense subtracts, anything else (transfers) leaves it alone.
+int signedAmountMinor(String? type, int amountMinor) => switch (type) {
+      'income' => amountMinor,
+      'expense' => -amountMinor,
+      _ => 0,
+    };
+
+/// A financial account (wallet, bank, mobile money…). Besides being created,
+/// edited and deleted offline, its balance is *estimated* from transactions that
+/// are still waiting to sync (see [adjustBalance]).
+class AccountAdapter extends EntityAdapter {
+  const AccountAdapter();
+
+  @override
+  String get entity => 'account';
+
+  @override
+  String get collection => '/v1/accounts';
+
+  @override
+  Future<Map<String, dynamic>> buildRecord(Map<String, dynamic> body, RecordLookup lookup) async {
+    final currency = (body['currency'] ?? 'MWK').toString();
+    final opening = moneyJson(_num(body['opening_balance']), currency);
+    final now = EntityAdapter.now();
+    return {
+      'id': body['id'],
+      'name': body['name'],
+      'type': body['type'] ?? 'wallet',
+      'provider_id': body['provider_id'],
+      'account_reference': body['account_reference'],
+      'currency': currency,
+      'opening_balance': opening,
+      'current_balance': opening,
+      'is_active': body['is_active'] ?? true,
+      'created_at': now,
+      'updated_at': now,
+      '_pending': true,
+    };
+  }
+
+  @override
+  Map<String, dynamic> applyPatch(Map<String, dynamic> record, Map<String, dynamic> body) {
+    final next = {...record};
+    for (final key in const ['name', 'type', 'account_reference', 'is_active', 'provider_id']) {
+      if (body.containsKey(key)) next[key] = body[key];
+    }
+    return EntityAdapter.pending(next);
+  }
+
+  /// [record] with its balance moved by [deltaMinor] and flagged as an estimate.
+  Map<String, dynamic> adjustBalance(Map<String, dynamic> record, int deltaMinor) {
+    if (deltaMinor == 0) return record;
+    final currency = (record['currency'] ?? 'MWK').toString();
+    final minor = _minor(record['current_balance']) + deltaMinor;
+    return {...record, 'current_balance': moneyJson(minor / 100, currency), 'balance_estimated': true};
+  }
+}
+
 class BudgetAdapter extends EntityAdapter {
   const BudgetAdapter();
 
@@ -589,6 +648,7 @@ double _num(dynamic v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
 
 /// The records that can be changed offline.
 const kEntityAdapters = <EntityAdapter>[
+  AccountAdapter(),
   TransactionAdapter(),
   GoalAdapter(),
   LoanAdapter(),

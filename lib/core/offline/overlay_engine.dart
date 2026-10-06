@@ -52,6 +52,37 @@ class OverlayEngine {
     return null;
   }
 
+  /// A record as it stands now: the saved copy (or a queued create) with queued
+  /// edits applied, or null if it is unknown or queued for deletion. Used to work
+  /// out how an edit or delete changes an account's balance.
+  Future<Map<String, dynamic>?> effectiveRecord(String userId, EntityAdapter adapter, String id) async {
+    final all = (await mutations.all(userId)).where((m) => m.entity == adapter.entity).toList();
+    Map<String, dynamic>? record = await lookupFor(userId)(adapter.collection, id);
+    for (final m in all) {
+      if (m.op == 'create' && m.targetIds.contains(id) && m.effect['record'] is Map) {
+        record = (m.effect['record'] as Map).cast<String, dynamic>();
+      } else if (record != null && m.op == 'update' && m.targetIds.contains(id)) {
+        record = adapter.applyPatch(record, m.body);
+      } else if (m.op == 'delete' && m.targetIds.contains(id)) {
+        return null;
+      }
+    }
+    return record;
+  }
+
+  /// Move an account's balance by the transactions waiting to sync.
+  Map<String, dynamic> _withBalance(EntityAdapter adapter, Map<String, dynamic> record, List<PendingMutation> all) {
+    if (adapter is! AccountAdapter) return record;
+    final id = record['id']?.toString();
+    var delta = 0;
+    for (final m in all) {
+      if (m.entity != 'transaction') continue;
+      final deltas = m.effect['balance_deltas'];
+      if (deltas is Map && deltas[id] is num) delta += (deltas[id] as num).toInt();
+    }
+    return adapter.adjustBalance(record, delta);
+  }
+
   /// [json] with this user's queued changes applied, or [json] untouched when
   /// the request is not for an offline-capable record or nothing is queued.
   Future<dynamic> apply(RequestOptions options, String userId, dynamic json) async {
@@ -64,7 +95,8 @@ class OverlayEngine {
       final own = all.where((m) => m.entity == adapter.entity).toList();
       final childEntity = adapter.childAdapter?.entity;
       final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
-      if ((own.isEmpty && children.isEmpty) || json is! Map || json['data'] == null) return json;
+      final touchesBalance = adapter is AccountAdapter && all.any((m) => m.entity == 'transaction' && m.effect['balance_deltas'] != null);
+      if ((own.isEmpty && children.isEmpty && !touchesBalance) || json is! Map || json['data'] == null) return json;
 
       if (isList && json['data'] is List) {
         final data = List<dynamic>.from(json['data'] as List);
@@ -73,7 +105,9 @@ class OverlayEngine {
         }
         for (var i = 0; i < data.length; i++) {
           final item = data[i];
-          if (item is Map) data[i] = _withChildren(adapter, item.cast<String, dynamic>(), children, includeChildList: false);
+          if (item is Map) {
+            data[i] = _withBalance(adapter, _withChildren(adapter, item.cast<String, dynamic>(), children, includeChildList: false), all);
+          }
         }
         return {...json, 'data': data};
       }
@@ -83,7 +117,7 @@ class OverlayEngine {
         for (final m in own) {
           if (m.op == 'update' && m.targetIds.contains(detail)) record = adapter.applyPatch(record, m.body);
         }
-        return {...json, 'data': _withChildren(adapter, record, children, includeChildList: true)};
+        return {...json, 'data': _withBalance(adapter, _withChildren(adapter, record, children, includeChildList: true), all)};
       }
       return json;
     }
@@ -171,7 +205,7 @@ class OverlayEngine {
       if (record == null) return null;
       final childEntity = adapter.childAdapter?.entity;
       final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
-      return {'data': _withChildren(adapter, record, children, includeChildList: true)};
+      return {'data': _withBalance(adapter, _withChildren(adapter, record, children, includeChildList: true), all)};
     }
     return null;
   }
@@ -204,7 +238,7 @@ class OverlayEngine {
       }
       final childEntity = adapter.childAdapter?.entity;
       final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
-      return {'data': _withChildren(adapter, current, children, includeChildList: true)};
+      return {'data': _withBalance(adapter, _withChildren(adapter, current, children, includeChildList: true), all)};
     }
     return null;
   }
