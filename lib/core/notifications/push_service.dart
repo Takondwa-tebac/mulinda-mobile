@@ -29,8 +29,13 @@ class PushService {
       // Foreground: show local notification and refresh the relevant provider.
       FirebaseMessaging.onMessage.listen((m) {
         final n = m.notification;
-        if (n != null)
-          NotificationService.show(n.title ?? 'Mulinda', n.body ?? '');
+        if (n != null) {
+          NotificationService.show(
+            n.title ?? 'Mulinda',
+            n.body ?? '',
+            imageUrl: n.android?.imageUrl ?? n.apple?.imageUrl,
+          );
+        }
         _refreshFromData(ref, m.data);
       });
 

@@ -27,12 +27,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          // onRefresh: () async {
-          //   await ref.invalidate(_userDetailProvider(widget.userId));
-          // },
-          onRefresh: () async {
-             await ref.refresh(_userDetailProvider(widget.userId).future);
-          },
+          onRefresh: () =>
+              ref.refresh(_userDetailProvider(widget.userId).future),
           child: Consumer(
             builder: (context, ref, _) {
               final async = ref.watch(_userDetailProvider(widget.userId));
@@ -67,13 +63,13 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   }
 }
 
-class _UserDetailContent extends StatelessWidget {
+class _UserDetailContent extends ConsumerWidget {
   const _UserDetailContent({required this.user});
 
   final Map<String, dynamic> user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
 
     // Extract subscription data
@@ -252,13 +248,31 @@ class _UserDetailContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
+        // Danger zone
+        _Section(
+          title: 'Danger Zone',
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => _deleteUser(context, ref),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: const Text('Delete User'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(40),
+                foregroundColor: scheme.error,
+                side: BorderSide(color: scheme.error),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
         // SMS Capture Stats (for free tier)
         if (!isSubscribed)
           _Section(
             title: 'SMS Capture',
             children: [
               _InfoRow('Free Limit Used', '${user['sms_capture_count'] ?? 0}'),
-              _InfoRow('Remaining', '${10 - (user['sms_capture_count'] ?? 0)}'),
+              _InfoRow('Remaining', '${(10 - ((user['sms_capture_count'] as num?)?.toInt() ?? 0)).clamp(0, 10)}'),
             ],
           ),
       ],
@@ -287,7 +301,7 @@ class _UserDetailContent extends StatelessWidget {
   }
 
   void _editRoles(BuildContext context, WidgetRef ref, List<String> currentRoles) {
-    final availableRoles = ['admin', 'user', 'moderator'];
+    final availableRoles = ['user', 'admin', 'super-admin'];
     final selectedRoles = Set<String>.from(currentRoles);
 
     showDialog(
@@ -352,6 +366,52 @@ class _UserDetailContent extends StatelessWidget {
     );
   }
 
+  Future<void> _deleteUser(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete user?'),
+        content: Text(
+          'This will permanently remove ${user['full_name'] ?? user['email']}. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(c).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    try {
+      await ref.read(adminRepositoryProvider).deleteUser(user['id'].toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User deleted')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is ApiException ? e.displayMessage : 'Failed to delete user',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   void _giftSubscription(BuildContext context, WidgetRef ref) {
     final periodController = TextEditingController(text: 'month');
     final reasonController = TextEditingController();
@@ -367,7 +427,7 @@ class _UserDetailContent extends StatelessWidget {
             const Text('Period:'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: 'month',
+              initialValue: 'month',
               items: const [
                 DropdownMenuItem(value: 'day', child: Text('Day')),
                 DropdownMenuItem(value: 'three_day', child: Text('3 Days')),

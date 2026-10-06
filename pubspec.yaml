@@ -76,6 +76,8 @@ dependencies:
   # release compile with "package net.jonhanson.flutter_native_splash does
   # not exist").
   flutter_native_splash: ^2.4.3
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

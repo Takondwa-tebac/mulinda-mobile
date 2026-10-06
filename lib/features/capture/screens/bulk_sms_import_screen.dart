@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:another_telephony/another_telephony.dart';
 import 'package:another_telephony/telephony.dart';
@@ -27,9 +28,10 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
 
   final _vendors = [
     {'id': null, 'name': 'All Vendors'},
-    {'id': 'tnm', 'name': 'TNM Mpamba'},
+    {'id': 'mpamba', 'name': 'TNM Mpamba'},
     {'id': 'airtel', 'name': 'Airtel Money'},
     {'id': 'fdh', 'name': 'FDH'},
+    {'id': 'nbs', 'name': 'NBS'},
     {'id': 'nbm', 'name': 'NBM'},
     {'id': 'centenary', 'name': 'Centenary'},
   ];
@@ -37,9 +39,12 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
   @override
   void initState() {
     super.initState();
-    // Default to today's date
-    _fromDate = DateTime.now();
-    _toDate = DateTime.now();
+    // Default to today's date (date-only, so the whole day is included)
+    final today = DateUtils.dateOnly(DateTime.now());
+    _fromDate = today;
+    _toDate = today;
+    // Auto-scan SMS on load
+    Future.microtask(() => _scanSms());
   }
 
   // List<Map<String, dynamic>> get _filteredSms {
@@ -91,7 +96,7 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
           return false;
         }
 
-        return !smsDate.isBefore(_fromDate!);
+        return !smsDate.isBefore(DateUtils.dateOnly(_fromDate!));
       }).toList();
     }
 
@@ -109,7 +114,10 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
           return false;
         }
 
-        return !smsDate.isAfter(_toDate!.add(const Duration(days: 1)));
+        // Inclusive of the whole "to" day
+        return smsDate.isBefore(
+          DateUtils.dateOnly(_toDate!).add(const Duration(days: 1)),
+        );
       }).toList();
     }
 
@@ -117,8 +125,25 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
     if (_selectedVendor != null) {
       filtered = filtered.where((sms) {
         final sender = sms['sender']?.toString() ?? '';
-
-        return sender.toLowerCase().contains(_selectedVendor!.toLowerCase());
+        final senderLower = sender.toLowerCase();
+        
+        // Match based on vendor keywords
+        switch (_selectedVendor) {
+          case 'mpamba':
+            return senderLower.contains('mpamba') || senderLower.contains('tnm');
+          case 'airtel':
+            return senderLower.contains('airtel');
+          case 'fdh':
+            return senderLower.contains('fdh');
+          case 'nbs':
+            return senderLower.contains('nbs') || senderLower.contains('national bank');
+          case 'nbm':
+            return senderLower.contains('nbm') || senderLower.contains('national bank');
+          case 'centenary':
+            return senderLower.contains('centenary');
+          default:
+            return true;
+        }
       }).toList();
     }
 
@@ -321,8 +346,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
 
     if (picked != null && mounted) {
       setState(() {
-        _fromDate = picked.start;
-        _toDate = picked.end;
+        _fromDate = DateUtils.dateOnly(picked.start);
+        _toDate = DateUtils.dateOnly(picked.end);
+        _selectedSmsIndices.clear();
       });
     }
   }
@@ -415,7 +441,10 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
                   );
                 }).toList(),
                 onChanged: (value) {
-                  setState(() => _selectedVendor = value);
+                  setState(() {
+                    _selectedVendor = value;
+                    _selectedSmsIndices.clear();
+                  });
                 },
               ),
             ),

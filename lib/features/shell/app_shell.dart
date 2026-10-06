@@ -60,10 +60,16 @@ class _AppShellState extends ConsumerState<AppShell> {
     final hasPendingItems = pendingCount > 0 || reviewCount > 0;
 
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          const AppUpdateBanner(),
-          Expanded(child: navigationShell),
+          navigationShell,
+          // Floats over the content so it never shifts the layout.
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: AppUpdateBanner(),
+            ),
+          ),
         ],
       ),
       // Hide the capture FAB on the Profile tab (index 3) — it only clutters
