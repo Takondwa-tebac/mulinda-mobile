@@ -138,6 +138,22 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// Local notice (works with no connection) when a captured SMS had to be
+  /// queued because the device is offline. Safe from the background isolate:
+  /// initialises the plugin first.
+  static Future<void> showSmsQueued(String smsBody) async {
+    await init();
+    final m = RegExp(r'(?:MWK|MK)\s?([\d,]+(?:\.\d+)?)', caseSensitive: false)
+        .firstMatch(smsBody);
+    final amount = m == null ? null : 'MK ${m.group(1)}';
+    await show(
+      'SMS saved offline',
+      amount == null
+          ? "We'll record this transaction when you're back online."
+          : '$amount — we\'ll record it when you\'re back online.',
+    );
+  }
+
   static Future<String?> _downloadImage(String? url) async {
     if (url == null || url.isEmpty) return null;
     try {

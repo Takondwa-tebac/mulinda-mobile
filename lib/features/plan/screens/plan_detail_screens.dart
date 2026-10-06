@@ -11,8 +11,8 @@ import '../../activity/screens/add_transaction_screen.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
-import '../data/plan_repository.dart' show loanRepaymentsProvider;
-import 'plan_forms.dart' show showEditRepaymentSheet;
+import '../data/plan_repository.dart';
+import 'plan_forms.dart' show showEditRepaymentSheet, showRepaySheet;
 
 // ---------------------------------------------------------------------------
 // Shared bits

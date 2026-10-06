@@ -7,7 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../activity/data/activity_repository.dart' show categoriesProvider;
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
-import '../data/plan_repository.dart' show goalContributionsProvider, loanRepaymentsProvider;
+import '../data/plan_repository.dart';
 import '../widgets/plan_form_kit.dart';
 
 const _goalTypes = ['emergency', 'house', 'car', 'business', 'education', 'vacation', 'custom'];

@@ -8,8 +8,8 @@ import '../../../core/router/routes.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
-import '../data/plan_repository.dart' show goalContributionsProvider;
-import 'plan_forms.dart' show showEditContributionSheet;
+import '../data/plan_repository.dart';
+import 'plan_forms.dart' show showContributeSheet, showEditContributionSheet;
 
 
 class GoalDetailScreen extends ConsumerStatefulWidget {

@@ -12,8 +12,11 @@ import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/security/app_lock.dart';
+import 'core/security/screenshot_protection.dart';
 import 'features/capture/data/sms_auto_capture.dart';
+import 'features/capture/data/sms_background_sync.dart';
 import 'features/capture/data/sms_manual_scanner.dart';
+import 'features/capture/data/sms_outbox.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
@@ -28,12 +31,16 @@ Future<void> main() async {
     // Firebase not configured for this platform (e.g. desktop dev) — skip.
   }
   await NotificationService.init();
+  await SmsBackgroundSync.init();
 
   // Resume automatic SMS capture if the user previously opted in. No-op when
   // disabled, unsupported, or signed out.
   unawaited(SmsAutoCapture.instance.maybeStart());
 
-  // Run manual SMS scan on app open to catch any missed SMS
+  // Catch missed SMS on app open. Only runs for users who opted in to
+  // auto-capture, never prompts, and only reads inbox messages after the
+  // server-side baseline, so existing users never get history re-imported.
+  // Anything captured while offline is synced first.
   unawaited(SmsManualScanner.instance.scanFinancialSms());
 
   runApp(
@@ -54,15 +61,19 @@ class MulindaApp extends ConsumerStatefulWidget {
   ConsumerState<MulindaApp> createState() => _MulindaAppState();
 }
 
-class _MulindaAppState extends ConsumerState<MulindaApp> {
+class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObserver {
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
   ProviderSubscription<AuthState>? _authSub;
   Uri? _pendingLink;
+  Timer? _outboxTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // While the app is open, retry queued (offline-captured) SMS every 2 min.
+    _outboxTimer = Timer.periodic(const Duration(minutes: 2), (_) => _flushOutbox());
     // Re-try a pending deep link, and register the FCM token, once auth resolves.
     _authSub = ref.listenManual(authControllerProvider, (_, next) {
       if (next.status != AuthStatus.unknown) _flushPendingLink();
@@ -108,8 +119,23 @@ class _MulindaAppState extends ConsumerState<MulindaApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(routerProvider).go(target));
   }
 
+  Future<void> _flushOutbox() async {
+    try {
+      if (await SmsOutbox.instance.pendingCount() > 0) {
+        await SmsOutbox.instance.flush();
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _flushOutbox();
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _outboxTimer?.cancel();
     _linkSub?.cancel();
     _authSub?.close();
     super.dispose();
@@ -134,7 +160,9 @@ class _MulindaAppState extends ConsumerState<MulindaApp> {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       routerConfig: router,
-      builder: (context, child) => AppLock(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => AppLock(
+        child: ScreenshotGuard(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

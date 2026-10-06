@@ -114,7 +114,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
-              final result = await SmsManualScanner.instance.scanFinancialSms();
+              final result = await SmsManualScanner.instance.scanFinancialSms(manual: true);
               if (mounted) {
                 _snack(result.message);
                 ref.invalidate(pendingSmsProvider);

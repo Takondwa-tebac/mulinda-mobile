@@ -1,162 +1,117 @@
 import 'dart:developer' as developer;
-import 'package:another_telephony/telephony.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../../core/env/app_env.dart';
+import 'package:another_telephony/telephony.dart';
+import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'sms_auto_capture.dart';
+import 'sms_outbox.dart';
 
 void smsScanLog(String message) {
   if (kDebugMode) developer.log(message, name: 'sms_scan');
 }
 
-/// Manual SMS scanner for users to trigger SMS scanning on demand
-/// and for app-open scanning to catch missed SMS
+/// Catch-up scan for SMS the live listener missed (app killed, phone off,
+/// listener not yet enabled…).
+///
+/// Safe for existing users: the server decides the earliest message it will
+/// accept (the user's *baseline*), so updating the app never re-imports
+/// history. The scan also keeps a cursor, so each run reads only inbox messages
+/// newer than the last run instead of the whole inbox.
 class SmsManualScanner {
   SmsManualScanner._();
   static final SmsManualScanner instance = SmsManualScanner._();
 
-  static const _tokenKey = 'mulinda_auth_token';
+  static const _cursorKey = 'sms_scan_cursor_ms';
   final Telephony _telephony = Telephony.instance;
 
-  /// Scan SMS inbox for financial messages and send to API
-  /// Called when user manually triggers scan or on app open
-  Future<ScanResult> scanFinancialSms() async {
-    smsScanLog('Starting manual SMS scan');
+  /// Scan the inbox for financial SMS newer than the baseline/cursor, queue them
+  /// in the outbox and sync.
+  ///
+  /// [manual] is true when the user tapped Scan: it may prompt for permission
+  /// and runs even if auto-capture is off. The launch scan (`manual: false`)
+  /// never prompts and does nothing unless the user opted in to auto-capture.
+  Future<ScanResult> scanFinancialSms({bool manual = false}) async {
+    smsScanLog('Starting SMS scan (manual=$manual)');
 
     try {
-      final granted = await _telephony.requestSmsPermissions ?? false;
+      if (!manual && !await SmsAutoCapture.isEnabled()) {
+        return ScanResult.success(0, 0, 'Auto-capture is off');
+      }
+
+      final granted = manual
+          ? (await _telephony.requestSmsPermissions ?? false)
+          : await Permission.sms.isGranted;
       if (!granted) {
-        smsScanLog('SMS permission denied');
-        return ScanResult.success(0, 0, 'Permission denied');
+        return ScanResult.success(0, 0, 'SMS permission not granted');
       }
 
-      final messages = await _telephony.getInboxSms();
-      final financialSms = messages
-          .where((msg) => _isFinancialSms(msg.body ?? ''))
+      // Always push anything already queued first (offline captures).
+      final preFlush = await SmsOutbox.instance.flush();
+
+      final baseline = await SmsOutbox.instance.fetchBaseline();
+      if (baseline == null) {
+        return ScanResult.success(
+          preFlush.created,
+          preFlush.failed,
+          'Offline or not signed in — will retry',
+          preFlush.duplicates + preFlush.skipped,
+        );
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final cursor = prefs.getInt(_cursorKey) ?? 0;
+      final sinceMs = cursor > baseline.millisecondsSinceEpoch
+          ? cursor
+          : baseline.millisecondsSinceEpoch;
+
+      final messages = await _telephony.getInboxSms(
+        filter: SmsFilter.where(SmsColumn.DATE).greaterThanOrEqualTo('$sinceMs'),
+        sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.ASC)],
+      );
+      final financial = messages
+          .where((m) => SmsAutoCapture.isFinancialSms(m.body ?? ''))
           .toList();
+      smsScanLog('Found ${financial.length} financial SMS of ${messages.length} since $sinceMs');
 
-      smsScanLog(
-        'Found ${financialSms.length} financial SMS out of ${messages.length} total',
+      var newest = cursor;
+      for (final m in financial) {
+        final date = m.date ?? DateTime.now().millisecondsSinceEpoch;
+        await SmsOutbox.instance.enqueue(
+          body: (m.body ?? '').trim(),
+          sender: m.address,
+          receivedAtMs: date,
+          origin: SmsOrigin.scan,
+        );
+        if (date > newest) newest = date;
+      }
+      for (final m in messages) {
+        final date = m.date ?? 0;
+        if (date > newest) newest = date;
+      }
+
+      final result = await SmsOutbox.instance.flush();
+
+      // Only advance the cursor when everything reached the server, so a failed
+      // sync is re-read next time (the server de-duplicates the overlap).
+      if (!result.offline && result.failed == 0 && newest > cursor) {
+        await prefs.setInt(_cursorKey, newest);
+      }
+
+      final message = result.offline
+          ? 'Offline — ${result.pending} queued, will sync automatically'
+          : 'Scan completed';
+      return ScanResult.success(
+        result.created + preFlush.created,
+        result.failed,
+        message,
+        result.duplicates + result.skipped,
       );
-
-      if (financialSms.isEmpty) {
-        return ScanResult.success(0, 0, 'No financial SMS found');
-      }
-
-      final token = await const FlutterSecureStorage().read(key: _tokenKey);
-      if (token == null || token.isEmpty) {
-        smsScanLog('User not authenticated');
-        return ScanResult.success(0, 0, 'Not logged in');
-      }
-
-      int processed = 0;
-      int failed = 0;
-      int skipped = 0;
-
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: AppEnv.apiBaseUrl,
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          connectTimeout: const Duration(seconds: 15),
-          sendTimeout: const Duration(seconds: 15),
-        ),
-      );
-
-      for (final msg in financialSms) {
-        try {
-          // Check if SMS was already processed by calling the API
-          final body = msg.body ?? '';
-          final sender = msg.sender ?? '';
-          
-          // Create a hash of the SMS body to check for duplicates
-          final smsHash = _hashSms(body);
-          
-          // First check if this SMS was already processed
-          try {
-            final checkResponse = await dio.post(
-              '/v1/sms/check-duplicate',
-              data: {
-                'body_hash': smsHash,
-                'sender': sender,
-              },
-            );
-            
-            if (checkResponse.data['exists'] == true) {
-              skipped++;
-              smsScanLog('SMS already processed, skipping');
-              continue;
-            }
-          } on DioException catch (e) {
-            // If check fails, proceed with submission (fallback)
-            smsScanLog('Duplicate check failed, proceeding: ${e.message}');
-          }
-
-          await dio.post(
-            '/v1/sms',
-            data: {
-              'body': body,
-              if (sender.isNotEmpty) 'sender': sender,
-            },
-          );
-          processed++;
-          smsScanLog('Processed SMS from $sender');
-        } on DioException catch (e) {
-          failed++;
-          smsScanLog(
-            'Failed to process SMS: ${e.response?.statusCode} ${e.message}',
-          );
-        } catch (e) {
-          failed++;
-          smsScanLog('Error processing SMS: $e');
-        }
-      }
-
-      smsScanLog('Scan complete: $processed processed, $failed failed, $skipped skipped');
-      return ScanResult.success(processed, failed, 'Scan completed', skipped);
     } catch (e) {
       smsScanLog('Scan failed: $e');
       return ScanResult.error('Scan failed: $e');
     }
-  }
-
-  /// Create a simple hash of SMS body for duplicate checking
-  String _hashSms(String body) {
-    // Simple hash based on content length and first/last characters
-    final normalized = body.trim().toLowerCase();
-    if (normalized.length < 10) return normalized;
-    return '${normalized.length}_${normalized.substring(0, 5)}_${normalized.substring(normalized.length - 5)}';
-  }
-
-  /// Check if SMS body appears to be financial
-  bool _isFinancialSms(String body) {
-    final b = body.toLowerCase();
-    const keywords = [
-      'mwk',
-      'kwacha',
-      'airtel',
-      'mpamba',
-      'tnm',
-      'mo626',
-      'received',
-      'sent',
-      'withdrawn',
-      'deposited',
-      'payment',
-      'balance',
-      'transaction',
-      'national bank',
-      'standard bank',
-      'fdh',
-      'nbs',
-      'paid',
-      'debited',
-      'credited',
-    ];
-    return keywords.any(b.contains);
   }
 }
 
@@ -170,8 +125,4 @@ class ScanResult {
   ScanResult.success(this.processed, this.failed, this.message, [this.skipped = 0])
     : success = true;
   ScanResult.error(this.message) : success = false, processed = 0, failed = 0, skipped = 0;
-}
-
-extension on SmsMessage {
-  String get sender => address ?? '';
 }

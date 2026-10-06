@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../capture/data/sms_outbox.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
 import '../data/user.dart';
@@ -197,6 +198,7 @@ class AuthController extends Notifier<AuthState> {
       // Even if the API call fails, clear locally.
     }
     await _tokens.clear();
+    await SmsOutbox.instance.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }
