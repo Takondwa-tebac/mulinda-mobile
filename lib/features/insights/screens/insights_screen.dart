@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -55,21 +56,12 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hasImage = insight.imageUrl != null && insight.imageUrl!.isNotEmpty;
     return Card(
+      clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
       color: insight.isRead ? null : scheme.primaryContainer.withValues(alpha: 0.35),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: scheme.primaryContainer,
-          foregroundColor: scheme.onPrimaryContainer,
-          child: Icon(_iconFor(insight.type), size: 18),
-        ),
-        title: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(insight.body),
-        isThreeLine: insight.body.length > 40,
-        trailing: insight.isRead
-            ? null
-            : Container(width: 10, height: 10, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
+      child: InkWell(
         onTap: insight.isRead
             ? null
             : () async {
@@ -77,6 +69,52 @@ class _InsightCard extends StatelessWidget {
                 ref.invalidate(insightsProvider);
                 ref.invalidate(unreadInsightsCountProvider);
               },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (hasImage)
+              CachedNetworkImage(
+                imageUrl: insight.imageUrl!,
+                height: 160,
+                fit: BoxFit.cover,
+                placeholder: (_, _) => const SizedBox(
+                  height: 160,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: scheme.primaryContainer,
+                foregroundColor: scheme.onPrimaryContainer,
+                child: Icon(_iconFor(insight.type), size: 18),
+              ),
+              title: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(insight.body),
+                  if (insight.date.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        insight.date,
+                        style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+                      ),
+                    ),
+                ],
+              ),
+              isThreeLine: insight.body.length > 40,
+              trailing: insight.isRead
+                  ? null
+                  : Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

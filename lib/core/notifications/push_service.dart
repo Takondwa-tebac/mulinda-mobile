@@ -79,6 +79,7 @@ class PushService {
       ref.invalidate(pendingReceiptsProvider);
     } else {
       ref.invalidate(unreadInsightsCountProvider);
+      ref.invalidate(insightsProvider);
     }
   }
 

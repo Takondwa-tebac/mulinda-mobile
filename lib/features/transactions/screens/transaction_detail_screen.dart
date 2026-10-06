@@ -11,6 +11,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/widgets/receipt_view.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
+import '../../dashboard/data/dashboard_repository.dart';
 
 /// Robust transaction detail: a share-ready receipt (bank-style), the fee/levy
 /// breakdown, and — for auto-captured transactions — the exact source SMS.
@@ -26,10 +27,6 @@ class TransactionDetailScreen extends ConsumerStatefulWidget {
 class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
   final _receiptKey = GlobalKey();
   bool _sharing = false;
-  bool _editing = false;
-  final _merchantController = TextEditingController();
-  final _notesController = TextEditingController();
-  String? _selectedCategoryId;
 
   Future<void> _share() async {
     setState(() => _sharing = true);
@@ -49,49 +46,35 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
   }
 
   void _showEditSheet(Txn txn) {
-    _merchantController.text = txn.merchant ?? '';
-    _notesController.text = txn.notes ?? '';
-    _selectedCategoryId = txn.categoryId;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => _EditTransactionSheet(
-        txn: txn,
-        merchantController: _merchantController,
-        notesController: _notesController,
-        selectedCategoryId: _selectedCategoryId,
-        onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
-        onSave: _saveEdit,
-      ),
+      builder: (_) => _EditTransactionSheet(txn: txn, onSave: _saveEdit),
     );
   }
 
-  Future<void> _saveEdit(Txn txn) async {
-    setState(() => _editing = true);
-    try {
-      await ref.read(activityRepositoryProvider).updateTransaction(
-        widget.txnId,
-        categoryId: _selectedCategoryId,
-        merchant: _merchantController.text.trim().isEmpty ? null : _merchantController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+  /// Throws [ApiException] on failure so the sheet can show the error and stay
+  /// open; on success the sheet closes itself.
+  Future<void> _saveEdit(_TxnEdit edit) async {
+    await ref.read(activityRepositoryProvider).updateTransaction(
+      widget.txnId,
+      type: edit.type,
+      categoryId: edit.categoryId,
+      merchant: edit.merchant,
+      notes: edit.notes,
+    );
+    // A type change moves money between income/expense, so refresh everything
+    // that shows balances or totals.
+    ref
+      ..invalidate(transactionDetailProvider(widget.txnId))
+      ..invalidate(transactionsProvider)
+      ..invalidate(accountsProvider)
+      ..invalidate(dashboardProvider);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transaction updated')),
       );
-      if (mounted) {
-        Navigator.of(context).pop();
-        ref.invalidate(transactionDetailProvider(widget.txnId));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction updated')),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.displayMessage)),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _editing = false);
     }
   }
 
@@ -284,98 +267,165 @@ class _SourceSmsCard extends StatelessWidget {
   }
 }
 
-/// Bottom sheet for editing transaction details (category, merchant, notes).
-/// Source SMS is never editable to maintain data integrity.
+/// The values chosen in the edit sheet.
+class _TxnEdit {
+  const _TxnEdit({this.type, this.categoryId, required this.merchant, required this.notes});
+
+  /// Null when the type is unchanged.
+  final String? type;
+  final String? categoryId;
+  final String merchant;
+  final String notes;
+}
+
+/// Bottom sheet for editing a transaction: type (money in / expense), category,
+/// merchant and notes. The source SMS is never editable, to keep data integrity.
 class _EditTransactionSheet extends ConsumerStatefulWidget {
-  const _EditTransactionSheet({
-    required this.txn,
-    required this.merchantController,
-    required this.notesController,
-    required this.selectedCategoryId,
-    required this.onCategoryChanged,
-    required this.onSave,
-  });
+  const _EditTransactionSheet({required this.txn, required this.onSave});
 
   final Txn txn;
-  final TextEditingController merchantController;
-  final TextEditingController notesController;
-  final String? selectedCategoryId;
-  final Function(String?) onCategoryChanged;
-  final Function(Txn) onSave;
+  final Future<void> Function(_TxnEdit) onSave;
 
   @override
   ConsumerState<_EditTransactionSheet> createState() => _EditTransactionSheetState();
 }
 
 class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
+  late final TextEditingController _merchant;
+  late final TextEditingController _notes;
+  late String _type;
+  String? _categoryId;
   bool _saving = false;
+
+  /// Transfers keep their type: they need a counterpart account to be valid.
+  bool get _typeEditable => widget.txn.type != 'transfer';
+
+  @override
+  void initState() {
+    super.initState();
+    _merchant = TextEditingController(text: widget.txn.merchant ?? '');
+    _notes = TextEditingController(text: widget.txn.notes ?? '');
+    _type = widget.txn.type;
+    _categoryId = widget.txn.categoryId;
+  }
+
+  @override
+  void dispose() {
+    _merchant.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(_TxnEdit(
+        type: _type == widget.txn.type ? null : _type,
+        categoryId: _categoryId,
+        merchant: _merchant.text.trim(),
+        notes: _notes.text.trim(),
+      ));
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider);
     final scheme = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: scheme.primary,
+          fontWeight: FontWeight.w700,
+        );
 
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: DraggableScrollableSheet(
-          initialChildSize: 0.6,
+          initialChildSize: 0.8,
           minChildSize: 0.5,
-          maxChildSize: 0.9,
+          maxChildSize: 0.95,
           expand: false,
-          builder: (context, scrollController) => Container(
+          builder: (context, scrollController) => Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Edit Transaction',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    )),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 20),
                 Expanded(
                   child: ListView(
                     controller: scrollController,
                     children: [
-                      // Category selector
-                      Text('Category',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: scheme.primary,
-                            fontWeight: FontWeight.w700,
-                          )),
+                      if (_typeEditable) ...[
+                        Text('Type', style: labelStyle),
+                        const SizedBox(height: 8),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'income',
+                              label: Text('Money in'),
+                              icon: Icon(Icons.arrow_downward, size: 18),
+                            ),
+                            ButtonSegment(
+                              value: 'expense',
+                              label: Text('Expense'),
+                              icon: Icon(Icons.arrow_upward, size: 18),
+                            ),
+                          ],
+                          selected: {_type},
+                          onSelectionChanged: _saving
+                              ? null
+                              : (s) => setState(() {
+                                    _type = s.first;
+                                    // A category only fits its own kind.
+                                    _categoryId = null;
+                                  }),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      Text('Category', style: labelStyle),
                       const SizedBox(height: 8),
                       categories.when(
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const Text('Failed to load categories'),
-                        data: (cats) => DropdownButtonFormField<String>(
-                          value: widget.selectedCategoryId,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                          items: cats.map((cat) {
-                            return DropdownMenuItem(
-                              value: cat.id,
-                              child: Text(cat.name),
-                            );
-                          }).toList(),
-                          onChanged: widget.onCategoryChanged,
-                        ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (_, _) => const Text('Failed to load categories'),
+                        data: (cats) {
+                          final options =
+                              _typeEditable ? cats.where((c) => c.kind == _type).toList() : cats;
+                          final selected =
+                              options.any((c) => c.id == _categoryId) ? _categoryId : null;
+                          return DropdownButtonFormField<String?>(
+                            key: ValueKey('cat-$_type'),
+                            initialValue: selected,
+                            decoration: const InputDecoration(border: OutlineInputBorder()),
+                            items: [
+                              const DropdownMenuItem<String?>(value: null, child: Text('None')),
+                              ...options.map((c) => DropdownMenuItem<String?>(
+                                    value: c.id,
+                                    child: Text(c.name),
+                                  )),
+                            ],
+                            onChanged: _saving ? null : (v) => setState(() => _categoryId = v),
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
-
-                      // Merchant field
                       TextFormField(
-                        controller: widget.merchantController,
+                        controller: _merchant,
                         decoration: const InputDecoration(
                           labelText: 'Merchant / Payee',
                           border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Notes field
                       TextFormField(
-                        controller: widget.notesController,
+                        controller: _notes,
                         maxLines: 3,
                         decoration: const InputDecoration(
                           labelText: 'Notes',
@@ -383,8 +433,6 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Warning about SMS integrity
                       if (widget.txn.isAutoCaptured)
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -410,7 +458,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _saving ? null : () => widget.onSave(widget.txn),
+                  onPressed: _saving ? null : _save,
                   icon: _saving
                       ? const SizedBox(
                           width: 18,
@@ -419,9 +467,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                         )
                       : const Icon(Icons.check),
                   label: Text(_saving ? 'Saving...' : 'Save Changes'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                  ),
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                 ),
               ],
             ),
