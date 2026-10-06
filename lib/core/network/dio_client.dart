@@ -1,7 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/auth/providers/auth_controller.dart';
 import '../env/app_env.dart';
+import '../offline/cache_store.dart';
+import '../offline/offline_cache_interceptor.dart';
+import '../offline/offline_mode.dart';
+import '../offline/offline_status.dart';
 import '../storage/token_storage.dart';
 
 /// A configured [Dio] instance: base URL, JSON headers, bearer-token injection,
@@ -17,6 +22,22 @@ final dioProvider = Provider<Dio>((ref) {
   );
 
   final tokens = ref.read(tokenStorageProvider);
+
+  // Offline mode: serve saved GET responses when there is no network. Only
+  // active for users who turned offline mode on (see OfflineModeController).
+  dio.interceptors.add(
+    OfflineCacheInterceptor(
+      store: EncryptedCacheStore.instance,
+      isActive: () => ref.read(offlineModeProvider).active,
+      currentUserId: () => ref.read(currentUserProvider)?.id,
+      onServedFromCache: (at) => Future.microtask(
+        () => ref.read(offlineDataProvider.notifier).markCache(at),
+      ),
+      onLiveResponse: () => Future.microtask(
+        () => ref.read(offlineDataProvider.notifier).markLive(),
+      ),
+    ),
+  );
 
   dio.interceptors.add(
     InterceptorsWrapper(

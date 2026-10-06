@@ -79,6 +79,10 @@ dependencies:
   package_info_plus: ^9.0.1
   url_launcher: ^6.3.2
   workmanager: ^0.10.10
+  drift: ^2.35.1
+  connectivity_plus: ^7.3.1
+  path: ^1.9.1
+  sqlite3: ^3.5.2
 
 dev_dependencies:
   flutter_test:
@@ -88,6 +92,12 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.9.0
   flutter_launcher_icons: ^0.14.1
+
+# Bundle SQLite3 Multiple Ciphers (encrypted database) for the offline cache.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 flutter:
   uses-material-design: true

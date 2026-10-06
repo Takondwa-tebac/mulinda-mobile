@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../../core/offline/offline_status.dart';
 import '../../core/widgets/app_update_banner.dart';
 import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
@@ -60,14 +61,27 @@ class _AppShellState extends ConsumerState<AppShell> {
     final hasPendingItems = pendingCount > 0 || reviewCount > 0;
 
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          navigationShell,
-          // Floats over the content so it never shifts the layout.
-          const SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: AppUpdateBanner(),
+          // Offline mode: "showing saved data" bar. It handles the status-bar
+          // inset itself, so the content below drops its own top padding.
+          const OfflineBanner(),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: ref.watch(offlineBannerVisibleProvider),
+              child: Stack(
+                children: [
+                  navigationShell,
+                  // Floats over the content so it never shifts the layout.
+                  const SafeArea(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: AppUpdateBanner(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

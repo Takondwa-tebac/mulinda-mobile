@@ -298,10 +298,11 @@ class _OfflineModeRow extends ConsumerWidget {
       secondary: Icon(Icons.offline_bolt_outlined, color: scheme.primary),
       title: const Text('Offline mode', style: TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(
-        'Keep using Mulinda without internet — your latest data is kept on this phone and '
-        'changes sync when you reconnect.'
+        'Open Mulinda with no internet and still see your latest accounts, transactions, goals '
+        'and more. While you are online, what you view is saved on this phone, encrypted. '
+        'Editing offline is coming soon; SMS capture already works offline.'
         '${mode.until != null ? ' Included with your plan until ${_date(mode.until!)}.' : ''}'
-        ' Viewing your records offline is rolling out soon; SMS capture already works offline.',
+        ' Turning this off deletes the saved data.',
         style: const TextStyle(fontSize: 12.5, height: 1.35),
       ),
       value: mode.enabled,

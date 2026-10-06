@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/offline/cache_store.dart';
 import '../../capture/data/sms_outbox.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
@@ -74,6 +75,7 @@ class AuthController extends Notifier<AuthState> {
       if (e.statusCode == 401) {
         await _tokens.clear();
         await _repo.clearCachedUser();
+        await _clearOfflineData();
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
     } catch (_) {
@@ -90,6 +92,13 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Keep current state; entitlements refresh on the next successful load.
     }
+  }
+
+  /// Saved offline data belongs to the signed-in account only.
+  Future<void> _clearOfflineData() async {
+    try {
+      await EncryptedCacheStore.instance.clearAll();
+    } catch (_) {}
   }
 
   /// Once a user has authenticated they should never see onboarding again,
@@ -197,6 +206,7 @@ class AuthController extends Notifier<AuthState> {
     await _repo.deleteAccount(confirmation);
     await _tokens.clear();
     await _repo.clearCachedUser();
+    await _clearOfflineData();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -208,6 +218,7 @@ class AuthController extends Notifier<AuthState> {
     }
     await _tokens.clear();
     await _repo.clearCachedUser();
+    await _clearOfflineData();
     await SmsOutbox.instance.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

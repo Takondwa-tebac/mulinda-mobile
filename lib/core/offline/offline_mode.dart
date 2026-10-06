@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/subscription/data/subscription_models.dart';
+import 'cache_store.dart';
 
 /// Whether offline mode is available to this user and whether they turned it on.
 class OfflineModeState {
@@ -65,6 +66,12 @@ class OfflineModeController extends Notifier<OfflineModeState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_key(user.id), value);
     state = state.copyWith(enabled: value);
+    // Turning it off removes everything saved on the phone for this account.
+    if (!value) {
+      try {
+        await EncryptedCacheStore.instance.clearUser(user.id);
+      } catch (_) {}
+    }
   }
 }
 
