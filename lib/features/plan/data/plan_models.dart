@@ -50,6 +50,7 @@ class GoalItem {
     required this.current,
     this.targetDate,
     this.monthlyContribution,
+    this.pending = false,
   });
 
   final String id;
@@ -59,6 +60,9 @@ class GoalItem {
   final Money current;
   final String? targetDate;
   final Money? monthlyContribution;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   double get progress => target.minorUnits > 0
       ? (current.minorUnits / target.minorUnits).clamp(0, 1).toDouble()
@@ -72,6 +76,7 @@ class GoalItem {
         current: Money.parse(j['current']),
         targetDate: _str(j['target_date']),
         monthlyContribution: j['monthly_contribution'] == null ? null : Money.parse(j['monthly_contribution']),
+        pending: j['_pending'] == true,
       );
 }
 
@@ -130,6 +135,7 @@ class LoanItem {
     required this.disbursedAt,
     this.firstPaymentDate,
     required this.outstanding,
+    this.pending = false,
   });
 
   final String id;
@@ -143,6 +149,9 @@ class LoanItem {
   final String? disbursedAt;
   final String? firstPaymentDate;
   final Money outstanding;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   factory LoanItem.fromJson(Map<String, dynamic> j) {
     final progress = (j['progress'] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -158,6 +167,7 @@ class LoanItem {
       disbursedAt: _str(j['disbursed_at']),
       firstPaymentDate: _str(j['first_payment_date']),
       outstanding: Money.parse(progress['outstanding']),
+      pending: j['_pending'] == true,
     );
   }
 }

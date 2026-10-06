@@ -5,6 +5,9 @@ import '../../features/auth/providers/auth_controller.dart';
 import '../env/app_env.dart';
 import '../offline/cache_store.dart';
 import '../offline/offline_cache_interceptor.dart';
+import '../offline/offline_sync_runner.dart';
+import '../offline/offline_write_interceptor.dart';
+import '../offline/overlay_engine.dart';
 import '../offline/offline_mode.dart';
 import '../offline/offline_status.dart';
 import '../storage/token_storage.dart';
@@ -23,13 +26,31 @@ final dioProvider = Provider<Dio>((ref) {
 
   final tokens = ref.read(tokenStorageProvider);
 
-  // Offline mode: serve saved GET responses when there is no network. Only
-  // active for users who turned offline mode on (see OfflineModeController).
+  // Offline mode (only for users who turned it on, see OfflineModeController):
+  //  * writes to transactions/goals/loans are queued when there is no network;
+  //  * reads are served from the saved cache, with queued changes layered on top.
+  final overlay = OverlayEngine(mutations: EncryptedCacheStore.instance, cache: EncryptedCacheStore.instance);
+  bool offlineActive() => ref.read(offlineModeProvider).active;
+  String? userId() => ref.read(currentUserProvider)?.id;
+
+  dio.interceptors.add(
+    OfflineWriteInterceptor(
+      store: EncryptedCacheStore.instance,
+      cache: EncryptedCacheStore.instance,
+      overlay: overlay,
+      isActive: offlineActive,
+      currentUserId: userId,
+      onQueued: () => onChangeQueued(ref.container),
+    ),
+  );
+
   dio.interceptors.add(
     OfflineCacheInterceptor(
       store: EncryptedCacheStore.instance,
-      isActive: () => ref.read(offlineModeProvider).active,
-      currentUserId: () => ref.read(currentUserProvider)?.id,
+      overlay: overlay,
+      versions: EncryptedCacheStore.instance,
+      isActive: offlineActive,
+      currentUserId: userId,
       onServedFromCache: (at) => Future.microtask(
         () => ref.read(offlineDataProvider.notifier).markCache(at),
       ),

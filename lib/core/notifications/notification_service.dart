@@ -149,8 +149,8 @@ class NotificationService {
     await show(
       'SMS saved offline',
       amount == null
-          ? "We'll record this transaction when you're back online."
-          : '$amount — we\'ll record it when you\'re back online.',
+          ? "We saved this message and will record it as soon as you're back online."
+          : 'We saved $amount and will record it as soon as you\'re back online.',
     );
   }
 

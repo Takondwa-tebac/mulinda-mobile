@@ -11,6 +11,8 @@ import 'core/notifications/notification_service.dart';
 import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
+import 'core/offline/offline_status.dart';
+import 'core/offline/offline_sync_runner.dart';
 import 'core/security/app_lock.dart';
 import 'core/security/screenshot_protection.dart';
 import 'features/capture/data/sms_auto_capture.dart';
@@ -72,6 +74,10 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // The moment a connection comes back, sync what was queued offline.
+    ref.listenManual(isOnlineProvider, (prev, next) {
+      if (next.valueOrNull == true && prev?.valueOrNull != true) _flushOutbox();
+    });
     // While the app is open, retry queued (offline-captured) SMS every 2 min.
     _outboxTimer = Timer.periodic(const Duration(minutes: 2), (_) => _flushOutbox());
     // Re-try a pending deep link, and register the FCM token, once auth resolves.
@@ -119,8 +125,12 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
     WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(routerProvider).go(target));
   }
 
+  /// Send everything captured or changed offline: queued edits first (they can
+  /// depend on one another), then SMS.
   Future<void> _flushOutbox() async {
     try {
+      if (!mounted) return;
+      await runMutationSync(ProviderScope.containerOf(context));
       if (await SmsOutbox.instance.pendingCount() > 0) {
         await SmsOutbox.instance.flush();
       }

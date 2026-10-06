@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../../../core/offline/mutation_sync.dart';
 import 'sms_auto_capture.dart' show smsCaptureLog;
 import 'sms_outbox.dart';
 
@@ -18,6 +19,8 @@ void smsSyncCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
     try {
+      // Changes made offline first (they may depend on each other), then SMS.
+      await MutationSync.instance.flush();
       final result = await SmsOutbox.instance.flush();
       smsCaptureLog(
         'background sync: created=${result.created} dup=${result.duplicates} '

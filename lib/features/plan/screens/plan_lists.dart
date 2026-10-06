@@ -104,6 +104,7 @@ class GoalsListScreen extends ConsumerWidget {
         },
         tile: (g) => _PlanTile(
           title: g.name,
+          pending: g.pending,
           value: '${g.current.formatted} / ${g.target.formatted}',
           progress: g.progress,
           onTap: () => context.push(Routes.goalDetail, extra: g),
@@ -160,6 +161,7 @@ class LoansListScreen extends ConsumerWidget {
         },
         tile: (l) => _PlanTile(
           title: l.name,
+          pending: l.pending,
           value: l.outstanding.formatted,
           sub: 'form.loanStatus.${l.status}'.tr(),
           onTap: () => context.push(Routes.loanDetail, extra: l),
@@ -247,6 +249,7 @@ class _PlanTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.extra,
+    this.pending = false,
   });
 
   final String title;
@@ -261,6 +264,9 @@ class _PlanTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final (String, VoidCallback)? extra;
+
+  /// Made offline and not synced yet.
+  final bool pending;
 
   @override
   Widget build(BuildContext context) {
@@ -281,8 +287,21 @@ class _PlanTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      title,
+                    child: Text.rich(
+                      TextSpan(children: [
+                        if (pending)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Tooltip(
+                                message: 'Waiting to sync',
+                                child: Icon(Icons.cloud_upload_outlined, size: 16, color: scheme.tertiary),
+                              ),
+                            ),
+                          ),
+                        TextSpan(text: title),
+                      ]),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),

@@ -5,26 +5,8 @@ import 'dart:typed_data';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mulinda_mobile/core/offline/cache_store.dart';
 import 'package:mulinda_mobile/core/offline/offline_cache_interceptor.dart';
-
-class _MemoryStore implements CacheStore {
-  final Map<String, CachedResponse> rows = {};
-
-  @override
-  Future<void> put(String userId, String key, dynamic body) async {
-    rows['$userId|$key'] = CachedResponse(body: body, fetchedAt: DateTime(2026, 10, 6, 14, 30));
-  }
-
-  @override
-  Future<CachedResponse?> get(String userId, String key) async => rows['$userId|$key'];
-
-  @override
-  Future<void> clearUser(String userId) async => rows.removeWhere((k, _) => k.startsWith('$userId|'));
-
-  @override
-  Future<void> clearAll() async => rows.clear();
-}
+import 'support/memory_store.dart';
 
 class _FakeConnectivity implements Connectivity {
   _FakeConnectivity(this.results);
@@ -59,7 +41,7 @@ class _Adapter implements HttpClientAdapter {
 }
 
 void main() {
-  late _MemoryStore store;
+  late MemoryStore store;
   late _Adapter adapter;
   late _FakeConnectivity connectivity;
   late Dio dio;
@@ -69,7 +51,7 @@ void main() {
   var liveCount = 0;
 
   setUp(() {
-    store = _MemoryStore();
+    store = MemoryStore();
     adapter = _Adapter();
     connectivity = _FakeConnectivity([ConnectivityResult.wifi]);
     active = true;

@@ -68,6 +68,7 @@ class Txn {
     this.balanceAfter,
     this.sourceSms,
     this.children = const [],
+    this.pending = false,
   });
 
   final String id;
@@ -101,6 +102,9 @@ class Txn {
 
   /// Fee/levy line items split from this principal, shown nested under it.
   final List<Txn> children;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   bool get isIncome => type == 'income';
   bool get isFee => component == 'fee';
@@ -140,6 +144,7 @@ class Txn {
       children: rawChildren
           .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
+      pending: json['_pending'] == true,
     );
   }
 }

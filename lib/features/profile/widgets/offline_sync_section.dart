@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../../core/offline/cache_store.dart';
+import '../../../core/offline/mutation_sync.dart';
 import '../../../core/offline/offline_mode.dart';
+import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../capture/data/sms_auto_capture.dart';
@@ -22,7 +25,9 @@ class OfflineSyncSection extends ConsumerStatefulWidget {
 
 class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
     with WidgetsBindingObserver {
-  int _pending = 0;
+  int _pending = 0; // SMS waiting
+  int _pendingChanges = 0; // edits/creates/deletes waiting
+  List<SyncNotice> _notices = const [];
   SyncStatus? _status;
   bool _autoCaptureOn = false;
 
@@ -30,6 +35,7 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
   int _done = 0;
   int _total = 0;
   bool _checkingInbox = false;
+  String _phase = '';
 
   @override
   void initState() {
@@ -54,9 +60,16 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
     final pending = await SmsOutbox.instance.pendingCount();
     final status = await SmsOutbox.instance.lastStatus();
     final auto = await SmsAutoCapture.isEnabled();
+    var changes = 0;
+    try {
+      changes = await EncryptedCacheStore.instance.count();
+    } catch (_) {}
+    final notices = await SyncNotices.load();
     if (!mounted) return;
     setState(() {
       _pending = pending;
+      _pendingChanges = changes;
+      _notices = notices;
       _status = status;
       _autoCaptureOn = auto;
     });
@@ -66,23 +79,34 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
     setState(() {
       _syncing = true;
       _done = 0;
-      _total = _pending;
+      _total = _pendingChanges;
+      _phase = 'changes';
       _checkingInbox = false;
     });
 
     String message;
     try {
+      // 1) Changes made offline (edits can depend on each other, so they go first).
+      final changes = await runMutationSync(
+        ProviderScope.containerOf(context),
+        onProgress: (done, total) {
+          if (mounted) setState(() { _done = done; _total = total; _phase = 'changes'; });
+        },
+      );
+
+      // 2) SMS captured offline.
+      if (mounted) setState(() { _done = 0; _total = _pending; _phase = 'sms'; });
       final flush = await SmsOutbox.instance.flush(
         onProgress: (done, total) {
-          if (mounted) setState(() { _done = done; _total = total; });
+          if (mounted) setState(() { _done = done; _total = total; _phase = 'sms'; });
         },
       );
 
       var captured = flush.created;
-      if (flush.busy) {
+      if (flush.busy && changes.busy) {
         message = 'A sync is already running — it will finish on its own.';
-      } else if (flush.offline) {
-        message = 'No connection. Your SMS are saved and will sync automatically.';
+      } else if (flush.offline || changes.offline) {
+        message = 'No connection. Everything is saved and will sync automatically.';
       } else {
         // Also pick up anything the live listener missed (opted-in users only;
         // never reads messages from before the server baseline).
@@ -91,9 +115,13 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
           final scan = await SmsManualScanner.instance.scanFinancialSms();
           captured += scan.processed;
         }
-        message = captured > 0
-            ? 'Synced — $captured new transaction${captured == 1 ? '' : 's'} captured.'
-            : 'Everything is up to date.';
+        final parts = <String>[
+          if (changes.applied > 0) '${changes.applied} change${changes.applied == 1 ? '' : 's'} saved',
+          if (captured > 0) '$captured new transaction${captured == 1 ? '' : 's'} captured',
+          if (changes.conflicts + changes.dropped > 0)
+            '${changes.conflicts + changes.dropped} not applied (see below)',
+        ];
+        message = parts.isEmpty ? 'Everything is up to date.' : 'Synced — ${parts.join(', ')}.';
       }
     } catch (_) {
       message = 'Sync failed. Please try again.';
@@ -133,9 +161,11 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
           ),
           const SizedBox(height: 6),
           Text(
-            'Bank and mobile-money SMS are saved on your phone first. If you have no '
-            'connection they wait safely, then sync automatically when you are back '
-            'online — each one is recorded only once.',
+            'Bank and mobile-money SMS are saved on your phone first. With offline mode on, '
+            'changes you make to transactions, goals and loans while offline wait safely too. '
+            'Everything syncs automatically when you are back online — each item is recorded '
+            'only once, and if something was changed elsewhere in the meantime, the latest '
+            'version is kept.',
             style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 14),
@@ -184,8 +214,19 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
                   ? 'Checking for missed SMS…'
                   : _total == 0
                       ? 'Contacting the server…'
-                      : 'Syncing $_done of $_total SMS…',
+                      : 'Syncing ${_phase == 'changes' ? 'changes' : 'SMS'}: $_done of $_total…',
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+            ),
+          ],
+
+          if (_notices.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _NoticesCard(
+              notices: _notices,
+              onClear: () async {
+                await SyncNotices.clear();
+                await _refresh();
+              },
             ),
           ],
 
@@ -215,13 +256,17 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
     final status = _status;
     const amber = Color(0xFFB26A00);
 
-    if (_pending > 0) {
-      final limit = status != null && status.limitReached > 0;
+    if (_pending > 0 || _pendingChanges > 0) {
+      final limit = _pending > 0 && status != null && status.limitReached > 0;
       final offline = status?.offline ?? false;
+      final waiting = [
+        if (_pendingChanges > 0) '$_pendingChanges change${_pendingChanges == 1 ? '' : 's'}',
+        if (_pending > 0) '$_pending SMS',
+      ].join(' and ');
       return (
         icon: offline ? Icons.cloud_off_outlined : Icons.schedule,
         color: amber,
-        title: '$_pending SMS waiting to sync',
+        title: '$waiting waiting to sync',
         detail: limit
             ? 'Your free SMS capture limit has been reached. Subscribe to sync these.'
             : offline
@@ -314,5 +359,50 @@ class _OfflineModeRow extends ConsumerWidget {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final l = d.toLocal();
     return '${l.day} ${months[l.month - 1]} ${l.year}';
+  }
+}
+
+/// What the last sync could not apply (the server's version was kept, or the
+/// item was rejected), with a way to dismiss it.
+class _NoticesCard extends StatelessWidget {
+  const _NoticesCard({required this.notices, required this.onClear});
+
+  final List<SyncNotice> notices;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: scheme.error),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Not applied', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              TextButton(onPressed: onClear, child: const Text('Dismiss')),
+            ],
+          ),
+          for (final n in notices.take(5))
+            Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 6),
+              child: Text(n.message, style: const TextStyle(fontSize: 12.5, height: 1.35)),
+            ),
+          if (notices.length > 5)
+            Text('+ ${notices.length - 5} more',
+                style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+        ],
+      ),
+    );
   }
 }

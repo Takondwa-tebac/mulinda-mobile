@@ -4,6 +4,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 
 import 'cache_store.dart';
+import 'entity_adapters.dart';
+import 'mutation_store.dart';
+import 'overlay_engine.dart';
 
 /// Marker on a [Response.extra] for data that came from the offline cache.
 const kFromCacheExtra = 'fromCache';
@@ -26,8 +29,17 @@ class OfflineCacheInterceptor extends Interceptor {
     required this.currentUserId,
     required this.onServedFromCache,
     required this.onLiveResponse,
+    this.overlay,
+    this.versions,
     Connectivity? connectivity,
   }) : _connectivity = connectivity ?? Connectivity();
+
+  /// Layers changes still waiting in the offline queue onto what is shown.
+  final OverlayEngine? overlay;
+
+  /// Remembers each record's `updated_at` so queued edits can name the version
+  /// they were based on.
+  final MutationStore? versions;
 
   final CacheStore store;
   final bool Function() isActive;
@@ -82,15 +94,26 @@ class OfflineCacheInterceptor extends Interceptor {
     if (userId == null) return null;
     try {
       final hit = await store.get(userId, keyFor(o));
-      if (hit == null) return null;
-      onServedFromCache(hit.fetchedAt);
+      dynamic body = hit?.body;
+      var fetchedAt = hit?.fetchedAt;
+
+      if (hit != null && overlay != null) {
+        body = await overlay!.apply(o, userId, body);
+      } else if (hit == null && overlay != null) {
+        // A record created offline has never been fetched: build it from the queue.
+        body = await overlay!.pendingDetail(o, userId);
+        fetchedAt = DateTime.now();
+      }
+      if (body == null || fetchedAt == null) return null;
+
+      onServedFromCache(fetchedAt);
       return Response<dynamic>(
         requestOptions: o,
-        data: hit.body,
+        data: body,
         statusCode: 200,
         extra: {
           kFromCacheExtra: true,
-          kFetchedAtExtra: hit.fetchedAt.millisecondsSinceEpoch,
+          kFetchedAtExtra: fetchedAt.millisecondsSinceEpoch,
         },
       );
     } catch (_) {
@@ -117,18 +140,38 @@ class OfflineCacheInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
+  Future<void> onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) async {
     final o = response.requestOptions;
     if (_eligible(o) && response.statusCode == 200 && response.extra[kFromCacheExtra] != true) {
       final data = response.data;
       final userId = currentUserId();
       if (userId != null && (data is Map || data is List)) {
         // Fire and forget: caching must never slow down or break a request.
+        // The raw server response is what is saved — never the overlaid one.
         unawaited(store.put(userId, keyFor(o), data).catchError((_) {}));
+
+        final entity = _entityFor(o.path);
+        if (entity != null && versions != null) {
+          unawaited(versions!.putVersions(userId, entity, OverlayEngine.versionsIn(o.path, data)).catchError((_) {}));
+        }
+
+        // Changes still waiting to sync must stay visible even on a live read.
+        if (overlay != null) {
+          try {
+            response.data = await overlay!.apply(o, userId, data);
+          } catch (_) {}
+        }
       }
       onLiveResponse();
     }
     handler.next(response);
+  }
+
+  static String? _entityFor(String path) {
+    for (final a in kEntityAdapters) {
+      if (a.isList(path) || a.detailId(path) != null) return a.entity;
+    }
+    return null;
   }
 
   @override
