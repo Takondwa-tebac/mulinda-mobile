@@ -24,6 +24,13 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _AdminCard(
+            icon: Icons.insights_outlined,
+            title: 'Platform Analytics',
+            subtitle: 'Users, paid vs gifted subscribers, and subscription revenue',
+            onTap: () => context.push(Routes.adminAnalytics),
+          ),
+          const SizedBox(height: 12),
+          _AdminCard(
             icon: Icons.campaign_outlined,
             title: 'Push Notifications',
             subtitle: 'Craft and send notifications to all or specific users',

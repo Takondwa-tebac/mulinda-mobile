@@ -50,6 +50,17 @@ class AdminRepository {
   return response;
 }
 
+  /// Platform analytics (users, subscribers, revenue, usage). The API caches
+  /// the result for a few minutes; [refresh] forces a recompute.
+  Future<Map<String, dynamic>> analytics({bool refresh = false}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/v1/admin/analytics',
+      queryParameters: {if (refresh) 'refresh': 1},
+    );
+    final data = res.data?['data'];
+    return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
   Future<Map<String, dynamic>> listAudits({int page = 1}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/v1/admin/audits',
