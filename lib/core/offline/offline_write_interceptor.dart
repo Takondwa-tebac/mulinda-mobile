@@ -108,18 +108,43 @@ class OfflineWriteInterceptor extends Interceptor {
     dynamic answer;
     var status = 200;
 
+    // A contribution or repayment also moves its goal's saved total / its loan's
+    // outstanding amount, so remember by how much (an edit or delete needs the
+    // old amount, found in the saved goal/loan detail or a queued create).
+    final child = adapter is ChildAdapter ? adapter : null;
+    final parentId = match.parentId;
+    Map<String, dynamic>? existing;
+    if (child != null && parentId != null && match.targetIds.isNotEmpty && match.op != 'create') {
+      existing = await overlay.findChild(userId, child, parentId, match.targetIds.first);
+    }
+
     switch (match.op) {
       case 'create':
-        final record = await adapter.buildRecord(body, overlay.lookupFor(userId));
-        effect = {'record': record};
+        final record = await adapter.buildRecord(
+          child == null ? body : {...body, '_parent_id': parentId},
+          overlay.lookupFor(userId),
+        );
+        effect = {
+          'record': record,
+          'parent_id': ?parentId,
+          if (child != null) 'delta_minor': child.deltaMinor('create', body, null),
+        };
         answer = {'data': record, 'queued': true};
         status = 201;
       case 'update':
+        effect = {
+          'parent_id': ?parentId,
+          if (child != null) 'delta_minor': child.deltaMinor('update', body, existing),
+        };
         answer = {
-          'data': adapter.applyPatch({'id': match.targetIds.isEmpty ? null : match.targetIds.first}, body),
+          'data': adapter.applyPatch(existing ?? {'id': match.targetIds.isEmpty ? null : match.targetIds.first}, body),
           'queued': true,
         };
       case 'delete':
+        effect = {
+          'parent_id': ?parentId,
+          if (child != null) 'delta_minor': child.deltaMinor('delete', body, existing),
+        };
         answer = null;
         status = 204;
     }

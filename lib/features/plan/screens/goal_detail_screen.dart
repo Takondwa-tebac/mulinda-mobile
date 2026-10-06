@@ -282,6 +282,7 @@ class _ContributionCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final note = contribution.note;
     final hasNote = note != null && note.trim().isNotEmpty;
+    final date = contribution.pending ? [_date, 'Waiting to sync'].whereType<String>().join(' · ') : _date;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -317,7 +318,7 @@ class _ContributionCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
                   ),
                 ),
-                if (_date != null) ...[
+                if (date != null) ...[
                   const SizedBox(height: 2),
                   Row(
                     children: [
@@ -325,7 +326,7 @@ class _ContributionCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          _date!,
+                          date,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),

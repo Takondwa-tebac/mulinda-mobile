@@ -154,6 +154,10 @@ class OfflineCacheInterceptor extends Interceptor {
         final entity = _entityFor(o.path);
         if (entity != null && versions != null) {
           unawaited(versions!.putVersions(userId, entity, OverlayEngine.versionsIn(o.path, data)).catchError((_) {}));
+          // Contributions / repayments are nested in their goal's / loan's detail.
+          OverlayEngine.childVersionsIn(o.path, data).forEach((childEntity, byId) {
+            unawaited(versions!.putVersions(userId, childEntity, byId).catchError((_) {}));
+          });
         }
 
         // Changes still waiting to sync must stay visible even on a live read.

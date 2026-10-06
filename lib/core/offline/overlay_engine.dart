@@ -9,8 +9,9 @@ import 'mutation_store.dart';
 /// Reads come from the server or the saved cache, neither of which knows about
 /// changes still waiting in the queue. This layers those changes on top of the
 /// response: a queued create appears in the list, an edit shows its new values,
-/// a delete disappears. Records touched this way carry `_pending: true` so the
-/// UI can mark them "waiting to sync".
+/// a delete disappears, and a contribution or repayment shows in its goal or
+/// loan and moves the saved or outstanding total. Records touched this way carry
+/// `_pending: true` so the UI can mark them "waiting to sync".
 class OverlayEngine {
   OverlayEngine({required this.mutations, required this.cache});
 
@@ -27,9 +28,29 @@ class OverlayEngine {
               if (item is Map && item['id']?.toString() == id) return item.cast<String, dynamic>();
             }
           }
+          if (data is Map && data['id']?.toString() == id) return data.cast<String, dynamic>();
         }
         return null;
       };
+
+  /// A saved contribution/repayment (they live inside the parent's detail), or a
+  /// queued create of one, so a queued edit knows how much it changes by.
+  Future<Map<String, dynamic>?> findChild(String userId, ChildAdapter adapter, String parentId, String childId) async {
+    final detail = await cache.get(userId, 'GET ${adapter.parentCollection}/$parentId');
+    final data = detail?.body is Map ? (detail!.body as Map)['data'] : null;
+    final list = data is Map ? data[adapter.childKey] : null;
+    if (list is List) {
+      for (final item in list) {
+        if (item is Map && item['id']?.toString() == childId) return item.cast<String, dynamic>();
+      }
+    }
+    for (final m in await mutations.all(userId)) {
+      if (m.entity == adapter.entity && m.op == 'create' && m.targetIds.contains(childId) && m.effect['record'] is Map) {
+        return (m.effect['record'] as Map).cast<String, dynamic>();
+      }
+    }
+    return null;
+  }
 
   /// [json] with this user's queued changes applied, or [json] untouched when
   /// the request is not for an offline-capable record or nothing is queued.
@@ -39,23 +60,30 @@ class OverlayEngine {
       final detail = isList ? null : adapter.detailId(options.path);
       if (!isList && detail == null) continue;
 
-      final queued = (await mutations.all(userId)).where((m) => m.entity == adapter.entity).toList();
-      if (queued.isEmpty || json is! Map || json['data'] == null) return json;
+      final all = await mutations.all(userId);
+      final own = all.where((m) => m.entity == adapter.entity).toList();
+      final childEntity = adapter.childAdapter?.entity;
+      final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
+      if ((own.isEmpty && children.isEmpty) || json is! Map || json['data'] == null) return json;
 
       if (isList && json['data'] is List) {
         final data = List<dynamic>.from(json['data'] as List);
-        for (final m in queued) {
+        for (final m in own) {
           _applyToList(adapter, m, data, options.queryParameters);
+        }
+        for (var i = 0; i < data.length; i++) {
+          final item = data[i];
+          if (item is Map) data[i] = _withChildren(adapter, item.cast<String, dynamic>(), children, includeChildList: false);
         }
         return {...json, 'data': data};
       }
 
       if (detail != null && json['data'] is Map) {
         var record = (json['data'] as Map).cast<String, dynamic>();
-        for (final m in queued) {
+        for (final m in own) {
           if (m.op == 'update' && m.targetIds.contains(detail)) record = adapter.applyPatch(record, m.body);
         }
-        return {...json, 'data': record};
+        return {...json, 'data': _withChildren(adapter, record, children, includeChildList: true)};
       }
       return json;
     }
@@ -82,6 +110,46 @@ class OverlayEngine {
     }
   }
 
+  /// Fold queued contributions/repayments into their goal/loan: move its total
+  /// and, on the detail view, add/edit/remove them in its list.
+  Map<String, dynamic> _withChildren(
+    EntityAdapter parent,
+    Map<String, dynamic> record,
+    List<PendingMutation> children, {
+    required bool includeChildList,
+  }) {
+    final child = parent.childAdapter;
+    if (child == null || children.isEmpty) return record;
+    final id = record['id']?.toString();
+    final mine = children.where((m) => m.effect['parent_id']?.toString() == id).toList();
+    if (mine.isEmpty) return record;
+
+    var next = {...record};
+    var delta = 0;
+    List<dynamic>? list = includeChildList && next[child.childKey] is List ? List<dynamic>.from(next[child.childKey] as List) : null;
+
+    for (final m in mine) {
+      delta += (m.effect['delta_minor'] as num?)?.toInt() ?? 0;
+      if (list == null) continue;
+      switch (m.op) {
+        case 'create':
+          final r = m.effect['record'];
+          if (r is Map && !list.any((e) => e is Map && e['id']?.toString() == r['id']?.toString())) list.insert(0, r.cast<String, dynamic>());
+        case 'update':
+          for (var i = 0; i < list.length; i++) {
+            final item = list[i];
+            if (item is Map && m.targetIds.contains(item['id']?.toString())) {
+              list[i] = child.applyPatch(item.cast<String, dynamic>(), m.body);
+            }
+          }
+        case 'delete':
+          list.removeWhere((e) => e is Map && m.targetIds.contains(e['id']?.toString()));
+      }
+    }
+    if (list != null) next[child.childKey] = list;
+    return parent.adjustForChildren(next, delta);
+  }
+
   /// A detail response for a record that exists only locally (created offline,
   /// never fetched), built from its queued create plus later edits. Null when
   /// [options] is not such a request.
@@ -89,8 +157,9 @@ class OverlayEngine {
     for (final adapter in kEntityAdapters) {
       final id = adapter.detailId(options.path);
       if (id == null) continue;
+      final all = await mutations.all(userId);
       Map<String, dynamic>? record;
-      for (final m in (await mutations.all(userId)).where((m) => m.entity == adapter.entity)) {
+      for (final m in all.where((m) => m.entity == adapter.entity)) {
         if (m.op == 'create' && m.targetIds.contains(id) && m.effect['record'] is Map) {
           record = (m.effect['record'] as Map).cast<String, dynamic>();
         } else if (record != null && m.op == 'update' && m.targetIds.contains(id)) {
@@ -99,7 +168,10 @@ class OverlayEngine {
           return null;
         }
       }
-      return record == null ? null : {'data': record};
+      if (record == null) return null;
+      final childEntity = adapter.childAdapter?.entity;
+      final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
+      return {'data': _withChildren(adapter, record, children, includeChildList: true)};
     }
     return null;
   }
@@ -124,12 +196,15 @@ class OverlayEngine {
       }
       if (record == null) return null;
 
+      final all = await mutations.all(userId);
       var current = record;
-      for (final m in (await mutations.all(userId)).where((m) => m.entity == adapter.entity)) {
+      for (final m in all.where((m) => m.entity == adapter.entity)) {
         if (m.op == 'update' && m.targetIds.contains(id)) current = adapter.applyPatch(current, m.body);
         if (m.op == 'delete' && m.targetIds.contains(id)) return null;
       }
-      return {'data': current};
+      final childEntity = adapter.childAdapter?.entity;
+      final children = childEntity == null ? <PendingMutation>[] : all.where((m) => m.entity == childEntity).toList();
+      return {'data': _withChildren(adapter, current, children, includeChildList: true)};
     }
     return null;
   }
@@ -152,5 +227,25 @@ class OverlayEngine {
       take(data);
     }
     return out;
+  }
+
+  /// Versions of the contributions/repayments nested in a goal/loan detail.
+  /// Returns `{childEntity: {id: updated_at}}`; empty for other responses.
+  static Map<String, Map<String, String>> childVersionsIn(String path, dynamic json) {
+    for (final adapter in kEntityAdapters) {
+      final child = adapter.childAdapter;
+      if (child == null || adapter.detailId(path) == null || json is! Map) continue;
+      final data = json['data'];
+      final list = data is Map ? data[child.childKey] : null;
+      if (list is! List) return const {};
+      final out = <String, String>{};
+      for (final item in list) {
+        if (item is Map && item['id'] != null && item['updated_at'] != null) {
+          out[item['id'].toString()] = item['updated_at'].toString();
+        }
+      }
+      return out.isEmpty ? const {} : {child.entity: out};
+    }
+    return const {};
   }
 }

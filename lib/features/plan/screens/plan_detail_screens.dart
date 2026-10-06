@@ -561,7 +561,7 @@ class _RepaymentsList extends ConsumerWidget {
               title: Text(r.amount.formatted,
                   style: const TextStyle(fontWeight: FontWeight.w700)),
               subtitle: r.paidAt != null
-                  ? Text(r.paidAt!)
+                  ? Text(r.pending ? '${r.paidAt!} · Waiting to sync' : r.paidAt!)
                   : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,

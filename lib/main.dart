@@ -14,7 +14,9 @@ import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
 import 'core/offline/offline_prefetch.dart';
 import 'core/offline/offline_status.dart';
+import 'core/offline/offline_mode.dart';
 import 'core/offline/prefs.dart';
+import 'core/offline/trusted_clock.dart';
 import 'core/offline/offline_sync_runner.dart';
 import 'core/security/app_lock.dart';
 import 'core/security/screenshot_protection.dart';
@@ -37,6 +39,7 @@ Future<void> main() async {
   }
   await NotificationService.init();
   final prefs = await SharedPreferences.getInstance();
+  TrustedClock.observeDevice(prefs);
   await SmsBackgroundSync.init();
 
   // Resume automatic SMS capture if the user previously opted in. No-op when
@@ -158,6 +161,10 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Note the phone's time (it only ever moves the trusted value forward) and
+      // re-check whether offline mode is still allowed.
+      TrustedClock.observeDevice(ref.read(sharedPreferencesProvider));
+      ref.invalidate(offlineModeProvider);
       _flushOutbox();
       _refreshOfflineData();
     }

@@ -73,8 +73,9 @@ void main() {
 
     test('ignore everything else (reads, sub-resources, other entities)', () {
       expect(matchWrite('GET', '/v1/transactions', null), isNull);
-      expect(matchWrite('POST', '/v1/goals/$txn1/contributions', {}), isNull);
-      expect(matchWrite('POST', '/v1/budgets', {}), isNull);
+      expect(matchWrite('POST', '/v1/goals/$txn1/contributions', {})!.entity, 'goal_contribution'); // a child, not a goal
+      expect(matchWrite('POST', '/v1/accounts', {}), isNull);
+      expect(matchWrite('POST', '/v1/coach/messages', {}), isNull);
       expect(matchWrite('PUT', '/v1/transactions/not-a-uuid', {}), isNull);
     });
 
@@ -328,7 +329,7 @@ void main() {
       connectivity.results = [ConnectivityResult.none];
       adapter.requests.clear();
       adapter.networkUp = false;
-      await expectLater(dio.post('/v1/budgets', data: {'name': 'x'}), throwsA(isA<DioException>()));
+      await expectLater(dio.post('/v1/accounts', data: {'name': 'x'}), throwsA(isA<DioException>()));
       expect(store.queue, isEmpty);
     });
   });

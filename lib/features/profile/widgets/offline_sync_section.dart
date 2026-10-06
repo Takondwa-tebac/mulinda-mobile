@@ -323,15 +323,19 @@ class OfflineModeRow extends ConsumerWidget {
         leading: Icon(Icons.lock_outline, color: scheme.onSurfaceVariant),
         title: const Text('Offline mode', style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
-          mode.paused
-              ? 'Paused — your plan no longer includes it. Renew to resume.'
-              : 'Use Mulinda with no internet. Available on the 3-day, weekly and monthly plans.',
+          mode.clockWrong
+              ? 'Paused: your phone\'s date or time looks wrong. Connect to the internet to resume.'
+              : mode.paused
+                  ? 'Paused: your plan no longer includes it. Renew to resume.'
+                  : 'Use Mulinda with no internet. Available on the 3-day, weekly and monthly plans.',
           style: const TextStyle(fontSize: 12.5, height: 1.35),
         ),
-        trailing: TextButton(
-          onPressed: () => context.push(Routes.subscription),
-          child: Text(mode.paused ? 'Renew' : 'Upgrade'),
-        ),
+        trailing: mode.clockWrong
+            ? null
+            : TextButton(
+                onPressed: () => context.push(Routes.subscription),
+                child: Text(mode.paused ? 'Renew' : 'Upgrade'),
+              ),
       );
     }
 

@@ -111,8 +111,20 @@ class OfflinePrefetcher {
           }
         }),
         PrefetchStep('Goals', () => _load(c, goalsProvider, goalsProvider.future)),
+        PrefetchStep('Goal details', () async {
+          for (final g in (await c.read(goalsProvider.future)).take(15)) {
+            final p = goalDetailProvider(g.id);
+            await _load(c, p, p.future);
+          }
+        }),
         PrefetchStep('Budgets', () => _load(c, budgetsProvider, budgetsProvider.future)),
         PrefetchStep('Loans', () => _load(c, loansProvider, loansProvider.future)),
+        PrefetchStep('Loan details', () async {
+          for (final l in (await c.read(loansProvider.future)).take(15)) {
+            final p = loanDetailProvider(l.id);
+            await _load(c, p, p.future);
+          }
+        }),
         PrefetchStep('Investments', () => _load(c, investmentsListProvider, investmentsListProvider.future)),
         PrefetchStep('Projects', () => _load(c, projectsProvider, projectsProvider.future)),
         PrefetchStep('Notifications', () => _load(c, insightsProvider, insightsProvider.future)),
