@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/subscription/data/subscription_models.dart';
 import 'cache_store.dart';
+import 'offline_prefetch.dart';
+import 'prefs.dart';
 
 /// Whether offline mode is available to this user and whether they turned it on.
 class OfflineModeState {
@@ -48,13 +50,10 @@ class OfflineModeController extends Notifier<OfflineModeState> {
         (info?.can(Entitlements.offlineMode) ?? false) &&
         (until == null || until.isAfter(DateTime.now()));
 
-    if (user != null) _load(user.id);
-    return OfflineModeState(eligible: eligible, enabled: false, until: until);
-  }
-
-  Future<void> _load(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    state = state.copyWith(enabled: prefs.getBool(_key(userId)) ?? false);
+    // Read synchronously (preferences are loaded before the first frame) so the
+    // very first requests already know whether offline mode is on.
+    final enabled = user != null && (ref.read(sharedPreferencesProvider).getBool(_key(user.id)) ?? false);
+    return OfflineModeState(eligible: eligible, enabled: enabled, until: until);
   }
 
   /// Turn offline mode on or off. Turning it on is refused unless the plan
@@ -63,11 +62,17 @@ class OfflineModeController extends Notifier<OfflineModeState> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     if (value && !state.eligible) return;
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool(_key(user.id), value);
     state = state.copyWith(enabled: value);
+    // Turning it on saves the main screens' data straight away, so going offline
+    // right after finds something to show.
+    if (value) {
+      unawaited(ref.read(offlinePrefetchProvider.notifier).start(force: true));
+    }
     // Turning it off removes everything saved on the phone for this account.
     if (!value) {
+      await prefs.remove(OfflinePrefetcher.lastKey);
       try {
         await EncryptedCacheStore.instance.clearUser(user.id);
       } catch (_) {}

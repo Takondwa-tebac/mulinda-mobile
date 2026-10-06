@@ -25,6 +25,7 @@ import '../../features/legal/screens/legal_page_screen.dart';
 import '../../features/dashboard/screens/home_screen.dart';
 import '../../features/insights/data/insights_repository.dart' show Insight;
 import '../../features/insights/screens/insights_screen.dart';
+import '../../features/profile/screens/offline_sync_screen.dart';
 import '../../features/insights/screens/notification_detail_screen.dart';
 import '../../features/onboarding/onboarding_prefs.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
@@ -162,6 +163,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.personalData, builder: (_, _) => const PersonalDataScreen()),
       GoRoute(path: Routes.preferences, builder: (_, _) => const PreferencesScreen()),
       GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen()),
+      GoRoute(path: Routes.offlineSync, builder: (_, _) => const OfflineSyncScreen()),
       GoRoute(
         path: Routes.notificationDetail,
         builder: (_, s) => NotificationDetailScreen(

@@ -41,7 +41,7 @@ class PersonalDataScreen extends ConsumerWidget {
                 _tile(context, Icons.insights_outlined, 'Daily summaries',
                     'The day-by-day recaps built from your activity', () => context.push(Routes.dailySummaries)),
                 const Divider(height: 1),
-                const OfflineSyncSection(),
+                const OfflineSyncTile(),
               ],
             ),
           ),

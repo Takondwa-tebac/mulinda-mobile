@@ -100,8 +100,9 @@ class OfflineCacheInterceptor extends Interceptor {
       if (hit != null && overlay != null) {
         body = await overlay!.apply(o, userId, body);
       } else if (hit == null && overlay != null) {
-        // A record created offline has never been fetched: build it from the queue.
-        body = await overlay!.pendingDetail(o, userId);
+        // Never opened while online: a record created offline (built from the
+        // queue), or one that appears in a saved list (built from that).
+        body = await overlay!.pendingDetail(o, userId) ?? await overlay!.detailFromSavedLists(o, userId);
         fetchedAt = DateTime.now();
       }
       if (body == null || fetchedAt == null) return null;

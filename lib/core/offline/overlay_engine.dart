@@ -104,6 +104,36 @@ class OverlayEngine {
     return null;
   }
 
+  /// A detail response built from the saved list pages, for a record whose own
+  /// detail page was never opened (so was never saved). Queued edits are applied.
+  /// Null when the record is not in any saved list.
+  Future<Map<String, dynamic>?> detailFromSavedLists(RequestOptions options, String userId) async {
+    for (final adapter in kEntityAdapters) {
+      final id = adapter.detailId(options.path);
+      if (id == null) continue;
+
+      Map<String, dynamic>? record;
+      for (final page in await cache.getByPrefix(userId, 'GET ${adapter.collection}')) {
+        final data = page.body is Map ? (page.body as Map)['data'] : null;
+        if (data is List) {
+          for (final item in data) {
+            if (item is Map && item['id']?.toString() == id) record = item.cast<String, dynamic>();
+          }
+        }
+        if (record != null) break;
+      }
+      if (record == null) return null;
+
+      var current = record;
+      for (final m in (await mutations.all(userId)).where((m) => m.entity == adapter.entity)) {
+        if (m.op == 'update' && m.targetIds.contains(id)) current = adapter.applyPatch(current, m.body);
+        if (m.op == 'delete' && m.targetIds.contains(id)) return null;
+      }
+      return {'data': current};
+    }
+    return null;
+  }
+
   /// `id → updated_at` for every record in a successful read, so a later queued
   /// edit can tell the server which version it was based on.
   static Map<String, String> versionsIn(String path, dynamic json) {
