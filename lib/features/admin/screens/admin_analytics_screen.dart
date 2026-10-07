@@ -101,6 +101,7 @@ class _AnalyticsBody extends StatelessWidget {
     final revenue = _map(data['revenue']);
     final gifts = _map(data['gifts']);
     final engagement = _map(data['engagement']);
+    final offline = _map(data['offline']);
     final scheme = Theme.of(context).colorScheme;
 
     return Align(
@@ -183,6 +184,19 @@ class _AnalyticsBody extends StatelessWidget {
               _Stat('Transactions this month', _count(_int(engagement['transactions_this_month'])), Icons.swap_horiz),
               _Stat('Coach conversations', _count(_int(engagement['coach_conversations'])), Icons.auto_awesome_outlined),
             ]),
+
+            // ---- Offline mode -----------------------------------------------
+            if (offline.isNotEmpty) ...[
+              const _SectionTitle('Offline mode'),
+              _TileGrid(tiles: [
+                _Stat('Eligible users', _count(_int(offline['eligible_users'])), Icons.verified_user_outlined),
+                _Stat('Turned it on', _count(_int(offline['users_with_offline_on'])), Icons.cloud_off_outlined),
+                _Stat('Conflicts and failures', _pct(offline['conflict_failure_rate']), Icons.warning_amber_outlined),
+                _Stat('Batches (24h)', _count(_int(offline['batches_last_24h'])), Icons.sync_outlined),
+                _Stat('Failed batches (24h)', _count(_int(offline['batches_failed_last_24h'])), Icons.sync_problem_outlined),
+                _Stat('Changes synced (14 days)', _count(_sumSeries(offline['series'], 'applied')), Icons.done_all),
+              ]),
+            ],
             const SizedBox(height: 16),
             Text(
               'Updated ${_updated(data['generated_at'])} · figures refresh every few minutes',
@@ -194,6 +208,9 @@ class _AnalyticsBody extends StatelessWidget {
       ),
     );
   }
+
+  int _sumSeries(dynamic series, String key) =>
+      series is List ? series.fold<int>(0, (a, e) => a + (e is Map ? _int(e[key]) : 0)) : 0;
 
   String _updated(dynamic iso) {
     final d = DateTime.tryParse(iso?.toString() ?? '')?.toLocal();

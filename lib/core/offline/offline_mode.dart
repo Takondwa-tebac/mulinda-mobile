@@ -45,7 +45,7 @@ class OfflineModeState {
 /// API reports (remembered on the device, so it can be evaluated with no
 /// connection); the on/off switch is a local per-account preference.
 class OfflineModeController extends Notifier<OfflineModeState> {
-  static String _key(String userId) => 'offline_mode_enabled_$userId';
+  static String _key(String userId) => offlineModePrefKey(userId);
 
   @override
   OfflineModeState build() {
@@ -82,6 +82,7 @@ class OfflineModeController extends Notifier<OfflineModeState> {
     // Turning it off removes everything saved on the phone for this account.
     if (!value) {
       await prefs.remove(OfflinePrefetcher.lastKey);
+      await prefs.remove(OfflinePrefetcher.cursorKey);
       try {
         await EncryptedCacheStore.instance.clearUser(user.id);
       } catch (_) {}

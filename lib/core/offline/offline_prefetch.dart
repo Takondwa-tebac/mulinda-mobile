@@ -10,15 +10,25 @@ import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/insights/data/insights_repository.dart';
 import '../../features/plan/data/plan_repository.dart';
 import '../../features/summary/data/summary_repository.dart';
+import '../network/dio_client.dart';
 import 'offline_mode.dart';
 import 'prefs.dart';
 
 /// One screen's worth of data to save for offline use.
 class PrefetchStep {
-  const PrefetchStep(this.label, this.run);
+  const PrefetchStep(this.label, this.run, {this.dependsOn});
 
   final String label;
   final Future<void> Function() run;
+
+  /// What this screen shows, by the names the change feed uses (transactions,
+  /// accounts, goals, loans, budgets, investments, projects). It is refreshed
+  /// when any of them changed. Null: always refreshed (the feed does not cover
+  /// it). Empty: only on a full refresh.
+  final Set<String>? dependsOn;
+
+  /// Whether a smart refresh has to reload this screen.
+  bool needsRefresh(Set<String> changed) => dependsOn == null || dependsOn!.any(changed.contains);
 }
 
 class PrefetchResult {
@@ -97,40 +107,80 @@ class OfflinePrefetcher {
     }
   }
 
+  static const _everything = {'transactions', 'accounts', 'goals', 'loans', 'budgets', 'investments', 'projects'};
+
+  /// Where the last change-feed position is kept (the server's `server_time`).
+  static const cursorKey = 'offline_changes_cursor';
+
+  /// Asks the server what changed since the last refresh and returns only the
+  /// steps that need to run. Everything runs the first time, when forced, when
+  /// the server says too much time has passed, or when the feed is unavailable.
+  /// `nextCursor` is stored by the caller once the refresh has succeeded.
+  static Future<({List<PrefetchStep> steps, String? nextCursor})> plan({
+    required List<PrefetchStep> all,
+    required String? cursor,
+    required bool force,
+    required Future<Map<String, dynamic>?> Function(String since) fetchSummary,
+  }) async {
+    if (force || cursor == null) {
+      // Take the server's clock now, so the next run asks about changes after this point.
+      final first = await fetchSummary(DateTime.now().toUtc().toIso8601String());
+      return (steps: all, nextCursor: first?['server_time']?.toString());
+    }
+    final summary = await fetchSummary(cursor);
+    if (summary == null) return (steps: all, nextCursor: null);
+
+    final next = summary['server_time']?.toString();
+    if (summary['full_refresh_required'] == true) return (steps: all, nextCursor: next);
+
+    final changed = <String>{
+      for (final e in ((summary['changed'] as Map?) ?? const {}).entries)
+        if (e.value == true) e.key.toString(),
+    };
+    return (steps: all.where((s) => s.needsRefresh(changed)).toList(), nextCursor: next);
+  }
+
   /// The screens worth having offline.
   static List<PrefetchStep> defaultSteps(ProviderContainer c) => [
-        PrefetchStep('Dashboard', () => _load(c, dashboardProvider, dashboardProvider.future)),
-        PrefetchStep('Accounts', () => _load(c, accountsProvider, accountsProvider.future)),
-        PrefetchStep('Categories', () => _load(c, categoriesProvider, categoriesProvider.future)),
-        PrefetchStep('Transactions', () => _load(c, transactionsProvider, transactionsProvider.future)),
+        PrefetchStep('Dashboard', () => _load(c, dashboardProvider, dashboardProvider.future),
+            dependsOn: _everything),
+        PrefetchStep('Accounts', () => _load(c, accountsProvider, accountsProvider.future),
+            dependsOn: {'accounts', 'transactions'}),
+        PrefetchStep('Categories', () => _load(c, categoriesProvider, categoriesProvider.future), dependsOn: {}),
+        PrefetchStep('Transactions', () => _load(c, transactionsProvider, transactionsProvider.future),
+            dependsOn: {'transactions'}),
         PrefetchStep('Account activity', () async {
           final accounts = await c.read(accountsProvider.future);
           for (final a in accounts.take(6)) {
             final p = accountTransactionsProvider(a.id);
             await _load(c, p, p.future);
           }
-        }),
-        PrefetchStep('Goals', () => _load(c, goalsProvider, goalsProvider.future)),
+        }, dependsOn: {'accounts', 'transactions'}),
+        PrefetchStep('Goals', () => _load(c, goalsProvider, goalsProvider.future), dependsOn: {'goals'}),
         PrefetchStep('Goal details', () async {
           for (final g in (await c.read(goalsProvider.future)).take(15)) {
             final p = goalDetailProvider(g.id);
             await _load(c, p, p.future);
           }
-        }),
-        PrefetchStep('Budgets', () => _load(c, budgetsProvider, budgetsProvider.future)),
-        PrefetchStep('Loans', () => _load(c, loansProvider, loansProvider.future)),
+        }, dependsOn: {'goals'}),
+        PrefetchStep('Budgets', () => _load(c, budgetsProvider, budgetsProvider.future),
+            dependsOn: {'budgets', 'transactions'}),
+        PrefetchStep('Loans', () => _load(c, loansProvider, loansProvider.future), dependsOn: {'loans'}),
         PrefetchStep('Loan details', () async {
           for (final l in (await c.read(loansProvider.future)).take(15)) {
             final p = loanDetailProvider(l.id);
             await _load(c, p, p.future);
           }
-        }),
-        PrefetchStep('Investments', () => _load(c, investmentsListProvider, investmentsListProvider.future)),
-        PrefetchStep('Projects', () => _load(c, projectsProvider, projectsProvider.future)),
+        }, dependsOn: {'loans'}),
+        PrefetchStep('Investments', () => _load(c, investmentsListProvider, investmentsListProvider.future),
+            dependsOn: {'investments'}),
+        PrefetchStep('Projects', () => _load(c, projectsProvider, projectsProvider.future),
+            dependsOn: {'projects', 'transactions'}),
         PrefetchStep('Notifications', () => _load(c, insightsProvider, insightsProvider.future)),
         PrefetchStep('Unread count', () => _load(c, unreadInsightsCountProvider, unreadInsightsCountProvider.future)),
         PrefetchStep('Inbox', () => _load(c, pendingReceiptsProvider, pendingReceiptsProvider.future)),
-        PrefetchStep('Daily summaries', () => _load(c, dailySummariesProvider, dailySummariesProvider.future)),
+        PrefetchStep('Daily summaries', () => _load(c, dailySummariesProvider, dailySummariesProvider.future),
+            dependsOn: {'transactions'}),
       ];
 }
 
@@ -177,14 +227,39 @@ class OfflinePrefetchController extends Notifier<PrefetchState> {
 
     state = state.copyWith(running: true, done: 0, total: 0, label: '');
     final container = ref.container;
+    final plan = await OfflinePrefetcher.plan(
+      all: OfflinePrefetcher.defaultSteps(container),
+      cursor: prefs.getString(OfflinePrefetcher.cursorKey),
+      force: force,
+      fetchSummary: _fetchSummary,
+    );
     final result = await OfflinePrefetcher.run(
-      steps: OfflinePrefetcher.defaultSteps(container),
+      steps: plan.steps,
       isOnline: _online,
       prefs: prefs,
       onProgress: (done, total, label) => state = state.copyWith(running: true, done: done, total: total, label: label),
     );
+    // Only move the position forward when every screen that needed it was saved,
+    // otherwise the next run would skip what failed.
+    if (plan.nextCursor != null && result.failed == 0 && !result.offline) {
+      await prefs.setString(OfflinePrefetcher.cursorKey, plan.nextCursor!);
+      if (plan.steps.isEmpty) await prefs.setInt(OfflinePrefetcher.lastKey, DateTime.now().millisecondsSinceEpoch);
+    }
     state = PrefetchState(lastSaved: OfflinePrefetcher.lastSaved(prefs));
     return result;
+  }
+
+  Future<Map<String, dynamic>?> _fetchSummary(String since) async {
+    try {
+      final res = await ref.read(dioProvider).get<dynamic>(
+        '/v1/sync/changes',
+        queryParameters: {'summary': 1, 'since': since},
+      );
+      final data = res.data is Map ? (res.data as Map)['data'] : null;
+      return data is Map ? data.cast<String, dynamic>() : null;
+    } catch (_) {
+      return null; // older server, rate limited or offline: refresh everything
+    }
   }
 }
 

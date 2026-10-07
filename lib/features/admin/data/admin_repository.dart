@@ -61,6 +61,22 @@ class AdminRepository {
     return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
   }
 
+  /// Switches for features (offline mode…): master switch, rollout percentage, allow-list.
+  Future<List<Map<String, dynamic>>> featureFlags() async {
+    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/features');
+    final data = res.data?['data'];
+    return data is List ? data.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList() : [];
+  }
+
+  Future<Map<String, dynamic>> updateFeatureFlag(String key, {bool? enabled, int? rolloutPercent}) async {
+    final res = await _dio.put<Map<String, dynamic>>('/v1/admin/features/$key', data: {
+      if (enabled != null) 'enabled': enabled,
+      if (rolloutPercent != null) 'rollout_percent': rolloutPercent,
+    });
+    final data = res.data?['data'];
+    return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
   Future<Map<String, dynamic>> listAudits({int page = 1}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/v1/admin/audits',

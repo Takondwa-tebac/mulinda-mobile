@@ -41,7 +41,7 @@ class _Adapter implements HttpClientAdapter {
 
   @override
   Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
-    requests.add(options);
+    if (options.path != '/v1/sync/metrics') requests.add(options); // reports are not part of what these tests check
     if (!networkUp) {
       throw DioException(requestOptions: options, type: DioExceptionType.connectionError);
     }

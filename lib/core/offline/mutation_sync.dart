@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../env/app_env.dart';
 import 'cache_store.dart';
 import 'mutation_store.dart';
+import 'prefs.dart';
 
 /// Something the user should know about after a sync: a change that could not be
 /// applied (the server's version was kept) or was rejected.
@@ -97,6 +99,25 @@ class MutationSync {
   static const _tokenKey = 'mulinda_auth_token';
   static const _lockStale = Duration(seconds: 90);
 
+  /// A batch is only worth the extra round trips from this many changes; the
+  /// server accepts at most [batchMaxItems].
+  static const batchMinItems = 3;
+  static const batchMaxItems = 50;
+
+  /// Waits between polls for the batch result (about 45 seconds in all).
+  @visibleForTesting
+  static List<Duration> batchPollDelays = const [
+    Duration(milliseconds: 800),
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 3),
+    Duration(seconds: 5),
+    Duration(seconds: 5),
+    Duration(seconds: 8),
+    Duration(seconds: 8),
+    Duration(seconds: 13),
+  ];
+
   final MutationStore store;
   final Dio Function(String token) _dioFactory;
   final Future<String?> Function()? _tokenReader;
@@ -135,15 +156,42 @@ class MutationSync {
     }
     _lockedAt = DateTime.now();
 
-    var applied = 0, conflicts = 0, dropped = 0;
+    var applied = 0, conflicts = 0, dropped = 0, failed = 0;
     var offline = false;
     final dio = _dioFactory(token);
 
     try {
       onProgress?.call(0, queue.length);
+      final batched = await _replayAsBatch(dio, queue, now);
       for (var i = 0; i < queue.length; i++) {
         final m = queue[i];
         if (m.nextRetryMs > now) break; // backing off — hold back everything after it
+
+        // Already replayed by the batch? Use its outcome instead of calling again.
+        final fromBatch = batched?[m.id];
+        if (fromBatch != null) {
+          final status = (fromBatch['status'] as num?)?.toInt() ?? 0;
+          final outcome = await _handle(m, status, fromBatch);
+          if (outcome == _Outcome.stop) {
+            failed++;
+            await _retryLater(m, 'HTTP $status');
+            break;
+          }
+          if (outcome == _Outcome.halt) break;
+          await store.remove(m.id);
+          switch (outcome) {
+            case _Outcome.applied:
+              applied++;
+            case _Outcome.conflict:
+              conflicts++;
+            case _Outcome.dropped:
+              dropped++;
+            default:
+              break;
+          }
+          onProgress?.call(i + 1, queue.length);
+          continue;
+        }
 
         late final Response<dynamic> res;
         try {
@@ -164,6 +212,7 @@ class MutationSync {
         final status = res.statusCode ?? 0;
         final outcome = await _handle(m, status, res.data);
         if (outcome == _Outcome.stop) {
+          failed++;
           await _retryLater(m, 'HTTP $status');
           break;
         }
@@ -185,13 +234,119 @@ class MutationSync {
       _lockedAt = null;
     }
 
+    final remaining = await store.count();
+    if (!offline) {
+      await _report(dio, queue, applied: applied, conflicts: conflicts, dropped: dropped, failed: failed, remaining: remaining);
+    }
+
     return MutationFlushResult(
       applied: applied,
       conflicts: conflicts,
       dropped: dropped,
-      remaining: await store.count(),
+      remaining: remaining,
       offline: offline,
     );
+  }
+
+  static const _reportedKey = 'sync_metrics_reported_ms';
+  static const _quietReportEvery = Duration(hours: 6);
+
+  /// Tells the server how the sync went (counts only, never the data), so admins
+  /// can watch sync health. The server queues it, so this is a quick call; it is
+  /// sent after a sync that did something, and otherwise at most every few hours.
+  /// Never allowed to fail or slow a sync.
+  Future<void> _report(
+    Dio dio,
+    List<PendingMutation> queue, {
+    required int applied,
+    required int conflicts,
+    required int dropped,
+    required int failed,
+    required int remaining,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      final eventful = applied + conflicts + dropped + failed > 0;
+      final last = prefs.getInt(_reportedKey) ?? 0;
+      if (!eventful && nowMs - last < _quietReportEvery.inMilliseconds) return;
+
+      final oldest = queue.isEmpty ? null : queue.map((m) => m.createdMs).reduce(math.min);
+      await dio.post<dynamic>(
+        '/v1/sync/metrics',
+        data: {
+          'applied': applied,
+          'conflicts': conflicts,
+          'dropped': dropped,
+          'failed': failed,
+          'queue_depth': remaining,
+          if (oldest != null && remaining > 0) 'oldest_queue_age_seconds': math.max(0, (nowMs - oldest) ~/ 1000),
+          'offline_mode_enabled': queue.isNotEmpty && (prefs.getBool(offlineModePrefKey(queue.first.userId)) ?? false),
+        },
+        options: Options(sendTimeout: const Duration(seconds: 5), receiveTimeout: const Duration(seconds: 5)),
+      );
+      await prefs.setInt(_reportedKey, nowMs);
+    } catch (_) {
+      // best effort
+    }
+  }
+
+  /// Hands a run of waiting changes to the server as one batch (it replays them
+  /// off the request cycle) and waits for the per-change results. Returns null
+  /// whenever that is not possible (too few changes, server too old or busy,
+  /// timeout...): the caller then replays one by one, which is always safe because
+  /// every change carries the same Idempotency-Key either way.
+  Future<Map<String, Map<String, dynamic>>?> _replayAsBatch(Dio dio, List<PendingMutation> queue, int now) async {
+    final run = <PendingMutation>[];
+    for (final m in queue) {
+      if (m.nextRetryMs > now || run.length >= batchMaxItems) break;
+      run.add(m);
+    }
+    if (run.length < batchMinItems) return null;
+
+    // Stable for the same changes, but new after a failed attempt (attempts change),
+    // so a stale outcome is never handed back.
+    final attempts = run.fold<int>(0, (a, m) => a + m.attempts);
+    final clientBatchId = 'b-${run.first.id}-${run.length}-$attempts';
+
+    try {
+      final created = await dio.post<dynamic>('/v1/sync/batches', data: {
+        'client_batch_id': clientBatchId,
+        'items': [
+          for (final m in run)
+            {
+              'id': m.id,
+              'method': m.method,
+              'path': m.path,
+              'body': m.body,
+              if (m.baseUpdatedAt != null) 'base_updated_at': m.baseUpdatedAt,
+            },
+        ],
+      });
+      if (created.statusCode != 202 || created.data is! Map) return null;
+      final batchId = (created.data['data'] as Map?)?['id']?.toString();
+      if (batchId == null) return null;
+
+      for (final wait in batchPollDelays) {
+        await Future<void>.delayed(wait);
+        final poll = await dio.get<dynamic>('/v1/sync/batches/$batchId');
+        if (poll.statusCode != 200 || poll.data is! Map) return null;
+        final data = ((poll.data as Map)['data'] as Map?)?.cast<String, dynamic>();
+        final status = data?['status']?.toString();
+        if (status == 'completed') {
+          final results = data?['results'];
+          if (results is! List) return null;
+          return {
+            for (final r in results.whereType<Map>())
+              if (r['id'] != null) r['id'].toString(): r.cast<String, dynamic>(),
+          };
+        }
+        if (status == 'failed') return null;
+      }
+    } catch (_) {
+      return null;
+    }
+    return null; // still running: fall back (replays are idempotent)
   }
 
   Future<_Outcome> _handle(PendingMutation m, int status, dynamic data) async {

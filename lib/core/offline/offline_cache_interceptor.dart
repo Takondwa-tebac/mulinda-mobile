@@ -52,6 +52,8 @@ class OfflineCacheInterceptor extends Interceptor {
   /// admin tools, downloads, AI chat and payment flows.
   static const _neverCache = [
     '/v1/auth',
+    '/v1/sync',
+    '/v1/features',
     '/v1/admin',
     '/v1/exports',
     '/v1/coach',

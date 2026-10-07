@@ -45,6 +45,7 @@ import '../../features/plan/screens/plan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
 import '../../features/admin/screens/admin_analytics_screen.dart';
+import '../../features/admin/screens/admin_feature_flags_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/audit_trail_screen.dart';
 import '../../features/admin/screens/push_notification_screen.dart';
@@ -218,6 +219,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
       GoRoute(path: Routes.adminAnalytics, builder: (_, _) => const AdminAnalyticsScreen()),
+      GoRoute(path: Routes.adminFeatures, builder: (_, _) => const AdminFeatureFlagsScreen()),
 
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
