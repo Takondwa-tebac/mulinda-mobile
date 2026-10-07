@@ -1,3 +1,4 @@
+import 'offline_storage.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -29,6 +30,13 @@ abstract class CacheStore {
   /// Every saved response whose key starts with [keyPrefix] (e.g. all cached
   /// `GET /v1/accounts…` pages) — used to look up names for locally built records.
   Future<List<CachedResponse>> getByPrefix(String userId, String keyPrefix);
+
+  /// Every saved response for [userId] with its size, for the "what is saved" list.
+  Future<List<CachedEntryUsage>> usage(String userId);
+
+  /// Remove the saved copies of [userId]'s screens. Changes still waiting to sync
+  /// are kept: they are not saved copies, they are the user's work.
+  Future<void> clearSaved(String userId);
 
   /// Remove everything saved for [userId] (offline mode turned off).
   Future<void> clearUser(String userId);
@@ -131,6 +139,25 @@ class EncryptedCacheStore implements CacheStore, MutationStore {
               fetchedAt: DateTime.fromMillisecondsSinceEpoch(r.read<int>('fetched_at')),
             ))
         .toList();
+  }
+
+  @override
+  Future<List<CachedEntryUsage>> usage(String userId) async {
+    final db = await _database;
+    final rows = await db
+        .customSelect(
+          'SELECT cache_key, length(CAST(body AS BLOB)) AS bytes FROM cached_responses WHERE user_id = ?',
+          variables: [Variable.withString(userId)],
+        )
+        .get();
+    return rows.map((r) => CachedEntryUsage(r.read<String>('cache_key'), r.read<int>('bytes'))).toList();
+  }
+
+  @override
+  Future<void> clearSaved(String userId) async {
+    final db = await _database;
+    await db.customStatement('DELETE FROM cached_responses WHERE user_id = ?', [userId]);
+    await db.customStatement('DELETE FROM record_versions WHERE user_id = ?', [userId]);
   }
 
   @override

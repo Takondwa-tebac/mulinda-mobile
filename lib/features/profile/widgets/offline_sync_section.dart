@@ -9,6 +9,8 @@ import '../../../core/offline/offline_mode.dart';
 import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/offline/offline_prefetch.dart';
+import '../../../core/offline/offline_storage.dart';
+import '../../../core/offline/prefs.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../capture/data/sms_auto_capture.dart';
 import '../../capture/data/sms_manual_scanner.dart';
@@ -164,7 +166,7 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
           Text(
             'Bank and mobile-money SMS are saved on your phone first. With offline mode on, '
             'changes you make to transactions, goals and loans while offline wait safely too. '
-            'Everything syncs automatically when you are back online — each item is recorded '
+            'Everything syncs automatically when you are back online. Each item is recorded '
             'only once, and if something was changed elsewhere in the meantime, the latest '
             'version is kept.',
             style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.4),
@@ -339,20 +341,45 @@ class OfflineModeRow extends ConsumerWidget {
       );
     }
 
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      secondary: Icon(Icons.offline_bolt_outlined, color: scheme.primary),
-      title: const Text('Offline mode', style: TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(
-        'Open Mulinda with no internet and still see your latest accounts, transactions, goals '
-        'and more. While you are online, what you view is saved on this phone, encrypted. '
-        'Editing offline is coming soon; SMS capture already works offline.'
-        '${mode.until != null ? ' Included with your plan until ${_date(mode.until!)}.' : ''}'
-        ' Turning this off deletes the saved data.',
-        style: const TextStyle(fontSize: 12.5, height: 1.35),
+    final muted = TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.4);
+
+    // The switch sits beside a short title; the explanation gets the full width
+    // below it, so nothing is squeezed between the icon and the switch.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.offline_bolt_outlined, color: scheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  mode.enabled ? 'Offline mode is on' : 'Offline mode',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+              ),
+              Switch(
+                value: mode.enabled,
+                onChanged: (v) => ref.read(offlineModeProvider.notifier).setEnabled(v),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Use Mulinda with no internet. While you are online, the screens you use are saved on this '
+            'phone (encrypted), so your accounts, transactions, goals and loans still open offline.',
+            style: muted,
+          ),
+          const SizedBox(height: 8),
+          const _Point(Icons.edit_outlined, 'Add or edit transactions, goals and loans offline. They sync when you are back online.'),
+          const _Point(Icons.sms_outlined, 'Bank and mobile-money SMS are captured offline too.'),
+          if (mode.until != null)
+            _Point(Icons.event_available_outlined, 'Included with your plan until ${_date(mode.until!)}.'),
+          const _Point(Icons.delete_outline, 'Turning this off deletes the saved data from this phone.'),
+        ],
       ),
-      value: mode.enabled,
-      onChanged: (v) => ref.read(offlineModeProvider.notifier).setEnabled(v),
     );
   }
 
@@ -360,6 +387,32 @@ class OfflineModeRow extends ConsumerWidget {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final l = d.toLocal();
     return '${l.day} ${months[l.month - 1]} ${l.year}';
+  }
+}
+
+/// A short line with an icon, wrapping nicely on narrow screens.
+class _Point extends StatelessWidget {
+  const _Point(this.icon, this.text);
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -467,6 +520,8 @@ class SavedDataCard extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
             const SizedBox(height: 12),
+            const _StoredDataList(),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -502,6 +557,146 @@ class SavedDataCard extends ConsumerWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
     if (diff.inHours < 24) return '${diff.inHours} h ago';
     return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+  }
+}
+
+/// What is saved on the phone, by screen, with sizes, and a way to delete it.
+/// Changes waiting to sync are never deleted from here.
+class _StoredDataList extends ConsumerStatefulWidget {
+  const _StoredDataList();
+
+  @override
+  ConsumerState<_StoredDataList> createState() => _StoredDataListState();
+}
+
+class _StoredDataListState extends ConsumerState<_StoredDataList> {
+  StorageBreakdown? _breakdown;
+  int _waiting = 0;
+  bool _clearing = false;
+  DateTime? _lastSeen;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    try {
+      final usage = await EncryptedCacheStore.instance.usage(user.id);
+      final waiting = await EncryptedCacheStore.instance.count(userId: user.id);
+      if (!mounted) return;
+      setState(() {
+        _breakdown = StorageBreakdown.from(usage);
+        _waiting = waiting;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _breakdown = const StorageBreakdown([]));
+    }
+  }
+
+  Future<void> _clear() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear saved data?'),
+        content: Text(
+          'This removes the saved copies of your screens from this phone. They are saved again '
+          'next time you are online. You will not be able to open them offline until then.'
+          '${_waiting > 0 ? '\n\nYour $_waiting change${_waiting == 1 ? '' : 's'} waiting to sync will be kept.' : ''}',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    setState(() => _clearing = true);
+    try {
+      await EncryptedCacheStore.instance.clearSaved(user.id);
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.remove(OfflinePrefetcher.lastKey);
+      await prefs.remove(OfflinePrefetcher.cursorKey);
+    } catch (_) {}
+    await _load();
+    if (!mounted) return;
+    setState(() => _clearing = false);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Saved data cleared.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final prefetch = ref.watch(offlinePrefetchProvider);
+
+    // Reload the list whenever a save finishes.
+    if (prefetch.lastSaved != _lastSeen) {
+      _lastSeen = prefetch.lastSaved;
+      if (!prefetch.running) WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+
+    final b = _breakdown;
+    if (b == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: Text('Stored on this phone', style: TextStyle(fontWeight: FontWeight.w700))),
+            Text(StorageBreakdown.formatBytes(b.totalBytes),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (b.isEmpty)
+          Text('Nothing is saved yet.', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5))
+        else
+          for (final g in b.groups)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Expanded(child: Text(g.label, style: const TextStyle(fontSize: 13))),
+                  Text(
+                    '${g.items} saved · ${StorageBreakdown.formatBytes(g.bytes)}',
+                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
+                  ),
+                ],
+              ),
+            ),
+        if (_waiting > 0) ...[
+          const SizedBox(height: 6),
+          Text(
+            '$_waiting change${_waiting == 1 ? '' : 's'} waiting to sync (kept when you clear saved data).',
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+          ),
+        ],
+        if (!b.isEmpty) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _clearing || prefetch.running ? null : _clear,
+              icon: _clearing
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.delete_outline, size: 18),
+              label: const Text('Clear saved data'),
+              style: TextButton.styleFrom(foregroundColor: scheme.error, padding: EdgeInsets.zero),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 
