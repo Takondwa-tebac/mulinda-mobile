@@ -92,6 +92,7 @@ class BudgetItem {
     required this.isExceeded,
     required this.alertThreshold,
     required this.isActive,
+    this.pending = false,
   });
 
   final String id;
@@ -104,6 +105,9 @@ class BudgetItem {
   final bool isExceeded;
   final double alertThreshold;
   final bool isActive;
+
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
 
   factory BudgetItem.fromJson(Map<String, dynamic> j) {
     final status = (j['status'] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -118,6 +122,7 @@ class BudgetItem {
       isExceeded: status['is_exceeded'] == true,
       alertThreshold: _num(j['alert_threshold']) ?? 0.8,
       isActive: j['is_active'] != false,
+      pending: j['_pending'] == true,
     );
   }
 }
@@ -220,6 +225,7 @@ class InvestmentItem {
     this.notes,
     this.accrual,
     this.valueSource = 'recorded',
+    this.pending = false,
   });
 
   final String id;
@@ -241,6 +247,9 @@ class InvestmentItem {
   /// recorded | estimated | invested — how [value] was arrived at.
   final String valueSource;
 
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
+
   /// True when [value] is the interest-accrued estimate, not a recorded value.
   bool get isEstimated => valueSource == 'estimated';
 
@@ -261,6 +270,7 @@ class InvestmentItem {
             ? InvestmentAccrual.fromJson((j['accrual'] as Map).cast<String, dynamic>())
             : null,
         valueSource: j['value_source']?.toString() ?? 'recorded',
+        pending: j['_pending'] == true,
       );
 }
 
@@ -276,6 +286,7 @@ class ProjectItem {
     this.startedAt,
     this.completedAt,
     this.completionPercentage,
+    this.pending = false,
   });
 
   final String id;
@@ -289,6 +300,9 @@ class ProjectItem {
   final String? completedAt;
   final double? completionPercentage;
 
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
+
   factory ProjectItem.fromJson(Map<String, dynamic> j) => ProjectItem(
         id: j['id'].toString(),
         name: j['name']?.toString() ?? '',
@@ -300,6 +314,7 @@ class ProjectItem {
         startedAt: _str(j['started_at']),
         completedAt: _str(j['completed_at']),
         completionPercentage: _num(j['completion_percentage']),
+        pending: j['_pending'] == true,
       );
 }
 
@@ -315,6 +330,7 @@ class GoalContribution {
     this.note,
     this.financialAccount,
     this.transaction,
+    this.pending = false,
   });
 
   final String id;
@@ -328,6 +344,9 @@ class GoalContribution {
   final Map<String, dynamic>? financialAccount;
   final Map<String, dynamic>? transaction;
 
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
+
   factory GoalContribution.fromJson(Map<String, dynamic> j) => GoalContribution(
         id: j['id'].toString(),
         goalId: j['goal_id'].toString(),
@@ -339,6 +358,7 @@ class GoalContribution {
         note: _str(j['note']),
         financialAccount: j['financial_account'] as Map<String, dynamic>?,
         transaction: j['transaction'] as Map<String, dynamic>?,
+        pending: j['_pending'] == true,
   );
 }
 
@@ -354,6 +374,7 @@ class LoanRepayment {
     this.note,
     this.financialAccount,
     this.transaction,
+    this.pending = false,
   });
 
   final String id;
@@ -367,6 +388,9 @@ class LoanRepayment {
   final Map<String, dynamic>? financialAccount;
   final Map<String, dynamic>? transaction;
 
+  /// Saved on this phone and waiting to sync (made offline).
+  final bool pending;
+
   factory LoanRepayment.fromJson(Map<String, dynamic> j) => LoanRepayment(
         id: j['id'].toString(),
         loanId: j['loan_id'].toString(),
@@ -378,5 +402,6 @@ class LoanRepayment {
         note: _str(j['note']),
         financialAccount: j['financial_account'] as Map<String, dynamic>?,
         transaction: j['transaction'] as Map<String, dynamic>?,
+        pending: j['_pending'] == true,
   );
 }

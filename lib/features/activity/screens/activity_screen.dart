@@ -234,6 +234,10 @@ class _AccountsStrip extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
                               color: scheme.onPrimaryContainer)),
+                      if (a.pending || a.balanceEstimated)
+                        Text(a.pending ? 'Waiting to sync' : 'Estimated until synced',
+                            style: TextStyle(
+                                fontSize: 11, color: scheme.onPrimaryContainer.withValues(alpha: 0.8))),
                     ],
                   ),
                 ),

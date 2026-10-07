@@ -52,6 +52,8 @@ class OfflineCacheInterceptor extends Interceptor {
   /// admin tools, downloads, AI chat and payment flows.
   static const _neverCache = [
     '/v1/auth',
+    '/v1/sync',
+    '/v1/features',
     '/v1/admin',
     '/v1/exports',
     '/v1/coach',
@@ -100,8 +102,9 @@ class OfflineCacheInterceptor extends Interceptor {
       if (hit != null && overlay != null) {
         body = await overlay!.apply(o, userId, body);
       } else if (hit == null && overlay != null) {
-        // A record created offline has never been fetched: build it from the queue.
-        body = await overlay!.pendingDetail(o, userId);
+        // Never opened while online: a record created offline (built from the
+        // queue), or one that appears in a saved list (built from that).
+        body = await overlay!.pendingDetail(o, userId) ?? await overlay!.detailFromSavedLists(o, userId);
         fetchedAt = DateTime.now();
       }
       if (body == null || fetchedAt == null) return null;
@@ -153,6 +156,10 @@ class OfflineCacheInterceptor extends Interceptor {
         final entity = _entityFor(o.path);
         if (entity != null && versions != null) {
           unawaited(versions!.putVersions(userId, entity, OverlayEngine.versionsIn(o.path, data)).catchError((_) {}));
+          // Contributions / repayments are nested in their goal's / loan's detail.
+          OverlayEngine.childVersionsIn(o.path, data).forEach((childEntity, byId) {
+            unawaited(versions!.putVersions(userId, childEntity, byId).catchError((_) {}));
+          });
         }
 
         // Changes still waiting to sync must stay visible even on a live read.

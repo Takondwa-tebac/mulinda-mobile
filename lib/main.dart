@@ -5,13 +5,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/localization/ny_localizations.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/routes.dart';
+import 'core/offline/offline_prefetch.dart';
 import 'core/offline/offline_status.dart';
+import 'core/offline/offline_mode.dart';
+import 'core/offline/prefs.dart';
+import 'core/offline/trusted_clock.dart';
 import 'core/offline/offline_sync_runner.dart';
 import 'core/security/app_lock.dart';
 import 'core/security/screenshot_protection.dart';
@@ -33,6 +38,8 @@ Future<void> main() async {
     // Firebase not configured for this platform (e.g. desktop dev) — skip.
   }
   await NotificationService.init();
+  final prefs = await SharedPreferences.getInstance();
+  TrustedClock.observeDevice(prefs);
   await SmsBackgroundSync.init();
 
   // Resume automatic SMS capture if the user previously opted in. No-op when
@@ -51,7 +58,10 @@ Future<void> main() async {
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       startLocale: const Locale('en'), // English is the default language.
-      child: const ProviderScope(child: MulindaApp()),
+      child: ProviderScope(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        child: const MulindaApp(),
+      ),
     ),
   );
 }
@@ -76,7 +86,10 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     // The moment a connection comes back, sync what was queued offline.
     ref.listenManual(isOnlineProvider, (prev, next) {
-      if (next.valueOrNull == true && prev?.valueOrNull != true) _flushOutbox();
+      if (next.valueOrNull == true && prev?.valueOrNull != true) {
+        _flushOutbox();
+        _refreshOfflineData();
+      }
     });
     // While the app is open, retry queued (offline-captured) SMS every 2 min.
     _outboxTimer = Timer.periodic(const Duration(minutes: 2), (_) => _flushOutbox());
@@ -85,6 +98,7 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       if (next.status != AuthStatus.unknown) _flushPendingLink();
       if (next.status == AuthStatus.authenticated) {
         PushService.instance.registerToken(ref);
+        _refreshOfflineData();
       }
     });
     _initDeepLinks();
@@ -125,6 +139,13 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
     WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(routerProvider).go(target));
   }
 
+  /// Keep the data saved for offline use fresh (offline mode on, signed in, and
+  /// the saved copy is more than a couple of hours old).
+  void _refreshOfflineData() {
+    if (ref.read(currentUserProvider) == null) return;
+    unawaited(ref.read(offlinePrefetchProvider.notifier).start());
+  }
+
   /// Send everything captured or changed offline: queued edits first (they can
   /// depend on one another), then SMS.
   Future<void> _flushOutbox() async {
@@ -139,7 +160,14 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _flushOutbox();
+    if (state == AppLifecycleState.resumed) {
+      // Note the phone's time (it only ever moves the trusted value forward) and
+      // re-check whether offline mode is still allowed.
+      TrustedClock.observeDevice(ref.read(sharedPreferencesProvider));
+      ref.invalidate(offlineModeProvider);
+      _flushOutbox();
+      _refreshOfflineData();
+    }
   }
 
   @override

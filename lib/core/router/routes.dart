@@ -21,6 +21,7 @@ abstract class Routes {
 
   static const coach = '/coach';
   static const insights = '/insights';
+  static const offlineSync = '/offline-sync';
   static const notificationDetail = '/notifications/:id';
   static String notificationDetailFor(String id) => '/notifications/$id';
 
@@ -72,4 +73,5 @@ abstract class Routes {
   static const adminUserDetail = '/admin/users/:userId';
   static const adminAudit = '/admin/audit';
   static const adminAnalytics = '/admin/analytics';
+  static const adminFeatures = '/admin/features';
 }

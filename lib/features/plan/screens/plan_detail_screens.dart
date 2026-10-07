@@ -12,6 +12,7 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
+import '../widgets/amount_record_card.dart';
 import 'plan_forms.dart' show showEditRepaymentSheet, showRepaySheet;
 
 // ---------------------------------------------------------------------------
@@ -514,7 +515,6 @@ class _RepaymentsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
 
     final repaymentsAsync = ref.watch(loanRepaymentsProvider(loanId));
 
@@ -523,7 +523,7 @@ class _RepaymentsList extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => Container(
+      error: (_, _) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
           child: Text('loan.repaymentsError'.tr(),
@@ -539,7 +539,7 @@ class _RepaymentsList extends ConsumerWidget {
                 children: [
                   Icon(Icons.payments_outlined,
                       size: 48,
-                      color: scheme.onSurfaceVariant.withOpacity(0.5)),
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
                   Text('loan.noRepayments'.tr(),
                       style: TextStyle(color: scheme.onSurfaceVariant)),
@@ -550,34 +550,18 @@ class _RepaymentsList extends ConsumerWidget {
         }
 
         return Column(
-          children: repayments.map((r) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: scheme.primaryContainer,
-                foregroundColor: scheme.onPrimaryContainer,
-                child: const Icon(Icons.payments_outlined, size: 18),
+          children: [
+            for (final r in repayments)
+              AmountRecordCard(
+                amount: r.amount.formatted,
+                rawDate: r.paidAt,
+                note: r.note,
+                pending: r.pending,
+                icon: Icons.payments_outlined,
+                onEdit: () => _editRepayment(context, ref, r),
+                onDelete: () => _deleteRepayment(context, ref, r),
               ),
-              title: Text(r.amount.formatted,
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: r.paidAt != null
-                  ? Text(r.paidAt!)
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: () => _editRepayment(context, ref, r),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    onPressed: () => _deleteRepayment(context, ref, r),
-                  ),
-                ],
-              ),
-            ),
-          )).toList(),
+          ],
         );
       },
     );

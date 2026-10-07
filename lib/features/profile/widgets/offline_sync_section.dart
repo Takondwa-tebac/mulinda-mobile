@@ -8,14 +8,15 @@ import '../../../core/offline/mutation_sync.dart';
 import '../../../core/offline/offline_mode.dart';
 import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/offline/offline_prefetch.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../capture/data/sms_auto_capture.dart';
 import '../../capture/data/sms_manual_scanner.dart';
 import '../../capture/data/sms_outbox.dart';
 
-/// "Offline capture & sync" block for the Your data card: explains the feature,
-/// shows how many captured SMS are waiting and the outcome of the last sync, and
-/// lets the user sync right now with live progress.
+/// The sync card of the Offline capture & sync screen: how many changes and SMS
+/// are waiting, the outcome of the last sync, anything that could not be applied,
+/// and a Sync now button with live progress.
 class OfflineSyncSection extends ConsumerStatefulWidget {
   const OfflineSyncSection({super.key});
 
@@ -242,10 +243,6 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(46)),
             ),
           ),
-
-          const SizedBox(height: 8),
-          const Divider(),
-          const _OfflineModeRow(),
         ],
       ),
     );
@@ -312,8 +309,8 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
 
 /// The plan-gated Offline mode switch: a toggle for eligible plans (3-day,
 /// weekly, monthly, trial), a locked row with an upgrade action otherwise.
-class _OfflineModeRow extends ConsumerWidget {
-  const _OfflineModeRow();
+class OfflineModeRow extends ConsumerWidget {
+  const OfflineModeRow({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -326,15 +323,19 @@ class _OfflineModeRow extends ConsumerWidget {
         leading: Icon(Icons.lock_outline, color: scheme.onSurfaceVariant),
         title: const Text('Offline mode', style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
-          mode.paused
-              ? 'Paused — your plan no longer includes it. Renew to resume.'
-              : 'Use Mulinda with no internet. Available on the 3-day, weekly and monthly plans.',
+          mode.clockWrong
+              ? 'Paused: your phone\'s date or time looks wrong. Connect to the internet to resume.'
+              : mode.paused
+                  ? 'Paused: your plan no longer includes it. Renew to resume.'
+                  : 'Use Mulinda with no internet. Available on the 3-day, weekly and monthly plans.',
           style: const TextStyle(fontSize: 12.5, height: 1.35),
         ),
-        trailing: TextButton(
-          onPressed: () => context.push(Routes.subscription),
-          child: Text(mode.paused ? 'Renew' : 'Upgrade'),
-        ),
+        trailing: mode.clockWrong
+            ? null
+            : TextButton(
+                onPressed: () => context.push(Routes.subscription),
+                child: Text(mode.paused ? 'Renew' : 'Upgrade'),
+              ),
       );
     }
 
@@ -403,6 +404,133 @@ class _NoticesCard extends StatelessWidget {
                 style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
         ],
       ),
+    );
+  }
+}
+
+/// "Saved for offline use": when the app last saved the main screens' data, with
+/// a button to do it now and live progress while it runs.
+class SavedDataCard extends ConsumerWidget {
+  const SavedDataCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final mode = ref.watch(offlineModeProvider);
+    final prefetch = ref.watch(offlinePrefetchProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.download_for_offline_outlined, color: scheme.primary),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Saved on this phone', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            mode.active
+                ? 'Your dashboard, accounts, transactions, goals, loans and more are saved here (encrypted) so '
+                    'they open with no internet. They refresh automatically while you are online.'
+                : 'Turn on Offline mode above and Mulinda will save your dashboard, accounts, transactions, '
+                    'goals and loans on this phone so they open with no internet.',
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.4),
+          ),
+          if (mode.active) ...[
+            const SizedBox(height: 12),
+            if (prefetch.running) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  minHeight: 8,
+                  value: prefetch.total == 0 ? null : (prefetch.done / prefetch.total).clamp(0.0, 1.0),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                prefetch.label.isEmpty
+                    ? 'Saving your data…'
+                    : 'Saving ${prefetch.label.toLowerCase()} (${prefetch.done + 1} of ${prefetch.total})…',
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+              ),
+            ] else
+              Text(
+                prefetch.lastSaved == null
+                    ? 'Nothing saved yet.'
+                    : 'Last saved ${_ago(prefetch.lastSaved!)}.',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: prefetch.running
+                    ? null
+                    : () async {
+                        final result = await ref.read(offlinePrefetchProvider.notifier).start(force: true);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(SnackBar(
+                            content: Text(result.offline
+                                ? 'No connection. Connect to the internet to save your data.'
+                                : result.failed > 0
+                                    ? 'Saved, but ${result.failed} item${result.failed == 1 ? '' : 's'} could not be saved. Try again.'
+                                    : 'Your data is saved on this phone.'),
+                          ));
+                      },
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: Text(prefetch.running ? 'Saving…' : 'Save my data now'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _ago(DateTime at) {
+    final diff = DateTime.now().difference(at);
+    if (diff.inSeconds < 45) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} h ago';
+    return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+  }
+}
+
+/// Text for the Personal data row that opens the offline screen.
+final offlineSyncSummaryProvider = FutureProvider.autoDispose<String>((ref) async {
+  final mode = ref.watch(offlineModeProvider);
+  final sms = await SmsOutbox.instance.pendingCount();
+  var changes = 0;
+  try {
+    changes = await EncryptedCacheStore.instance.count();
+  } catch (_) {}
+  final waiting = sms + changes;
+  if (waiting > 0) return '$waiting waiting to sync';
+  return mode.active ? 'Offline mode on · everything is synced' : 'SMS capture and offline mode';
+});
+
+/// The tappable row in Your data that opens the dedicated screen.
+class OfflineSyncTile extends ConsumerWidget {
+  const OfflineSyncTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(offlineSyncSummaryProvider).valueOrNull ?? 'SMS capture and offline mode';
+    return ListTile(
+      leading: const Icon(Icons.cloud_sync_outlined),
+      title: const Text('Offline capture & sync'),
+      subtitle: Text(summary),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.offlineSync),
     );
   }
 }

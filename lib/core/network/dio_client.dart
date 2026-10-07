@@ -1,3 +1,5 @@
+import 'dart:io' show HttpDate;
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +10,8 @@ import '../offline/offline_cache_interceptor.dart';
 import '../offline/offline_sync_runner.dart';
 import '../offline/offline_write_interceptor.dart';
 import '../offline/overlay_engine.dart';
+import '../offline/prefs.dart';
+import '../offline/trusted_clock.dart';
 import '../offline/offline_mode.dart';
 import '../offline/offline_status.dart';
 import '../storage/token_storage.dart';
@@ -57,6 +61,21 @@ final dioProvider = Provider<Dio>((ref) {
       onLiveResponse: () => Future.microtask(
         () => ref.read(offlineDataProvider.notifier).markLive(),
       ),
+    ),
+  );
+
+  // The server's clock is the truth for offline-mode plan checks.
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onResponse: (response, handler) {
+        final date = response.headers.value('date');
+        if (date != null) {
+          try {
+            TrustedClock.recordServerTime(ref.read(sharedPreferencesProvider), HttpDate.parse(date));
+          } catch (_) {}
+        }
+        handler.next(response);
+      },
     ),
   );
 

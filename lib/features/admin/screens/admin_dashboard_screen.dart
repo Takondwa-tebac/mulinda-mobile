@@ -31,6 +31,13 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _AdminCard(
+            icon: Icons.toggle_on_outlined,
+            title: 'Feature Flags',
+            subtitle: 'Switch offline mode on or off and roll it out gradually',
+            onTap: () => context.push(Routes.adminFeatures),
+          ),
+          const SizedBox(height: 12),
+          _AdminCard(
             icon: Icons.campaign_outlined,
             title: 'Push Notifications',
             subtitle: 'Craft and send notifications to all or specific users',

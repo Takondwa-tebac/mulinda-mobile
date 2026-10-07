@@ -133,6 +133,7 @@ class BudgetsListScreen extends ConsumerWidget {
         },
         tile: (b) => _PlanTile(
           title: b.name,
+          pending: b.pending,
           value: '${b.spent.formatted} / ${b.limit.formatted}',
           progress: b.percentage / 100,
           danger: b.isExceeded,
@@ -190,6 +191,7 @@ class InvestmentsListScreen extends ConsumerWidget {
         },
         tile: (i) => _PlanTile(
           title: i.name,
+          pending: i.pending,
           value: i.value.formatted,
           // Term investments show the interest earned so far (estimated by the
           // API from the rate and elapsed days); others show the plain gain.
@@ -221,6 +223,7 @@ class ProjectsListScreen extends ConsumerWidget {
         },
         tile: (p) => _PlanTile(
           title: p.name,
+          pending: p.pending,
           value: p.spent.formatted,
           valueLabel: 'project.spent'.tr(),
           sub: p.budget?.formatted,
