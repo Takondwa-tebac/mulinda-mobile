@@ -1,5 +1,6 @@
 import 'package:mulinda_mobile/core/offline/cache_store.dart';
 import 'package:mulinda_mobile/core/offline/mutation_store.dart';
+import 'package:mulinda_mobile/core/offline/offline_storage.dart';
 
 /// In-memory stand-in for the encrypted store (cache + mutation queue + versions).
 class MemoryStore implements CacheStore, MutationStore {
@@ -20,6 +21,18 @@ class MemoryStore implements CacheStore, MutationStore {
   @override
   Future<List<CachedResponse>> getByPrefix(String userId, String keyPrefix) async =>
       rows.entries.where((e) => e.key.startsWith('$userId|$keyPrefix')).map((e) => e.value).toList();
+
+  @override
+  Future<List<CachedEntryUsage>> usage(String userId) async => [
+        for (final e in rows.entries.where((e) => e.key.startsWith('$userId|')))
+          CachedEntryUsage(e.key.substring(userId.length + 1), e.value.body.toString().length),
+      ];
+
+  @override
+  Future<void> clearSaved(String userId) async {
+    rows.removeWhere((k, _) => k.startsWith('$userId|'));
+    versions.removeWhere((k, _) => k.startsWith('$userId|'));
+  }
 
   @override
   Future<void> clearUser(String userId) async {
