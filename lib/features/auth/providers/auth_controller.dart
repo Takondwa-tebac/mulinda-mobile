@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/notifications/push_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/offline/cache_store.dart';
 import '../../capture/data/sms_outbox.dart';
@@ -204,6 +205,7 @@ class AuthController extends Notifier<AuthState> {
   /// Permanently delete the account, then clear local session.
   Future<void> deleteAccount(String confirmation) async {
     await _repo.deleteAccount(confirmation);
+    await PushService.instance.unregister();
     await _tokens.clear();
     await _repo.clearCachedUser();
     await _clearOfflineData();
@@ -216,6 +218,7 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Even if the API call fails, clear locally.
     }
+    await PushService.instance.unregister();
     await _tokens.clear();
     await _repo.clearCachedUser();
     await _clearOfflineData();

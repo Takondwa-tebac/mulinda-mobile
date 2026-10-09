@@ -64,11 +64,15 @@ android {
             // local_auth doesn't work with debug keys, so a proper release keystore is needed for that plugin to work.
             // signingConfig = signingConfigs.getByName("debug")
 
-            // Keep code/resource shrinking off — this low-RAM host can't run R8 +
-            // the resource-shrink pass without exhausting memory. Re-enable on a
-            // bigger build machine if you want a smaller APK.
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8: shrink, optimise and obfuscate the Android code (Google Play asks
+            // for this), and drop unused resources. Rules for plugins that use
+            // reflection are in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 
