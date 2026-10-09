@@ -62,6 +62,14 @@ class PushService {
     } catch (_) {}
   }
 
+  /// Invalidate this device's FCM token on sign-out so pushes meant for the
+  /// previous account can never reach it; a fresh token is issued on next login.
+  Future<void> unregister() async {
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {}
+  }
+
   Future<void> _registerToken(WidgetRef ref, String token) async {
     try {
       await ref
