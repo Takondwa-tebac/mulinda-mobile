@@ -291,6 +291,7 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
   late String _interestPeriod = widget.item?.interestPeriod ?? 'annual';
   late DateTime _startedAt = apiToDate(widget.item?.startedAt) ?? DateTime.now();
   late DateTime? _maturity = apiToDate(widget.item?.maturityDate);
+  late bool _remind = widget.item?.remindersEnabled ?? true;
 
   // What is specific to the chosen type (units and price of shares, a SACCO's
   // member number...), keyed by the field's key.
@@ -401,6 +402,7 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
     }
     if (def.requiresMaturity) data['maturity_date'] = dateToApi(_maturity);
     if (def.fields.isNotEmpty) data['details'] = details;
+    if (def.reminders.isNotEmpty) data['reminders_enabled'] = _remind;
     if (_notes.text.trim().isNotEmpty) data['notes'] = _notes.text.trim();
 
     final repo = ref.read(planRepositoryProvider);
@@ -539,6 +541,13 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
           ),
         pkText(controller: _name, label: 'form.name'.tr(), validator: _req),
         for (final f in def.fields) _fieldWidget(f, lang),
+        // Savings circle: worked out from the contribution and members; typing a payout
+        // in the field above replaces it.
+        if (def.estimate != null)
+          _Worked(
+            label: def.estimate!.label(lang),
+            value: def.estimatePayout(_numbers(def)) == null ? '-' : _money(def.estimatePayout(_numbers(def))!),
+          ),
         if (def.derivesAmountInvested)
           _Worked(
             label: 'investForm.amountInvestedWorked'.tr(),
@@ -563,9 +572,26 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
         pkDate(context: context, label: 'form.startedAt'.tr(), value: _startedAt, onPick: (d) => setState(() => _startedAt = d)),
         if (def.requiresMaturity)
           pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d), required: true),
+        if (def.reminders.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('investForm.remindMe'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(_reminderHint(def), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+              value: _remind,
+              onChanged: (v) => setState(() => _remind = v),
+            ),
+          ),
         pkText(controller: _notes, label: 'form.notes'.tr(), maxLines: 2),
       ],
     );
+  }
+
+  /// What the reminders cover for this kind of holding, in words.
+  String _reminderHint(InvestmentTypeDef def) {
+    final parts = [for (final r in def.reminders) 'investForm.remind_$r'.tr()];
+    return parts.join(' ');
   }
 }
 

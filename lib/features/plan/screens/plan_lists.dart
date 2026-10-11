@@ -506,25 +506,34 @@ class _PlanTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.primary,
-                        ),
-                      ),
-                      if (valueLabel != null)
-                        Text(
-                          valueLabel!,
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 11,
+                  // The amount shrinks to fit instead of squeezing a long name, and never
+                  // takes more than its share of the row.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            value,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: scheme.primary,
+                            ),
                           ),
-                        ),
-                    ],
+                          if (valueLabel != null)
+                            Text(
+                              valueLabel!,
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 11,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                   PopupMenuButton<String>(
                     padding: EdgeInsets.zero,
@@ -565,11 +574,16 @@ class _PlanTile extends StatelessWidget {
                             fontSize: 11,
                           ),
                         ),
-                      Text(
-                        sub!,
-                        style: TextStyle(
-                          color: subColor ?? scheme.onSurfaceVariant,
-                          fontSize: 13,
+                      // Wraps onto a second line (then ends in "...") instead of running off the card.
+                      Expanded(
+                        child: Text(
+                          sub!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: subColor ?? scheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],

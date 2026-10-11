@@ -65,7 +65,21 @@ class InvestmentTypeDef {
     this.derivesValue = false,
     this.derivation = const {},
     this.fields = const [],
+    this.contributions = false,
+    this.estimate,
+    this.reminders = const [],
   });
+
+  /// The reminders that can be switched on or off for this kind of holding
+  /// (contribution, meeting, payout). Empty: it has none.
+  final List<String> reminders;
+
+  /// Money can be added over time (a savings circle, a policy, a fund).
+  final bool contributions;
+
+  /// Savings circle: what you receive is worked out as these fields multiplied
+  /// (contribution x members) unless the field `overrideField` is filled in.
+  final InvestmentEstimate? estimate;
 
   final String type;
   final Map<String, String> labels;
@@ -103,7 +117,22 @@ class InvestmentTypeDef {
         fields: [
           for (final f in (j['fields'] as List? ?? const [])) InvestmentField.fromJson((f as Map).cast<String, dynamic>()),
         ],
+        contributions: j['contributions'] == true,
+        reminders: [for (final r in (j['reminders'] as List? ?? const [])) r.toString()],
+        estimate: j['estimate'] is Map ? InvestmentEstimate.fromJson((j['estimate'] as Map).cast<String, dynamic>()) : null,
       );
+
+  /// What you will receive, from what has been typed: the payout entered, else the
+  /// fields multiplied. Null until the numbers are there.
+  double? estimatePayout(Map<String, double?> n) {
+    final e = estimate;
+    if (e == null) return null;
+    final typed = n[e.overrideField];
+    if (typed != null && typed > 0) return typed;
+    final parts = [for (final k in e.multiply) n[k]];
+    if (parts.isEmpty || parts.any((v) => v == null || v <= 0)) return null;
+    return _round(parts.fold<double>(1, (a, b) => a * b!));
+  }
 
   /// Worked out from the typed details, for showing while the user types. The
   /// server works the same figures out again when it saves, and its answer wins.
@@ -129,6 +158,23 @@ class InvestmentTypeDef {
         return (invested: null, value: null);
     }
   }
+}
+
+/// How a savings circle's payout is estimated.
+class InvestmentEstimate {
+  const InvestmentEstimate({required this.labels, required this.multiply, required this.overrideField});
+
+  final Map<String, String> labels;
+  final List<String> multiply;
+  final String overrideField;
+
+  String label(String lang) => _pick(labels, lang);
+
+  factory InvestmentEstimate.fromJson(Map<String, dynamic> j) => InvestmentEstimate(
+        labels: _labels(j['label']),
+        multiply: [for (final k in (j['multiply'] as List? ?? const [])) k.toString()],
+        overrideField: j['override_field']?.toString() ?? '',
+      );
 }
 
 double _round(double v) => (v * 100).round() / 100;

@@ -121,6 +121,8 @@ class InvestmentDetailScreen extends ConsumerWidget {
               _ProjectionCard(accrual: accrual, maturity: maturity),
 
             if (inv.type == 'shares') _SharePriceCard(investment: inv),
+            _ForecastCard(investment: inv),
+            _ContributionsCard(investment: inv),
 
             const SizedBox(height: 16),
             Card(
@@ -202,6 +204,354 @@ class InvestmentDetailScreen extends ConsumerWidget {
   }
 }
 
+/// A savings circle: what you will receive, roughly when, and what is left to pay.
+class _ForecastCard extends StatelessWidget {
+  const _ForecastCard({required this.investment});
+
+  final InvestmentItem investment;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = investment.forecast;
+    if (f == null || f.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('investForm.forecastTitle'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              const SizedBox(height: 10),
+              if (f.expectedPayout != null) ...[
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(f.expectedPayout!.formatted, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24)),
+                ),
+                Text(
+                  f.isEstimate ? 'investForm.payoutEstimate'.tr() : 'investForm.payoutEntered'.tr(),
+                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (f.payoutDate != null)
+                _MiniRow(icon: Icons.event_outlined, label: 'investForm.expectedOn'.tr(), value: f.payoutDate!),
+              if (f.roundsRemaining != null)
+                _MiniRow(icon: Icons.repeat, label: 'investForm.roundsLeft'.tr(), value: '${f.roundsRemaining}'),
+              if (f.cycleTotal != null)
+                _MiniRow(icon: Icons.savings_outlined, label: 'investForm.cycleTotal'.tr(), value: f.cycleTotal!.formatted),
+              const SizedBox(height: 6),
+              Text('investForm.forecastNote'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5, height: 1.35)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniRow extends StatelessWidget {
+  const _MiniRow({required this.icon, required this.label, required this.value});
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
+          const SizedBox(width: 8),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Recurring or ongoing holdings: the total added so far, when the next contribution
+/// is due, the contributions themselves, and a way to add one.
+class _ContributionsCard extends ConsumerWidget {
+  const _ContributionsCard({required this.investment});
+
+  final InvestmentItem investment;
+
+  Future<void> _add(BuildContext context, WidgetRef ref, double? suggested) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _ContributionSheet(investment: investment, suggestedAmount: suggested),
+    );
+    if (saved == true) {
+      ref
+        ..invalidate(investmentsListProvider)
+        ..invalidate(investmentContributionsProvider(investment.id))
+        ..invalidate(dashboardProvider);
+    }
+  }
+
+  Future<void> _remove(BuildContext context, WidgetRef ref, InvestmentContribution c) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text('investForm.removeContribution'.tr()),
+        content: Text('investForm.removeContributionBody'.tr()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text('form.delete'.tr())),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(planRepositoryProvider).deleteContribution(investment.id, c.id);
+      ref
+        ..invalidate(investmentsListProvider)
+        ..invalidate(investmentContributionsProvider(investment.id))
+        ..invalidate(dashboardProvider);
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final defs = ref.watch(investmentTypesProvider).valueOrNull ?? fallbackInvestmentTypes;
+    final def = defs.where((d) => d.type == investment.type).firstOrNull;
+    if (def == null || !(def.contributions || def.reminders.isNotEmpty)) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    final summary = investment.contributions;
+    final due = investment.nextDue;
+    final list = ref.watch(investmentContributionsProvider(investment.id));
+
+    // The regular amount, when the type has one (a round's contribution, a premium).
+    final field = def.derivation['contribution_field']?.toString();
+    final regular = field == null ? null : (investment.details[field] as num?)?.toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('investForm.contributions'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                  const SizedBox(width: 12),
+                  if (def.contributions)
+                  FilledButton.tonal(
+                    onPressed: () => _add(context, ref, regular),
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 16)),
+                    child: Text('investForm.addContribution'.tr()),
+                  ),
+                ],
+              ),
+              if (def.reminders.isNotEmpty)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text('investForm.remindMe'.tr()),
+                  value: investment.remindersEnabled,
+                  onChanged: (v) async {
+                    try {
+                      await ref.read(planRepositoryProvider).updateInvestment(investment.id, {'reminders_enabled': v});
+                      ref.invalidate(investmentsListProvider);
+                    } on ApiException catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+                      }
+                    }
+                  },
+                ),
+              if (summary != null && summary.count > 0) ...[
+                const SizedBox(height: 8),
+                _MiniRow(icon: Icons.functions, label: 'investForm.contributedSoFar'.tr(), value: summary.total.formatted),
+              ],
+              if (due != null) ...[
+                _MiniRow(
+                  icon: due.overdue ? Icons.warning_amber_rounded : Icons.event_repeat_outlined,
+                  label: due.overdue ? 'investForm.overdue'.tr() : 'investForm.nextDue'.tr(),
+                  value: due.date,
+                ),
+              ],
+              const SizedBox(height: 4),
+              if (def.contributions)
+              list.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                ),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (items) {
+                  if (items.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text('investForm.noContributions'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35)),
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final c in items.take(8))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(c.amount.formatted, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text([c.contributedOn, if (c.note != null) c.note!].join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            tooltip: 'form.delete'.tr(),
+                            onPressed: () => _remove(context, ref, c),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContributionSheet extends ConsumerStatefulWidget {
+  const _ContributionSheet({required this.investment, this.suggestedAmount});
+
+  final InvestmentItem investment;
+  final double? suggestedAmount;
+
+  @override
+  ConsumerState<_ContributionSheet> createState() => _ContributionSheetState();
+}
+
+class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final _amount = TextEditingController(
+    text: widget.suggestedAmount == null
+        ? ''
+        : (widget.suggestedAmount! == widget.suggestedAmount!.roundToDouble()
+            ? widget.suggestedAmount!.toInt().toString()
+            : widget.suggestedAmount!.toString()),
+  );
+  final _note = TextEditingController();
+  DateTime _day = DateTime.now();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(planRepositoryProvider).addContribution(
+            widget.investment.id,
+            double.parse(_amount.text.trim()),
+            day: _day,
+            note: _note.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('investForm.contributionSaved'.tr())));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('investForm.addContribution'.tr(), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _amount,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'investForm.contributionAmount'.tr()),
+              validator: (v) {
+                final n = double.tryParse((v ?? '').trim());
+                return (n == null || n <= 0) ? 'auth.required'.tr() : null;
+              },
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _day,
+                  firstDate: DateTime(2015),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) setState(() => _day = picked);
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(labelText: 'investForm.priceDate'.tr()),
+                child: Text(_day.toIso8601String().split('T').first),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(controller: _note, decoration: InputDecoration(labelText: 'investForm.contributionNote'.tr())),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text('form.save'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// A share's price today, how it moved since the last price entered, and the gain
 /// or loss that is on the units held. The price is entered by hand (the exchange
 /// has no open data feed), so the card says when it was last updated.
@@ -244,8 +594,12 @@ class _SharePriceCard extends ConsumerWidget {
                   Expanded(
                     child: Text('investForm.priceTitle'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
+                  const SizedBox(width: 12),
+                  // The app's buttons are full width by default; here it sits beside the
+                  // title, so it takes only the room its label needs.
                   FilledButton.tonal(
                     onPressed: () => _update(context, ref),
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 16)),
                     child: Text('investForm.updatePrice'.tr()),
                   ),
                 ],

@@ -58,6 +58,18 @@ class PlanRepository {
   Future<void> createInvestment(Map<String, dynamic> data) => _post('/v1/investments', data);
   Future<void> updateInvestment(String id, Map<String, dynamic> data) => _put('/v1/investments/$id', data);
 
+  Future<List<InvestmentContribution>> investmentContributions(String id) =>
+      _list('/v1/investments/$id/contributions', InvestmentContribution.fromJson);
+
+  /// Add money to a recurring or ongoing holding (today when [day] is null).
+  Future<void> addContribution(String id, double amount, {DateTime? day, String? note}) => _post('/v1/investments/$id/contributions', {
+        'amount': amount,
+        if (day != null) 'contributed_on': day.toIso8601String().split('T').first,
+        if (note != null && note.isNotEmpty) 'note': note,
+      });
+
+  Future<void> deleteContribution(String id, String contributionId) => _delete('/v1/investments/$id/contributions/$contributionId');
+
   /// Enter the closing price of one share for a day (today when [day] is null).
   Future<void> recordSharePrice(String id, double price, {DateTime? day}) => _post('/v1/investments/$id/prices', {
         'price': price,
@@ -134,6 +146,10 @@ final budgetsProvider =
     FutureProvider.autoDispose<List<BudgetItem>>((ref) => ref.read(planRepositoryProvider).budgets());
 final loansProvider =
     FutureProvider.autoDispose<List<LoanItem>>((ref) => ref.read(planRepositoryProvider).loans());
+final investmentContributionsProvider = FutureProvider.family.autoDispose<List<InvestmentContribution>, String>(
+  (ref, id) => ref.read(planRepositoryProvider).investmentContributions(id),
+);
+
 final investmentsListProvider =
     FutureProvider.autoDispose<List<InvestmentItem>>((ref) => ref.read(planRepositoryProvider).investments());
 final projectsProvider =

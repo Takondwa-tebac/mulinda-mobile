@@ -152,10 +152,12 @@ class _CategorySheetState extends ConsumerState<_CategorySheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final async = ref.watch(categoriesProvider);
-    final height = MediaQuery.sizeOf(context).height * 0.85;
+    final media = MediaQuery.of(context);
+    // Tall, but never taller than what the keyboard and the status bar leave free.
+    final height = (media.size.height * 0.85).clamp(0.0, media.size.height - media.viewInsets.bottom - media.padding.top - 56);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
       child: SizedBox(
         height: height,
         child: Column(
@@ -197,7 +199,7 @@ class _CategorySheetState extends ConsumerState<_CategorySheet> {
                   final offerCreate = canCreateCategory(all, query, kind: widget.kind ?? widget.createKind);
 
                   return ListView(
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: EdgeInsets.only(bottom: 24 + (media.viewInsets.bottom > 0 ? 0 : media.padding.bottom)),
                     children: [
                       if (query.isEmpty)
                         ListTile(

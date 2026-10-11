@@ -220,6 +220,69 @@ class InvestmentAccrual {
       );
 }
 
+/// What has been added to a recurring or ongoing holding.
+class ContributionsSummary {
+  const ContributionsSummary({required this.count, required this.total});
+
+  final int count;
+  final Money total;
+
+  factory ContributionsSummary.fromJson(Map<String, dynamic> j) => ContributionsSummary(
+        count: (j['count'] as num?)?.toInt() ?? 0,
+        total: Money.parse(j['total']),
+      );
+}
+
+/// When the next contribution is due.
+class NextDue {
+  const NextDue({required this.date, required this.overdue});
+
+  final String date;
+  final bool overdue;
+
+  factory NextDue.fromJson(Map<String, dynamic> j) => NextDue(date: j['date']?.toString() ?? '', overdue: j['overdue'] == true);
+}
+
+/// A savings circle: what you will receive and roughly when.
+class PayoutForecast {
+  const PayoutForecast({this.expectedPayout, this.isEstimate = false, this.payoutDate, this.cycleTotal, this.roundsRemaining});
+
+  final Money? expectedPayout;
+
+  /// Worked out from the contribution and members rather than entered.
+  final bool isEstimate;
+  final String? payoutDate;
+  final Money? cycleTotal;
+  final int? roundsRemaining;
+
+  bool get isEmpty => expectedPayout == null && payoutDate == null && cycleTotal == null && roundsRemaining == null;
+
+  factory PayoutForecast.fromJson(Map<String, dynamic> j) => PayoutForecast(
+        expectedPayout: j['expected_payout'] is Map ? Money.parse(j['expected_payout']) : null,
+        isEstimate: j['payout_is_estimate'] == true,
+        payoutDate: _str(j['payout_date']),
+        cycleTotal: j['cycle_total'] is Map ? Money.parse(j['cycle_total']) : null,
+        roundsRemaining: (j['rounds_remaining'] as num?)?.toInt(),
+      );
+}
+
+/// A contribution made to a holding.
+class InvestmentContribution {
+  const InvestmentContribution({required this.id, required this.contributedOn, required this.amount, this.note});
+
+  final String id;
+  final String contributedOn;
+  final Money amount;
+  final String? note;
+
+  factory InvestmentContribution.fromJson(Map<String, dynamic> j) => InvestmentContribution(
+        id: j['id'].toString(),
+        contributedOn: j['contributed_on']?.toString() ?? '',
+        amount: Money.parse(j['amount']),
+        note: _str(j['note']),
+      );
+}
+
 /// The newest closing price of a share and how it moved since the one before.
 class ShareTrade {
   const ShareTrade({required this.pricedOn, required this.price, this.change, this.changePercent, this.dayGain});
@@ -265,8 +328,19 @@ class InvestmentItem {
     this.valueSource = 'recorded',
     this.details = const {},
     this.lastTrade,
+    this.contributions,
+    this.nextDue,
+    this.forecast,
+    this.remindersEnabled = true,
     this.pending = false,
   });
+
+  /// Reminders about contributions, meetings and payouts are on for this holding.
+  final bool remindersEnabled;
+
+  final ContributionsSummary? contributions;
+  final NextDue? nextDue;
+  final PayoutForecast? forecast;
 
   final String id;
   final String name;
@@ -321,6 +395,10 @@ class InvestmentItem {
         valueSource: j['value_source']?.toString() ?? 'recorded',
         details: j['details'] is Map ? (j['details'] as Map).cast<String, dynamic>() : const {},
         lastTrade: j['last_trade'] is Map ? ShareTrade.fromJson((j['last_trade'] as Map).cast<String, dynamic>()) : null,
+        contributions: j['contributions'] is Map ? ContributionsSummary.fromJson((j['contributions'] as Map).cast<String, dynamic>()) : null,
+        nextDue: j['next_due'] is Map ? NextDue.fromJson((j['next_due'] as Map).cast<String, dynamic>()) : null,
+        forecast: j['forecast'] is Map ? PayoutForecast.fromJson((j['forecast'] as Map).cast<String, dynamic>()) : null,
+        remindersEnabled: j['reminders_enabled'] != false,
         pending: j['_pending'] == true,
       );
 }

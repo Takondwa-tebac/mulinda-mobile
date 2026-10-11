@@ -357,6 +357,9 @@ IconData iconForInsightType(String type) => switch (type) {
       'budget_alert' => Icons.warning_amber_rounded,
       'bill_due' => Icons.event_outlined,
       'loan_repayment_due' => Icons.account_balance_outlined,
+      'investment_contribution_due' => Icons.event_repeat_outlined,
+      'investment_meeting' => Icons.groups_outlined,
+      'investment_payout' => Icons.payments_outlined,
       'announcement' => Icons.campaign_outlined,
       _ => Icons.insights_outlined,
     };
