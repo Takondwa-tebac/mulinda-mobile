@@ -7,8 +7,8 @@ import '../../subscription/screens/checkout_webview_screen.dart';
 import '../data/export_models.dart';
 import '../data/export_repository.dart';
 
-/// Export your financial records to CSV or PDF. Free with an active
-/// subscription; otherwise a one-time K50 (paid via PayChangu).
+/// Export your financial records to CSV or PDF. Free with a paid or gifted
+/// subscription; otherwise (including on the free trial) a one-time K50 (paid via PayChangu).
 class ExportScreen extends ConsumerStatefulWidget {
   const ExportScreen({super.key});
 
@@ -195,7 +195,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Free with any active subscription. Otherwise a one-time K50 covers this export.',
+                      'Free with a paid subscription. Otherwise, including during the free trial, a one-time K50 covers this export.',
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
