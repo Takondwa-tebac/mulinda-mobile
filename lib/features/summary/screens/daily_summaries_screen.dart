@@ -84,28 +84,28 @@ class _SummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_prettyDate(summary.date),
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Row(
-                    children: [
-                      Text('${summary.transactionCount} txns',
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-                    ],
+                  Expanded(
+                    child: Text(_prettyDate(summary.date),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
+                  const SizedBox(width: 8),
+                  Text('${summary.transactionCount} txns',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
                 ],
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  _Metric(label: 'Spent', value: summary.expense.formatted, color: Colors.red.shade700),
-                  _Metric(label: 'In', value: summary.income.formatted, color: Colors.green.shade700),
-                  _Metric(label: 'Net', value: summary.net.formatted, color: null),
-                ],
-              ),
+              // One line per figure, label left and amount right. The amount shrinks
+              // to fit instead of being cut off, whatever the screen width.
+              _Line(label: 'Net', value: summary.net.formatted, color: null, bold: true),
+              const SizedBox(height: 4),
+              _Line(label: 'Spent', value: summary.expense.formatted, color: Colors.red.shade700),
+              const SizedBox(height: 2),
+              _Line(label: 'In', value: summary.income.formatted, color: Colors.green.shade700),
               if (summary.topCategory != null) ...[
                 const SizedBox(height: 10),
                 Row(
@@ -137,27 +137,36 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value, required this.color});
+class _Line extends StatelessWidget {
+  const _Line({required this.label, required this.value, required this.color, this.bold = false});
 
   final String label;
   final String value;
   final Color? color;
+  final bool bold;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          const SizedBox(height: 2),
-          Text(value,
+    return Row(
+      children: [
+        Text(label, style: TextStyle(fontSize: bold ? 13 : 12, color: Colors.grey)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontWeight: FontWeight.w600, color: color)),
-        ],
-      ),
+              style: TextStyle(
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                fontSize: bold ? 17 : 14,
+                color: color,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

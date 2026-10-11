@@ -1,3 +1,4 @@
+import 'offline_diagnostics.dart';
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -151,7 +152,9 @@ class OfflineCacheInterceptor extends Interceptor {
       if (userId != null && (data is Map || data is List)) {
         // Fire and forget: caching must never slow down or break a request.
         // The raw server response is what is saved — never the overlaid one.
-        unawaited(store.put(userId, keyFor(o), data).catchError((_) {}));
+        unawaited(store.put(userId, keyFor(o), data).catchError((Object e) {
+          OfflineDiagnostics.record('Saving ${o.path}', e);
+        }));
 
         final entity = _entityFor(o.path);
         if (entity != null && versions != null) {

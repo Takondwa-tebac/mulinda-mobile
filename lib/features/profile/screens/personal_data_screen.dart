@@ -27,7 +27,7 @@ class PersonalDataScreen extends ConsumerWidget {
         children: [
           _Header(
             icon: Icons.privacy_tip_outlined,
-            text: 'Your data is yours. Export it, see how it\'s used, or remove it entirely — anytime.',
+            text: 'Your data is yours. Export it, see how it\'s used, or remove it entirely, anytime.',
           ),
           const SizedBox(height: 16),
 

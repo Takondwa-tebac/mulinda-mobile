@@ -92,12 +92,20 @@ class BudgetItem {
     required this.isExceeded,
     required this.alertThreshold,
     required this.isActive,
+    this.categoryName,
+    this.periodFrom,
+    this.periodTo,
     this.pending = false,
   });
 
   final String id;
   final String name;
   final String? categoryId;
+  final String? categoryName;
+
+  /// The current period this budget is measuring, as `YYYY-MM-DD` (from the server).
+  final String? periodFrom;
+  final String? periodTo;
   final String period;
   final Money limit;
   final Money spent;
@@ -115,6 +123,9 @@ class BudgetItem {
       id: j['id'].toString(),
       name: j['name']?.toString() ?? (status['category']?.toString() ?? ''),
       categoryId: _str(j['category_id']),
+      categoryName: _str((j['category'] as Map?)?['name']),
+      periodFrom: _str(status['from']),
+      periodTo: _str(status['to']),
       period: j['period']?.toString() ?? 'monthly',
       limit: Money.parse(j['limit'] ?? status['limit']),
       spent: Money.parse(status['spent']),

@@ -13,6 +13,7 @@ import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 import '../widgets/amount_record_card.dart';
+import '../widgets/budget_spending.dart';
 import 'plan_forms.dart' show showEditRepaymentSheet, showRepaySheet;
 
 // ---------------------------------------------------------------------------
@@ -251,6 +252,8 @@ class BudgetDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          BudgetSpendingSection(budget: b),
         ],
       ),
     );

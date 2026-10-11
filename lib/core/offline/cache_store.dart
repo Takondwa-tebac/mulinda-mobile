@@ -1,3 +1,4 @@
+import 'offline_diagnostics.dart';
 import 'offline_storage.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -61,7 +62,13 @@ class EncryptedCacheStore implements CacheStore, MutationStore {
 
   Future<_CacheDb>? _db;
 
-  Future<_CacheDb> get _database => _db ??= _open();
+  /// A failed attempt is not kept: the next call tries again, instead of every
+  /// later save failing until the app is restarted.
+  Future<_CacheDb> get _database => _db ??= _open().onError<Object>((e, _) {
+        _db = null;
+        OfflineDiagnostics.record('Opening the saved-data database', e);
+        throw e;
+      });
 
   Future<_CacheDb> _open() async {
     const storage = FlutterSecureStorage();

@@ -1,4 +1,10 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Renders a chart card from a coach chart API payload.
 /// [data] is the `data` field returned by a `/coach/charts/*` endpoint.
@@ -247,41 +253,101 @@ class _SavingsRuleChart extends StatelessWidget {
 // Shared components
 // ---------------------------------------------------------------------------
 
-class _ChartCard extends StatelessWidget {
+class _ChartCard extends StatefulWidget {
   const _ChartCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
 
   @override
+  State<_ChartCard> createState() => _ChartCardState();
+}
+
+class _ChartCardState extends State<_ChartCard> {
+  final _captureKey = GlobalKey();
+  bool _sharing = false;
+
+  /// Turns the chart into a picture and opens the share sheet, from where it can
+  /// be saved to the phone (Photos, Files) or sent to someone.
+  Future<void> _saveOrShare() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final boundary = _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) return;
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/mulinda_chart_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes.buffer.asUint8List());
+      await Share.shareXFiles([XFile(file.path)], text: 'Mulinda: ${widget.title}');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(content: Text('Could not save this chart. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 0.2,
+    return Stack(
+      children: [
+        // Everything inside the boundary ends up in the picture; the button sits
+        // on top of it, outside, so it is not part of the picture.
+        RepaintBoundary(
+          key: _captureKey,
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(scheme.surfaceContainerLow, scheme.surface),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 32),
+                  child: Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurfaceVariant,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                widget.child,
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
+        ),
+        Positioned(
+          top: 6,
+          right: 2,
+          child: IconButton(
+            tooltip: 'Save or share this chart',
+            visualDensity: VisualDensity.compact,
+            iconSize: 18,
+            onPressed: _sharing ? null : _saveOrShare,
+            icon: _sharing
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(Icons.ios_share, color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
     );
   }
 }

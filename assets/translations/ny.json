@@ -587,5 +587,29 @@
       "week": "Sabata limodzi",
       "month": "Mwezi umodzi"
     }
+  },
+  "budgetSpend": {
+      "recordSpend": "Lembani zomwe mwawononga",
+      "addExisting": "Onjezani zomwe zilipo",
+      "spendingThisPeriod": "Zomwe mwawononga nthawi ino",
+      "countsCategory": "Ndalama zomwe mwawononga mu gulu la {} zimawerengedwa mu bajeti iyi.",
+      "countsAll": "Bajeti iyi imawerenga zonse zomwe mumawononga.",
+      "nothingSpent": "Simunawononge kalikonse nthawi ino.",
+      "loadError": "Sitinathe kutsegula zomwe mwawononga.",
+      "pickTitle": "Onjezani ndalama yomwe mwawononga kale",
+      "pickBody": "Sankhani ndalama yomwe mwawononga nthawi ino. Idzasamukira ku gulu la {} kuti iwerengedwe mu bajeti iyi.",
+      "pickEmpty": "Ndalama zonse zomwe mwawononga nthawi ino zikuwerengedwa kale mu bajeti iyi.",
+      "added": "Yawonjezedwa ku bajeti iyi.",
+      "recordingFor": "Mukulemba zomwe mwawononga pa {}",
+      "thisBudget": "bajeti iyi",
+      "thisBudgetsCategory": "la bajeti iyi",
+      "noCategory": "Palibe gulu",
+      "expense": "Ndalama yowononga",
+      "onTrack": "Zili bwino",
+      "almostThere": "Mwatsala pang'ono",
+      "overBudget": "Mwapyola malire",
+      "overBy": "Mwapyola ndi {}",
+      "percentUsed": "{}% yagwiritsidwa",
+      "budget": "Bajeti"
   }
-}
+}

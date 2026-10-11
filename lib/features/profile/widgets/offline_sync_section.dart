@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../core/offline/mutation_sync.dart';
 import '../../../core/offline/offline_mode.dart';
 import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/offline/offline_diagnostics.dart';
 import '../../../core/offline/offline_prefetch.dart';
 import '../../../core/offline/offline_storage.dart';
 import '../../../core/offline/prefs.dart';
@@ -520,6 +522,7 @@ class SavedDataCard extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
             const SizedBox(height: 12),
+            const _ProblemsNotice(),
             const _StoredDataList(),
             const SizedBox(height: 12),
             SizedBox(
@@ -560,6 +563,68 @@ class SavedDataCard extends ConsumerWidget {
   }
 }
 
+/// Shows what went wrong while saving, when something did, so a failure is not
+/// just a silent "nothing saved". Hidden when there is nothing to report.
+class _ProblemsNotice extends StatelessWidget {
+  const _ProblemsNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ValueListenableBuilder<int>(
+      valueListenable: OfflineDiagnostics.changes,
+      builder: (context, _, _) {
+        final entries = OfflineDiagnostics.entries;
+        if (entries.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 6),
+          decoration: BoxDecoration(
+            color: scheme.errorContainer.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: scheme.error),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Some data could not be saved', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                  TextButton(onPressed: OfflineDiagnostics.clear, child: const Text('Dismiss')),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8, bottom: 4),
+                child: SelectableText(
+                  entries.take(4).join('\n'),
+                  style: const TextStyle(fontSize: 12, height: 1.35),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: entries.join('\n')));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(const SnackBar(content: Text('Copied. You can paste it to support.')));
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                label: const Text('Copy details'),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// What is saved on the phone, by screen, with sizes, and a way to delete it.
 /// Changes waiting to sync are never deleted from here.
 class _StoredDataList extends ConsumerStatefulWidget {
@@ -592,7 +657,8 @@ class _StoredDataListState extends ConsumerState<_StoredDataList> {
         _breakdown = StorageBreakdown.from(usage);
         _waiting = waiting;
       });
-    } catch (_) {
+    } catch (e) {
+      OfflineDiagnostics.record('Reading what is stored', e);
       if (mounted) setState(() => _breakdown = const StorageBreakdown([]));
     }
   }

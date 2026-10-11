@@ -587,5 +587,29 @@
       "week": "1 week",
       "month": "1 month"
     }
+  },
+  "budgetSpend": {
+      "recordSpend": "Record spend",
+      "addExisting": "Add existing",
+      "spendingThisPeriod": "Spending this period",
+      "countsCategory": "Expenses in the {} category count toward this budget.",
+      "countsAll": "This budget counts all of your spending.",
+      "nothingSpent": "Nothing spent yet this period.",
+      "loadError": "Could not load the spending.",
+      "pickTitle": "Add an existing expense",
+      "pickBody": "Pick an expense from this period. It moves into the {} category so it counts toward this budget.",
+      "pickEmpty": "Every expense from this period already counts toward this budget.",
+      "added": "Added to this budget.",
+      "recordingFor": "Recording spend for {}",
+      "thisBudget": "this budget",
+      "thisBudgetsCategory": "this budget's",
+      "noCategory": "No category",
+      "expense": "Expense",
+      "onTrack": "On track",
+      "almostThere": "Almost there",
+      "overBudget": "Over budget",
+      "overBy": "Over by {}",
+      "percentUsed": "{}% used",
+      "budget": "Budget"
   }
-}
+}

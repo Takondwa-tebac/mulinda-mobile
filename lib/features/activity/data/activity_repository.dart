@@ -55,6 +55,22 @@ class ActivityRepository {
     }
   }
 
+  /// Expenses in a budget's period: just [categoryId] when the budget has one,
+  /// otherwise all of them. Fee and levy lines are included because they count
+  /// toward the spend too. [from] and [to] are `YYYY-MM-DD`, both inclusive.
+  Future<List<Txn>> expensesForPeriod({String? categoryId, String? from, String? to}) => _list(
+        '/v1/transactions',
+        Txn.fromJson,
+        query: {
+          'type': 'expense',
+          'include_children': 1,
+          'per_page': 100,
+          'category_id': ?categoryId,
+          'from': ?from,
+          if (to != null) 'to': '${to}T23:59:59',
+        },
+      );
+
   Future<List<Txn>> transactionsForAccount(String accountId) => _list(
         '/v1/transactions',
         Txn.fromJson,

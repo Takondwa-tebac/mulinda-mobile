@@ -11,6 +11,7 @@ import '../../features/insights/data/insights_repository.dart';
 import '../../features/plan/data/plan_repository.dart';
 import '../../features/summary/data/summary_repository.dart';
 import '../network/dio_client.dart';
+import 'offline_diagnostics.dart';
 import 'offline_mode.dart';
 import 'prefs.dart';
 
@@ -79,7 +80,8 @@ class OfflinePrefetcher {
       try {
         await steps[i].run();
         saved++;
-      } catch (_) {
+      } catch (e) {
+        OfflineDiagnostics.record('Saving ${steps[i].label}', e);
         failed++;
         // If the connection dropped mid-way there is no point carrying on.
         if (!await isOnline()) {

@@ -10,7 +10,20 @@ import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key, this.projectId, this.projectName});
+  const AddTransactionScreen({
+    super.key,
+    this.projectId,
+    this.projectName,
+    this.initialCategoryId,
+    this.budgetName,
+    this.expenseOnly = false,
+  });
+
+  /// Recording spend for a budget: the category is preselected and it can only
+  /// be an expense.
+  final String? initialCategoryId;
+  final String? budgetName;
+  final bool expenseOnly;
 
   /// When set, the transaction is tagged to this project (recording spend
   /// toward it) and defaults to an expense.
@@ -29,7 +42,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   String _type = 'expense';
   String? _accountId;
-  String? _categoryId;
+  late String? _categoryId = widget.initialCategoryId;
   DateTime _date = DateTime.now();
   bool _loading = false;
 
@@ -106,7 +119,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               orElse: () => <Category>[],
             );
             // Drop a stale category selection when switching type.
-            if (_categoryId != null && !cats.any((c) => c.id == _categoryId)) {
+            if (categories.hasValue && _categoryId != null && !cats.any((c) => c.id == _categoryId)) {
               _categoryId = null;
             }
 
@@ -137,14 +150,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    SegmentedButton<String>(
-                      segments: [
-                        ButtonSegment(value: 'expense', label: Text('addTxn.expense'.tr())),
-                        ButtonSegment(value: 'income', label: Text('addTxn.income'.tr())),
-                      ],
-                      selected: {_type},
-                      onSelectionChanged: (s) => setState(() => _type = s.first),
-                    ),
+                    if (widget.budgetName != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.pie_chart_outline, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text('budgetSpend.recordingFor'.tr(args: [widget.budgetName!]),
+                                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (!widget.expenseOnly)
+                      SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment(value: 'expense', label: Text('addTxn.expense'.tr())),
+                          ButtonSegment(value: 'income', label: Text('addTxn.income'.tr())),
+                        ],
+                        selected: {_type},
+                        onSelectionChanged: (s) => setState(() => _type = s.first),
+                      ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _amount,
