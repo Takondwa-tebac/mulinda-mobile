@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,8 +21,12 @@ class _Msg {
     this.charts = const [],
     this.failed = false,
     this.retryPrompt,
+    this.note,
   });
   final String text;
+
+  /// What a failed turn says instead of the usual "couldn't get a response".
+  final String? note;
   final bool fromUser;
   final bool isStreaming;
   final List<Future<Map<String, dynamic>?>> charts;
@@ -47,6 +53,32 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   bool _sending = false;
   bool _loadingHistory = true;
 
+  // The AI service is rate limiting us: the box stays disabled until this time.
+  DateTime? _busyUntil;
+  Timer? _busyTimer;
+
+  int get _busySeconds {
+    final until = _busyUntil;
+    if (until == null) return 0;
+    final left = until.difference(DateTime.now()).inSeconds + 1;
+    return left > 0 ? left : 0;
+  }
+
+  /// Pause the chat box for [seconds] and count down; it comes back by itself.
+  void _startBusy(int seconds) {
+    _busyTimer?.cancel();
+    setState(() => _busyUntil = DateTime.now().add(Duration(seconds: seconds)));
+    _busyTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      if (_busySeconds == 0) {
+        t.cancel();
+        setState(() => _busyUntil = null);
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +87,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
   @override
   void dispose() {
+    _busyTimer?.cancel();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -82,7 +115,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
   Future<void> _send(String text) async {
     final message = text.trim();
-    if (message.isEmpty || _sending) return;
+    if (message.isEmpty || _sending || _busySeconds > 0) return;
 
     setState(() => _messages.add(_Msg(text: message, fromUser: true)));
     _input.clear();
@@ -92,7 +125,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   /// Regenerate a failed turn: drop the failed bubble and re-run the same
   /// prompt (the user message is kept).
   Future<void> _regenerate(String prompt) async {
-    if (_sending) return;
+    if (_sending || _busySeconds > 0) return;
     setState(() {
       if (_messages.isNotEmpty && _messages.last.failed) _messages.removeLast();
     });
@@ -117,6 +150,10 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
       await for (final chunk in stream) {
         if (!mounted) return;
+        if (chunk.busyRetryAfter != null) {
+          _handleBusy(chunk.busyRetryAfter!, message);
+          return;
+        }
         if (chunk.isDone) {
           setState(() {
             _conversationId = chunk.conversationId ?? _conversationId;
@@ -168,6 +205,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           }
         });
       }
+    } on CoachBusyException catch (e) {
+      if (!mounted) return;
+      _handleBusy(e.retryAfter, message);
     } on ApiException catch (e) {
       if (!mounted) return;
       _handleSendError(e.displayMessage, message);
@@ -175,6 +215,26 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       if (!mounted) return;
       _handleSendError('coach.error'.tr(), message);
     }
+  }
+
+  /// The AI service is rate limiting us. Keep what the user asked, say the assistant is
+  /// busy, and disable the box until the wait is over; Regenerate comes back with it.
+  void _handleBusy(int seconds, String prompt) {
+    setState(() {
+      _sending = false;
+      if (_messages.isNotEmpty && !_messages.last.fromUser) {
+        final last = _messages.last;
+        _messages[_messages.length - 1] = _Msg(
+          text: last.text,
+          fromUser: false,
+          charts: last.charts,
+          failed: true,
+          retryPrompt: prompt,
+          note: 'coach.busyBubble'.tr(),
+        );
+      }
+    });
+    _startBusy(seconds);
   }
 
   void _handleSendError(String message, String prompt) {
@@ -251,7 +311,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                           final m = _messages[i];
                           return _Bubble(
                             msg: m,
-                            onRegenerate: (m.failed && m.retryPrompt != null && !_sending)
+                            onRegenerate: (m.failed && m.retryPrompt != null && !_sending && _busySeconds == 0)
                                 ? () => _regenerate(m.retryPrompt!)
                                 : null,
                           );
@@ -260,8 +320,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           ),
           _InputBar(
             controller: _input,
-            enabled: !_sending && !_loadingHistory,
+            enabled: !_sending && !_loadingHistory && _busySeconds == 0,
             onSend: _send,
+            busySeconds: _busySeconds,
           ),
         ],
       ),
@@ -316,7 +377,7 @@ class _Bubble extends StatelessWidget {
                   Icon(Icons.error_outline, size: 16, color: scheme.error),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text('coach.noResponse'.tr(),
+                    child: Text(msg.note ?? 'coach.noResponse'.tr(),
                         style: TextStyle(color: scheme.error, fontSize: 13)),
                   ),
                 ],
@@ -474,11 +535,15 @@ class _InputBar extends StatelessWidget {
     required this.controller,
     required this.enabled,
     required this.onSend,
+    this.busySeconds = 0,
   });
 
   final TextEditingController controller;
   final bool enabled;
   final void Function(String) onSend;
+
+  /// Seconds left while the assistant is busy; 0 when it is not.
+  final int busySeconds;
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +563,11 @@ class _InputBar extends StatelessWidget {
                 textInputAction: TextInputAction.send,
                 onSubmitted: onSend,
                 decoration: InputDecoration(
-                  hintText: 'coach.hint'.tr(),
+                  hintText: busySeconds <= 0
+                      ? 'coach.hint'.tr()
+                      : busySeconds >= 120
+                          ? 'coach.busyHintMinutes'.tr(args: ['${(busySeconds / 60).ceil()}'])
+                          : 'coach.busyHint'.tr(args: ['$busySeconds']),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),

@@ -101,6 +101,9 @@ class PushService {
         router.go(Routes.dailySummaries);
       } else if (type == 'export') {
         router.go(Routes.exports);
+      } else if (type == 'ai_unavailable') {
+        // The AI service was busy: add the item by hand instead.
+        router.go(Routes.addTransaction);
       } else if (type == 'inbox' && itemType == 'transaction') {
         // Auto-recorded SMS transactions land in the review queue.
         router.go(Routes.review);

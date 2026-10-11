@@ -154,6 +154,9 @@
     "queued": "Got it - we're reading your message. It'll appear once you approve it."
   },
   "receipt": {
+    "busyTitle": "Receipt scanning is busy",
+    "busyBody": "Scanning is not available right now. You can add this expense by hand instead.",
+    "addByHand": "Add by hand",
     "title": "Scan receipt",
     "subtitle": "Snap or pick a receipt and Mulinda will extract the transaction.",
     "takePhoto": "Take photo",
@@ -234,6 +237,9 @@
     }
   },
   "coach": {
+    "busyHintMinutes": "The assistant is busy. You can write again in about {} minutes.",
+    "busyHint": "The assistant is busy. You can write again in {}s.",
+    "busyBubble": "The assistant is very busy right now. You can ask again in a moment.",
     "title": "Ask Mulinda",
     "hint": "Ask about your money…",
     "emptyTitle": "Hi, I'm Mulinda",
