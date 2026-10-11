@@ -364,6 +364,11 @@
       "pension": "Pension",
       "business": "Business",
       "property": "Property",
+      "money_market": "Money market fund",
+      "sacco": "SACCO",
+      "rosca": "Chipereganyu (savings circle)",
+      "vsla": "Village savings group (VSLA)",
+      "savings_policy": "Savings policy",
       "other": "Other"
     },
     "investStatus": {
@@ -535,6 +540,11 @@
       "pension": "Pension",
       "business": "Business",
       "property": "Property",
+      "money_market": "Money market fund",
+      "sacco": "SACCO",
+      "rosca": "Chipereganyu (savings circle)",
+      "vsla": "Village savings group (VSLA)",
+      "savings_policy": "Savings policy",
       "other": "Other"
     },
     "gain": "Gain",
@@ -611,5 +621,29 @@
       "overBy": "Over by {}",
       "percentUsed": "{}% used",
       "budget": "Budget"
+  },
+  "investForm": {
+    "priceTitle": "Share price",
+    "updatePrice": "Update price",
+    "noPriceYet": "No price entered yet. Enter the closing price from the Malawi Stock Exchange to see how your shares are doing.",
+    "gainToday": "Gain or loss",
+    "needSecondPrice": "Enter the price again on another day to see the change.",
+    "priceHint": "Enter the closing price of one share. Prices are not fetched automatically.",
+    "pricePerShare": "Price of one share",
+    "priceDate": "Date",
+    "priceSaved": "Price saved.",
+    "amountInvestedWorked": "Amount invested (worked out)",
+    "currentValueWorked": "Current value (worked out)",
+    "details": "Details"
+  },
+  "categoryPicker": {
+    "label": "Category",
+    "title": "Choose a category",
+    "search": "Search categories",
+    "none": "None",
+    "notFound": "Category not found",
+    "createNamed": "Create \"{}\"",
+    "createHint": "Add it as a new category (needs internet)",
+    "loadError": "Could not load the categories."
   }
 }

@@ -1,3 +1,4 @@
+import 'investment_types.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,6 +57,12 @@ class PlanRepository {
 
   Future<void> createInvestment(Map<String, dynamic> data) => _post('/v1/investments', data);
   Future<void> updateInvestment(String id, Map<String, dynamic> data) => _put('/v1/investments/$id', data);
+
+  /// Enter the closing price of one share for a day (today when [day] is null).
+  Future<void> recordSharePrice(String id, double price, {DateTime? day}) => _post('/v1/investments/$id/prices', {
+        'price': price,
+        if (day != null) 'priced_on': day.toIso8601String().split('T').first,
+      });
   Future<void> deleteInvestment(String id) => _delete('/v1/investments/$id');
 
   Future<void> createProject(Map<String, dynamic> data) => _post('/v1/projects', data);
@@ -105,6 +112,19 @@ class PlanRepository {
 }
 
 final planRepositoryProvider = Provider<PlanRepository>((ref) => PlanRepository(ref.read(dioProvider)));
+
+/// The kinds of holding and the fields each asks for. Falls back to the plain
+/// list when the server's cannot be reached or does not have it yet.
+final investmentTypesProvider = FutureProvider<List<InvestmentTypeDef>>((ref) async {
+  try {
+    final res = await ref.read(dioProvider).get<dynamic>('/v1/investment-types');
+    final list = (res.data is Map ? (res.data as Map)['data'] : null) as List?;
+    if (list == null || list.isEmpty) return fallbackInvestmentTypes;
+    return [for (final e in list) InvestmentTypeDef.fromJson((e as Map).cast<String, dynamic>())];
+  } catch (_) {
+    return fallbackInvestmentTypes;
+  }
+});
 
 final advisoryProvider =
     FutureProvider.autoDispose<AdvisorySummary>((ref) => ref.read(planRepositoryProvider).advisory());

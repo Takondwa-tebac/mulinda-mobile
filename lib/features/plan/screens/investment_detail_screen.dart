@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/currencies.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../data/investment_types.dart';
+import '../widgets/mse_logo.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 
@@ -63,12 +66,22 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'invest.type.${inv.type}'.tr(),
-                      style: TextStyle(
-                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                        fontSize: 13,
-                      ),
+                    Row(
+                      children: [
+                        if (inv.type == 'shares') ...[
+                          MseLogo(ticker: inv.ticker, name: inv.name, size: 34),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Text(
+                            'invest.type.${inv.type}'.tr(),
+                            style: TextStyle(
+                              color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -107,6 +120,8 @@ class InvestmentDetailScreen extends ConsumerWidget {
             if (accrual != null)
               _ProjectionCard(accrual: accrual, maturity: maturity),
 
+            if (inv.type == 'shares') _SharePriceCard(investment: inv),
+
             const SizedBox(height: 16),
             Card(
               child: Column(
@@ -142,6 +157,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            _DetailsCard(investment: inv),
           ],
         ),
       ),
@@ -182,6 +198,257 @@ class InvestmentDetailScreen extends ConsumerWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
       }
+    }
+  }
+}
+
+/// A share's price today, how it moved since the last price entered, and the gain
+/// or loss that is on the units held. The price is entered by hand (the exchange
+/// has no open data feed), so the card says when it was last updated.
+class _SharePriceCard extends ConsumerWidget {
+  const _SharePriceCard({required this.investment});
+
+  final InvestmentItem investment;
+
+  Future<void> _update(BuildContext context, WidgetRef ref) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _PriceSheet(investment: investment),
+    );
+    if (saved == true) {
+      ref.invalidate(investmentsListProvider);
+      ref.invalidate(dashboardProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final trade = investment.lastTrade;
+    final up = trade?.isUp ?? false;
+    final down = trade?.isDown ?? false;
+    final color = up ? Colors.green.shade700 : (down ? scheme.error : scheme.onSurfaceVariant);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('investForm.priceTitle'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: () => _update(context, ref),
+                    child: Text('investForm.updatePrice'.tr()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (trade == null)
+                Text('investForm.noPriceYet'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35))
+              else ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(trade.price.formatted, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(trade.pricedOn, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (trade.hasChange && trade.changePercent != null)
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        '${up ? '▲' : (down ? '▼' : '')} ${(trade.changePercent!.abs() * 100).toStringAsFixed(2)}%',
+                        style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                      ),
+                      if (trade.dayGain != null)
+                        Text(
+                          '${'investForm.gainToday'.tr()}: ${trade.dayGain!.formatted}',
+                          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                        ),
+                    ],
+                  )
+                else
+                  Text('investForm.needSecondPrice'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PriceSheet extends ConsumerStatefulWidget {
+  const _PriceSheet({required this.investment});
+
+  final InvestmentItem investment;
+
+  @override
+  ConsumerState<_PriceSheet> createState() => _PriceSheetState();
+}
+
+class _PriceSheetState extends ConsumerState<_PriceSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final _price = TextEditingController(
+    text: widget.investment.lastTrade == null ? '' : widget.investment.lastTrade!.price.amount.toString(),
+  );
+  DateTime _day = DateTime.now();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _price.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(planRepositoryProvider).recordSharePrice(
+            widget.investment.id,
+            double.parse(_price.text.trim()),
+            day: _day,
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('investForm.priceSaved'.tr())));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('investForm.updatePrice'.tr(), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text('investForm.priceHint'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.35)),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _price,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'investForm.pricePerShare'.tr()),
+              validator: (v) {
+                final n = double.tryParse((v ?? '').trim());
+                return (n == null || n <= 0) ? 'auth.required'.tr() : null;
+              },
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _day,
+                  firstDate: DateTime(2015),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) setState(() => _day = picked);
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(labelText: 'investForm.priceDate'.tr()),
+                child: Text(_day.toIso8601String().split('T').first),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text('form.save'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The facts specific to this kind of holding (a share's units and price, a
+/// SACCO's member number...), labelled from the server's description of the type.
+class _DetailsCard extends ConsumerWidget {
+  const _DetailsCard({required this.investment});
+
+  final InvestmentItem investment;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (investment.details.isEmpty) return const SizedBox.shrink();
+    final lang = context.locale.languageCode;
+    final defs = ref.watch(investmentTypesProvider).valueOrNull ?? fallbackInvestmentTypes;
+    final def = defs.where((d) => d.type == investment.type).firstOrNull;
+    if (def == null) return const SizedBox.shrink();
+
+    final rows = <Widget>[];
+    for (final f in def.fields) {
+      final raw = investment.details[f.key];
+      if (raw == null || raw.toString().isEmpty) continue;
+      rows.add(_InfoRow(icon: Icons.notes_outlined, label: f.label(lang), value: _show(f, raw, lang)));
+    }
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Card(child: Column(children: rows)),
+    );
+  }
+
+  String _show(InvestmentField f, Object raw, String lang) {
+    switch (f.kind) {
+      case 'money':
+        final v = (raw as num).toDouble();
+        final whole = v == v.roundToDouble();
+        final parts = v.toStringAsFixed(whole ? 0 : 2).split('.');
+        final grouped = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
+        final symbol = currencyInfo(investment.amountInvested.currency).symbol;
+        return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
+      case 'percent':
+        return '$raw%';
+      case 'select':
+        return f.options.where((o) => o.value == raw).firstOrNull?.label(lang) ?? raw.toString();
+      case 'number':
+        final v = (raw as num).toDouble();
+        return v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+      default:
+        return raw.toString();
     }
   }
 }

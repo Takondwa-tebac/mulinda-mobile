@@ -104,6 +104,7 @@ flutter:
   assets:
     - assets/translations/
     - assets/logo.png
+    - assets/mse_logos/
   fonts:
     - family: Inter
       fonts:

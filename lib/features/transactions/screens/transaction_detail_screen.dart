@@ -1,3 +1,4 @@
+import '../../activity/widgets/category_picker.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -336,7 +337,6 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider);
     final scheme = Theme.of(context).colorScheme;
     final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
           color: scheme.primary,
@@ -392,28 +392,13 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                       ],
                       Text('Category', style: labelStyle),
                       const SizedBox(height: 8),
-                      categories.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (_, _) => const Text('Failed to load categories'),
-                        data: (cats) {
-                          final options =
-                              _typeEditable ? cats.where((c) => c.kind == _type).toList() : cats;
-                          final selected =
-                              options.any((c) => c.id == _categoryId) ? _categoryId : null;
-                          return DropdownButtonFormField<String?>(
-                            key: ValueKey('cat-$_type'),
-                            initialValue: selected,
-                            decoration: const InputDecoration(border: OutlineInputBorder()),
-                            items: [
-                              const DropdownMenuItem<String?>(value: null, child: Text('None')),
-                              ...options.map((c) => DropdownMenuItem<String?>(
-                                    value: c.id,
-                                    child: Text(c.name),
-                                  )),
-                            ],
-                            onChanged: _saving ? null : (v) => setState(() => _categoryId = v),
-                          );
-                        },
+                      CategoryPickerField(
+                        key: ValueKey('cat-$_type'),
+                        value: _categoryId,
+                        kind: _typeEditable ? _type : null,
+                        createKind: _type,
+                        enabled: !_saving,
+                        onChanged: (v) => setState(() => _categoryId = v),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

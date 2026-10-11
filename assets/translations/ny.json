@@ -364,6 +364,11 @@
       "pension": "Penshoni",
       "business": "Bizinesi",
       "property": "Katundu",
+      "money_market": "Money market fund",
+      "sacco": "SACCO",
+      "rosca": "Chipereganyu",
+      "vsla": "Banki ya mudzi (VSLA)",
+      "savings_policy": "Inshuwalansi yosungira",
       "other": "Zina"
     },
     "investStatus": {
@@ -535,6 +540,11 @@
       "pension": "Penshoni",
       "business": "Bizinesi",
       "property": "Katundu",
+      "money_market": "Money market fund",
+      "sacco": "SACCO",
+      "rosca": "Chipereganyu",
+      "vsla": "Banki ya mudzi (VSLA)",
+      "savings_policy": "Inshuwalansi yosungira",
       "other": "Zina"
     },
     "gain": "Phindu",
@@ -611,5 +621,29 @@
       "overBy": "Mwapyola ndi {}",
       "percentUsed": "{}% yagwiritsidwa",
       "budget": "Bajeti"
+  },
+  "investForm": {
+    "priceTitle": "Mtengo wa gawo",
+    "updatePrice": "Sinthani mtengo",
+    "noPriceYet": "Simunalembe mtengo. Lembani mtengo wotsekera wa Malawi Stock Exchange kuti muone momwe magawo anu akuyendera.",
+    "gainToday": "Phindu kapena kutaya",
+    "needSecondPrice": "Lembaninso mtengo pa tsiku lina kuti muone kusintha.",
+    "priceHint": "Lembani mtengo wotsekera wa gawo limodzi. Mitengo siitengedwa yokha.",
+    "pricePerShare": "Mtengo wa gawo limodzi",
+    "priceDate": "Tsiku",
+    "priceSaved": "Mtengo wasungidwa.",
+    "amountInvestedWorked": "Ndalama zomwe mwayika (zawerengedwa)",
+    "currentValueWorked": "Mtengo wa pano (wawerengedwa)",
+    "details": "Zambiri"
+  },
+  "categoryPicker": {
+    "label": "Gulu",
+    "title": "Sankhani gulu",
+    "search": "Sakani magulu",
+    "none": "Palibe",
+    "notFound": "Gulu silinapezeke",
+    "createNamed": "Pangani \"{}\"",
+    "createHint": "Liwonjezeni ngati gulu latsopano (pamafunika intaneti)",
+    "loadError": "Sitinathe kutsegula magulu."
   }
 }

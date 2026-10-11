@@ -2,21 +2,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/money/currencies.dart';
 import '../../../core/money/money.dart';
 import '../../../core/network/api_exception.dart';
-import '../../activity/data/activity_repository.dart' show categoriesProvider;
+import '../../activity/widgets/category_picker.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../data/investment_types.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
+import '../widgets/mse_logo.dart';
 import '../widgets/plan_form_kit.dart';
 
 const _goalTypes = ['emergency', 'house', 'car', 'business', 'education', 'vacation', 'custom'];
 const _interestTypes = ['reducing_balance', 'flat'];
 const _loanStatuses = ['active', 'paid_off', 'defaulted', 'closed'];
-const _investTypes = [
-  'fixed_deposit', 'treasury_bill', 'treasury_bond', 'unit_trust',
-  'shares', 'pension', 'business', 'property', 'other'
-];
 const _investStatuses = ['active', 'matured', 'sold', 'closed'];
 const _interestPeriods = ['annual', 'monthly'];
 const _projectStatuses = ['planning', 'active', 'on_hold', 'completed'];
@@ -166,10 +165,6 @@ class _BudgetFormState extends ConsumerState<BudgetForm> with _FormSubmit {
   @override
   Widget build(BuildContext context) {
     final edit = widget.item != null;
-    final cats = ref.watch(categoriesProvider).maybeWhen(
-          data: (c) => c.where((x) => x.kind == 'expense').toList(),
-          orElse: () => [],
-        );
     return _Scaffold(
       title: edit ? 'form.editBudget'.tr() : 'form.newBudget'.tr(),
       formKey: _formKey,
@@ -180,13 +175,9 @@ class _BudgetFormState extends ConsumerState<BudgetForm> with _FormSubmit {
         pkText(controller: _name, label: 'form.name'.tr()),
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: DropdownButtonFormField<String?>(
-            initialValue: _categoryId,
-            decoration: InputDecoration(labelText: 'form.category'.tr()),
-            items: [
-              DropdownMenuItem(value: null, child: Text('form.none'.tr())),
-              ...cats.map((c) => DropdownMenuItem(value: c.id as String?, child: Text(c.name))),
-            ],
+          child: CategoryPickerField(
+            value: _categoryId,
+            kind: 'expense',
             onChanged: (v) => setState(() => _categoryId = v),
           ),
         ),
@@ -301,6 +292,15 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
   late DateTime _startedAt = apiToDate(widget.item?.startedAt) ?? DateTime.now();
   late DateTime? _maturity = apiToDate(widget.item?.maturityDate);
 
+  // What is specific to the chosen type (units and price of shares, a SACCO's
+  // member number...), keyed by the field's key.
+  final Map<String, TextEditingController> _detailText = {};
+  final Map<String, DateTime?> _detailDates = {};
+  final Map<String, String?> _detailSelects = {};
+  final Map<String, FocusNode> _focusNodes = {};
+
+  String get _currency => widget.item?.amountInvested.currency ?? 'MWK';
+
   @override
   void dispose() {
     _name.dispose();
@@ -308,56 +308,297 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
     _value.dispose();
     _return.dispose();
     _notes.dispose();
+    for (final c in _detailText.values) {
+      c.dispose();
+    }
+    for (final n in _focusNodes.values) {
+      n.dispose();
+    }
     super.dispose();
   }
 
-  void _save() {
+  Object? _saved(String key) => widget.item?.details[key];
+
+  TextEditingController _controllerFor(InvestmentField f) => _detailText.putIfAbsent(f.key, () {
+        final v = _saved(f.key);
+        final text = v == null ? '' : (v is num && v == v.roundToDouble() ? v.toInt().toString() : v.toString());
+        final c = TextEditingController(text: text);
+        c.addListener(() => setState(() {}));
+        return c;
+      });
+
+  Map<String, double?> _numbers(InvestmentTypeDef def) => {
+        for (final f in def.fields)
+          if (f.isNumeric) f.key: double.tryParse(_controllerFor(f).text.trim()),
+      };
+
+  String _money(double v) {
+    final whole = v == v.roundToDouble();
+    final parts = v.toStringAsFixed(whole ? 0 : 2).split('.');
+    final grouped = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
+    final symbol = currencyInfo(_currency).symbol;
+    return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
+  }
+
+  void _toast(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _save(InvestmentTypeDef def) {
     if (!_formKey.currentState!.validate()) return;
-    if (_maturity == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('auth.required'.tr())));
-      return;
+
+    final details = <String, dynamic>{};
+    for (final f in def.fields) {
+      switch (f.kind) {
+        case 'date':
+          final d = _detailDates[f.key] ?? apiToDate(_saved(f.key)?.toString());
+          if (d == null && f.required) return _toast('auth.required'.tr());
+          if (d != null) details[f.key] = dateToApi(d);
+        case 'select':
+          final v = _detailSelects[f.key] ?? _saved(f.key)?.toString();
+          if (v == null && f.required) return _toast('auth.required'.tr());
+          if (v != null) details[f.key] = v;
+        default:
+          final raw = _controllerFor(f).text.trim();
+          if (raw.isEmpty) continue;
+          details[f.key] = f.isNumeric ? double.parse(raw) : raw;
+      }
     }
+
+    if (def.requiresMaturity && _maturity == null) return _toast('auth.required'.tr());
+
+    final derived = def.derive(_numbers(def));
+    double? invested;
+    if (def.derivesAmountInvested) {
+      invested = derived.invested;
+      if (invested == null || invested <= 0) return _toast('auth.required'.tr());
+    } else {
+      invested = double.parse(_amount.text.trim());
+    }
+
     final data = <String, dynamic>{
       'name': _name.text.trim(),
       'type': _type,
       'status': _status,
-      'interest_period': _interestPeriod,
-      'amount_invested': double.parse(_amount.text.trim()),
+      'amount_invested': invested,
       'started_at': dateToApi(_startedAt),
-      'maturity_date': dateToApi(_maturity),
     };
-    if (_value.text.trim().isNotEmpty) data['current_value'] = double.parse(_value.text.trim());
-    final ret = double.tryParse(_return.text.trim());
-    if (ret != null) data['expected_annual_return'] = ret / 100;
+
+    // The server works these out again and its answer wins; they are sent too so a
+    // change made offline already shows the right figures.
+    if (def.derivesValue) {
+      if (derived.value != null) data['current_value'] = derived.value;
+    } else if (_value.text.trim().isNotEmpty) {
+      data['current_value'] = double.parse(_value.text.trim());
+    }
+
+    if (def.interest) {
+      data['interest_period'] = _interestPeriod;
+      final ret = double.tryParse(_return.text.trim());
+      if (ret != null) data['expected_annual_return'] = ret / 100;
+    }
+    if (def.requiresMaturity) data['maturity_date'] = dateToApi(_maturity);
+    if (def.fields.isNotEmpty) data['details'] = details;
     if (_notes.text.trim().isNotEmpty) data['notes'] = _notes.text.trim();
 
     final repo = ref.read(planRepositoryProvider);
     submit(ref, () => widget.item == null ? repo.createInvestment(data) : repo.updateInvestment(widget.item!.id, data), investmentsListProvider);
   }
 
+  /// A text field that suggests names as you type (companies listed on the Malawi
+  /// Stock Exchange for shares). Picking one also fills the ticker and where it is
+  /// traded; typing something else is fine.
+  Widget _suggestField(InvestmentField f, String label) {
+    final controller = _controllerFor(f);
+    final focus = _focusNodes.putIfAbsent(f.key, FocusNode.new);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: RawAutocomplete<InvestmentOption>(
+        textEditingController: controller,
+        focusNode: focus,
+        displayStringForOption: (o) => o.label('en'),
+        optionsBuilder: (value) {
+          final q = value.text.trim().toLowerCase();
+          if (q.isEmpty) return f.suggestions;
+          return f.suggestions.where((o) => o.label('en').toLowerCase().contains(q) || o.value.toLowerCase().contains(q));
+        },
+        onSelected: (o) => setState(() {
+          final ticker = _detailText['ticker'];
+          if (ticker != null && ticker.text.trim().isEmpty) ticker.text = o.value;
+          _detailSelects['exchange'] ??= 'mse';
+        }),
+        fieldViewBuilder: (context, textController, focusNode, onSubmit) => TextFormField(
+          controller: textController,
+          focusNode: focusNode,
+          decoration: InputDecoration(labelText: label, suffixIcon: const Icon(Icons.search)),
+          validator: (v) => f.required && (v ?? '').trim().isEmpty ? 'auth.required'.tr() : null,
+        ),
+        optionsViewBuilder: (context, onSelected, options) => Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240, maxWidth: 420),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final o in options)
+                    ListTile(
+                      dense: true,
+                      leading: MseLogo(ticker: o.value, name: o.label('en'), size: 32),
+                      title: Text(o.label('en')),
+                      trailing: Text(o.value, style: Theme.of(context).textTheme.labelSmall),
+                      onTap: () => onSelected(o),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fieldWidget(InvestmentField f, String lang) {
+    final label = f.label(lang);
+    switch (f.kind) {
+      case 'date':
+        return pkDate(
+          context: context,
+          label: label,
+          value: _detailDates[f.key] ?? apiToDate(_saved(f.key)?.toString()),
+          onPick: (d) => setState(() => _detailDates[f.key] = d),
+          required: false,
+        );
+      case 'select':
+        final current = _detailSelects[f.key] ?? _saved(f.key)?.toString();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: DropdownButtonFormField<String>(
+            initialValue: f.options.any((o) => o.value == current) ? current : null,
+            decoration: InputDecoration(labelText: label),
+            items: [for (final o in f.options) DropdownMenuItem(value: o.value, child: Text(o.label(lang)))],
+            validator: f.required ? (v) => v == null ? 'auth.required'.tr() : null : null,
+            onChanged: (v) => setState(() => _detailSelects[f.key] = v),
+          ),
+        );
+      default:
+        if (f.suggestions.isNotEmpty) return _suggestField(f, label);
+        return pkText(
+          controller: _controllerFor(f),
+          label: label,
+          keyboard: f.isNumeric ? const TextInputType.numberWithOptions(decimal: true) : null,
+          validator: (v) {
+            final text = (v ?? '').trim();
+            if (text.isEmpty) return f.required ? 'auth.required'.tr() : null;
+            if (f.isNumeric && double.tryParse(text) == null) return 'auth.required'.tr();
+            return null;
+          },
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final edit = widget.item != null;
+    final lang = context.locale.languageCode;
+    final defs = ref.watch(investmentTypesProvider).valueOrNull ?? fallbackInvestmentTypes;
+    final def = defs.firstWhere(
+      (d) => d.type == _type,
+      orElse: () => InvestmentTypeDef(type: _type, labels: {'en': _type}, interest: true),
+    );
+    final scheme = Theme.of(context).colorScheme;
+    final derived = def.derive(_numbers(def));
+    final description = def.description(lang);
+
     return _Scaffold(
       title: edit ? 'form.editInvestment'.tr() : 'form.newInvestment'.tr(),
       formKey: _formKey,
       loading: loading,
-      onSave: _save,
+      onSave: () => _save(def),
       saveLabel: edit ? 'form.save'.tr() : 'form.create'.tr(),
       children: [
+        pkDropdown<String>(
+          value: _type,
+          label: 'form.type'.tr(),
+          entries: [
+            for (final d in defs) (d.type, 'form.investType.${d.type}'.tr()),
+            if (!defs.any((d) => d.type == _type)) (_type, 'form.investType.$_type'.tr()),
+          ],
+          onChanged: (v) => setState(() => _type = v),
+        ),
+        if (description != null && description.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(description, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+          ),
         pkText(controller: _name, label: 'form.name'.tr(), validator: _req),
-        pkDropdown<String>(value: _type, label: 'form.type'.tr(), entries: _entries(_investTypes, 'form.investType'), onChanged: (v) => setState(() => _type = v)),
+        for (final f in def.fields) _fieldWidget(f, lang),
+        if (def.derivesAmountInvested)
+          _Worked(
+            label: 'investForm.amountInvestedWorked'.tr(),
+            value: derived.invested == null ? '-' : _money(derived.invested!),
+          )
+        else
+          pkMoney(controller: _amount, label: 'form.amountInvested'.tr()),
+        if (def.derivesValue)
+          _Worked(
+            label: 'investForm.currentValueWorked'.tr(),
+            value: derived.value == null
+                ? (derived.invested == null ? '-' : _money(derived.invested!))
+                : _money(derived.value!),
+          )
+        else
+          pkMoney(controller: _value, label: 'form.currentValue'.tr(), required: false),
         pkDropdown<String>(value: _status, label: 'form.status'.tr(), entries: _entries(_investStatuses, 'form.investStatus'), onChanged: (v) => setState(() => _status = v)),
-        pkMoney(controller: _amount, label: 'form.amountInvested'.tr()),
-        pkMoney(controller: _value, label: 'form.currentValue'.tr(), required: false),
-        pkText(controller: _return, label: 'form.expectedReturn'.tr(), keyboard: const TextInputType.numberWithOptions(decimal: true)),
-        pkDropdown<String>(value: _interestPeriod, label: 'form.interestPeriod'.tr(), entries: _entries(_interestPeriods, 'form.interestPeriods'), onChanged: (v) => setState(() => _interestPeriod = v)),
+        if (def.interest) ...[
+          pkText(controller: _return, label: 'form.expectedReturn'.tr(), keyboard: const TextInputType.numberWithOptions(decimal: true)),
+          pkDropdown<String>(value: _interestPeriod, label: 'form.interestPeriod'.tr(), entries: _entries(_interestPeriods, 'form.interestPeriods'), onChanged: (v) => setState(() => _interestPeriod = v)),
+        ],
         pkDate(context: context, label: 'form.startedAt'.tr(), value: _startedAt, onPick: (d) => setState(() => _startedAt = d)),
-        pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d), required: true),
+        if (def.requiresMaturity)
+          pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d), required: true),
         pkText(controller: _notes, label: 'form.notes'.tr(), maxLines: 2),
       ],
+    );
+  }
+}
+
+/// A figure the app works out from what was typed, shown instead of asking for it.
+class _Worked extends StatelessWidget {
+  const _Worked({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
+          const SizedBox(width: 12),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

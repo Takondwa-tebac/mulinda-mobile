@@ -220,6 +220,33 @@ class InvestmentAccrual {
       );
 }
 
+/// The newest closing price of a share and how it moved since the one before.
+class ShareTrade {
+  const ShareTrade({required this.pricedOn, required this.price, this.change, this.changePercent, this.dayGain});
+
+  final String pricedOn;
+  final Money price;
+
+  /// Null until a second day's price has been entered.
+  final Money? change;
+  final double? changePercent;
+
+  /// Gain or loss on the units held, for that move.
+  final Money? dayGain;
+
+  bool get hasChange => change != null;
+  bool get isUp => (change?.minorUnits ?? 0) > 0;
+  bool get isDown => (change?.minorUnits ?? 0) < 0;
+
+  factory ShareTrade.fromJson(Map<String, dynamic> j) => ShareTrade(
+        pricedOn: j['priced_on']?.toString() ?? '',
+        price: Money.parse(j['price']),
+        change: j['change'] is Map ? Money.parse(j['change']) : null,
+        changePercent: _num(j['change_percent']),
+        dayGain: j['day_gain'] is Map ? Money.parse(j['day_gain']) : null,
+      );
+}
+
 class InvestmentItem {
   const InvestmentItem({
     required this.id,
@@ -236,6 +263,8 @@ class InvestmentItem {
     this.notes,
     this.accrual,
     this.valueSource = 'recorded',
+    this.details = const {},
+    this.lastTrade,
     this.pending = false,
   });
 
@@ -243,6 +272,15 @@ class InvestmentItem {
   final String name;
   final String type;
   final String status;
+
+  /// Shares: the newest closing price and the last day's move.
+  final ShareTrade? lastTrade;
+
+  /// The stock exchange symbol of a share holding (e.g. NBM), if one was recorded.
+  String? get ticker => details['ticker']?.toString();
+
+  /// What is specific to this kind of holding (a share's units and price...).
+  final Map<String, dynamic> details;
   final Money amountInvested;
   final Money value;
   final Money gain;
@@ -281,6 +319,8 @@ class InvestmentItem {
             ? InvestmentAccrual.fromJson((j['accrual'] as Map).cast<String, dynamic>())
             : null,
         valueSource: j['value_source']?.toString() ?? 'recorded',
+        details: j['details'] is Map ? (j['details'] as Map).cast<String, dynamic>() : const {},
+        lastTrade: j['last_trade'] is Map ? ShareTrade.fromJson((j['last_trade'] as Map).cast<String, dynamic>()) : null,
         pending: j['_pending'] == true,
       );
 }

@@ -8,6 +8,7 @@ import '../../../core/router/routes.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
+import '../widgets/category_picker.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
@@ -200,13 +201,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       onChanged: (v) => setState(() => _accountId = v),
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String?>(
-                      initialValue: _categoryId,
-                      decoration: InputDecoration(labelText: 'addTxn.category'.tr()),
-                      items: [
-                        DropdownMenuItem(value: null, child: Text('addTxn.none'.tr())),
-                        ...cats.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
-                      ],
+                    CategoryPickerField(
+                      value: _categoryId,
+                      kind: _type,
+                      createKind: _type,
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
                     const SizedBox(height: 16),

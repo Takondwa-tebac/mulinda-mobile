@@ -14,6 +14,16 @@ class ActivityRepository {
 
   Future<List<Category>> categories() => _list('/v1/categories', Category.fromJson);
 
+  /// Add a category of the user's own (it gets the generic icon).
+  Future<Category> createCategory({required String name, required String kind}) async {
+    try {
+      final res = await _dio.post('/v1/categories', data: {'name': name, 'kind': kind});
+      return Category.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   Future<List<Txn>> transactions() =>
       _list('/v1/transactions', Txn.fromJson, query: {'per_page': 50});
 

@@ -7,6 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
+import '../widgets/mse_logo.dart';
 import '../data/plan_repository.dart';
 import 'plan_forms.dart';
 
@@ -171,6 +172,15 @@ class LoansListScreen extends ConsumerWidget {
   }
 }
 
+/// " · ▲ 2.5% today" for a share whose price moved since the last one entered.
+String _todayMove(InvestmentItem i) {
+  final trade = i.lastTrade;
+  if (trade == null || !trade.hasChange || trade.changePercent == null) return '';
+  final arrow = trade.isUp ? '▲' : (trade.isDown ? '▼' : '');
+  final pct = (trade.changePercent!.abs() * 100).toStringAsFixed(1);
+  return ' · $arrow $pct%';
+}
+
 class InvestmentsListScreen extends ConsumerWidget {
   const InvestmentsListScreen({super.key});
   @override
@@ -187,12 +197,14 @@ class InvestmentsListScreen extends ConsumerWidget {
         },
         tile: (i) => _PlanTile(
           title: i.name,
+          leading: i.type == 'shares' ? MseLogo(ticker: i.ticker, name: i.name, size: 36) : null,
           pending: i.pending,
           value: i.value.formatted,
           // Term investments show the interest earned so far (estimated by the
           // API from the rate and elapsed days); others show the plain gain.
           sub: '${'invest.type.${i.type}'.tr()} · '
-              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}',
+              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
+              '${_todayMove(i)}',
           subColor: i.gain.isNegative ? Colors.red : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
@@ -432,7 +444,11 @@ class _PlanTile extends StatelessWidget {
     required this.onDelete,
     this.extra,
     this.pending = false,
+    this.leading,
   });
+
+  /// Shown before the title (a company logo).
+  final Widget? leading;
 
   final String title;
   final String value;
@@ -467,6 +483,7 @@ class _PlanTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: 12)],
                   Expanded(
                     child: Text.rich(
                       TextSpan(children: [
