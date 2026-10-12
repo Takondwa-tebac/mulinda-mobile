@@ -312,7 +312,7 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
 }
 
 /// The plan-gated Offline mode switch: a toggle for eligible plans (3-day,
-/// weekly, monthly, trial), a locked row with an upgrade action otherwise.
+/// weekly, monthly), a locked row with an upgrade action otherwise.
 class OfflineModeRow extends ConsumerWidget {
   const OfflineModeRow({super.key});
 
