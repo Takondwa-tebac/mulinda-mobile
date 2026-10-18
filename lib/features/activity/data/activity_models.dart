@@ -40,17 +40,23 @@ class Account {
 }
 
 class Category {
-  const Category({required this.id, required this.name, required this.kind});
+  const Category({required this.id, required this.name, required this.kind, this.icon, this.color});
 
   final String id;
   final String name;
   final String kind; // expense | income
+
+  /// A Material icon name and a `#RRGGBB` colour from the server; either may be missing.
+  final String? icon;
+  final String? color;
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
       id: json['id'].toString(),
       name: json['name']?.toString() ?? '',
       kind: json['kind']?.toString() ?? 'expense',
+      icon: json['icon']?.toString(),
+      color: json['color']?.toString(),
     );
   }
 }

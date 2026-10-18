@@ -205,11 +205,26 @@ class AuthController extends Notifier<AuthState> {
   /// Permanently delete the account, then clear local session.
   Future<void> deleteAccount(String confirmation) async {
     await _repo.deleteAccount(confirmation);
+    await _forgetGoogleAccount();
     await PushService.instance.unregister();
     await _tokens.clear();
     await _repo.clearCachedUser();
     await _clearOfflineData();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  /// Forget the Google account on this phone, so the next Google sign-in asks
+  /// which account to use instead of silently picking the one that just left.
+  Future<void> _forgetGoogleAccount() async {
+    final google = GoogleSignIn(scopes: const ['email', 'profile']);
+    try {
+      await google.disconnect();
+    } catch (_) {
+      // Not signed in with Google, or already disconnected.
+    }
+    try {
+      await google.signOut();
+    } catch (_) {}
   }
 
   Future<void> signOut() async {
@@ -218,6 +233,7 @@ class AuthController extends Notifier<AuthState> {
     } catch (_) {
       // Even if the API call fails, clear locally.
     }
+    await _forgetGoogleAccount();
     await PushService.instance.unregister();
     await _tokens.clear();
     await _repo.clearCachedUser();

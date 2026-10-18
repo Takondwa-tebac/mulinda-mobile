@@ -132,10 +132,20 @@ class SmsAutoCapture {
     }
   }
 
-  /// Heuristic: does this SMS look like a money/transaction message? Mirrors the
-  /// filter used by the manual inbox import.
+  /// An amount of money: `MWK 5,000`, `MK5000`, `K 200.50` or `5,000 MWK`.
+  static final _amount = RegExp(
+    r'\b(?:mwk|mk|k)\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?(?:mwk|kwacha)\b',
+    caseSensitive: false,
+  );
+
+  /// Heuristic: does this SMS look like a money/transaction message? It needs an
+  /// amount of money as well as a money word, so telecom notices and promotions that
+  /// only say "balance" or "received" stay on the phone instead of being sent to the
+  /// server (where they would count against the free capture limit). The server
+  /// decides whether it is really a completed transaction.
   static bool isFinancialSms(String body) {
     final b = body.toLowerCase();
+    if (!_amount.hasMatch(b)) return false;
     const keywords = [
       'mwk', 'kwacha', 'airtel', 'mpamba', 'tnm', 'mo626',
       'received', 'sent', 'withdrawn', 'deposited', 'payment',

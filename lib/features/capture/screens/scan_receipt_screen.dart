@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/permissions/permission_service.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../auth/providers/auth_controller.dart';
@@ -47,8 +49,32 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
         Navigator.of(context).pop();
       }
     } on ApiException catch (e) {
-      _snack(e.displayMessage);
       if (mounted) setState(() => _loading = false);
+      if (e.code == 'ai_rate_limited') {
+        await _offerManualEntry();
+      } else {
+        _snack(e.displayMessage);
+      }
+    }
+  }
+
+  /// Scanning is paused (the AI service is busy): offer to add the expense by hand.
+  Future<void> _offerManualEntry() async {
+    if (!mounted) return;
+    final addNow = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text('receipt.busyTitle'.tr()),
+        content: Text('receipt.busyBody'.tr()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text('receipt.addByHand'.tr())),
+        ],
+      ),
+    );
+    if (addNow == true && mounted) {
+      Navigator.of(context).pop();
+      context.push(Routes.addTransaction);
     }
   }
 

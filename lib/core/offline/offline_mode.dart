@@ -22,7 +22,7 @@ class OfflineModeState {
   final bool clockWrong;
 
   /// The plan grants offline mode and it has not expired (3-day, weekly,
-  /// monthly or trial — never Day Pass).
+  /// or monthly, paid or gifted; not the free trial, never Day Pass).
   final bool eligible;
 
   /// The user's own choice (off by default, stored per account on this device).

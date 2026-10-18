@@ -34,9 +34,20 @@ class ChartHint {
   final Map<String, dynamic> params;
 }
 
+/// The assistant cannot answer right now because the AI service is rate limiting us.
+/// The chat waits [retryAfter] seconds before it accepts another message.
+class CoachBusyException implements Exception {
+  const CoachBusyException(this.retryAfter);
+
+  final int retryAfter;
+}
+
 class CoachChunk {
-  const CoachChunk({this.text, this.isDone = false, this.conversationId, this.chartHint});
+  const CoachChunk({this.text, this.isDone = false, this.conversationId, this.chartHint, this.busyRetryAfter});
   final String? text;
+
+  /// Set when the reply stopped because the AI service is busy: seconds to wait.
+  final int? busyRetryAfter;
   final bool isDone;
   final String? conversationId;
   final ChartHint? chartHint;
@@ -118,6 +129,10 @@ class CoachRepository {
         ),
       );
     } on DioException catch (e) {
+      // Turned away up front because the AI service is rate limiting us.
+      if (e.response?.statusCode == 429) {
+        throw CoachBusyException(_retryAfter(e.response?.headers.value('retry-after')));
+      }
       throw ApiException.fromDio(e);
     }
 
@@ -151,6 +166,12 @@ class CoachRepository {
     yield const CoachChunk(isDone: true);
   }
 
+  /// Seconds to wait, from a header or an event; a minute when it is missing.
+  static int _retryAfter(Object? value) {
+    final seconds = int.tryParse(value?.toString() ?? '');
+    return (seconds == null || seconds <= 0) ? 60 : seconds.clamp(5, 7200);
+  }
+
   /// Parse one SSE block (which may contain several `data:` lines) into chunks.
   List<CoachChunk> _parseBlock(String block) {
     final out = <CoachChunk>[];
@@ -178,6 +199,8 @@ class CoachRepository {
                 ),
               ));
             }
+          case 'rate_limited':
+            out.add(CoachChunk(busyRetryAfter: _retryAfter(parsed['retry_after'])));
           case 'done':
             out.add(CoachChunk(isDone: true, conversationId: parsed['conversation_id']?.toString()));
         }

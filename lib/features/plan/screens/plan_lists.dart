@@ -7,6 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
+import '../widgets/mse_logo.dart';
 import '../data/plan_repository.dart';
 import 'plan_forms.dart';
 
@@ -131,12 +132,8 @@ class BudgetsListScreen extends ConsumerWidget {
           ref.invalidate(budgetsProvider);
           await ref.read(budgetsProvider.future);
         },
-        tile: (b) => _PlanTile(
-          title: b.name,
-          pending: b.pending,
-          value: '${b.spent.formatted} / ${b.limit.formatted}',
-          progress: b.percentage / 100,
-          danger: b.isExceeded,
+        tile: (b) => _BudgetCard(
+          budget: b,
           onTap: () => context.push(Routes.budgetDetail, extra: b),
           onEdit: () => context.push(Routes.budgetForm, extra: b),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
@@ -175,6 +172,15 @@ class LoansListScreen extends ConsumerWidget {
   }
 }
 
+/// " · ▲ 2.5% today" for a share whose price moved since the last one entered.
+String _todayMove(InvestmentItem i) {
+  final trade = i.lastTrade;
+  if (trade == null || !trade.hasChange || trade.changePercent == null) return '';
+  final arrow = trade.isUp ? '▲' : (trade.isDown ? '▼' : '');
+  final pct = (trade.changePercent!.abs() * 100).toStringAsFixed(1);
+  return ' · $arrow $pct%';
+}
+
 class InvestmentsListScreen extends ConsumerWidget {
   const InvestmentsListScreen({super.key});
   @override
@@ -191,12 +197,14 @@ class InvestmentsListScreen extends ConsumerWidget {
         },
         tile: (i) => _PlanTile(
           title: i.name,
+          leading: i.type == 'shares' ? MseLogo(ticker: i.ticker, name: i.name, size: 36) : null,
           pending: i.pending,
           value: i.value.formatted,
           // Term investments show the interest earned so far (estimated by the
           // API from the rate and elapsed days); others show the plain gain.
           sub: '${'invest.type.${i.type}'.tr()} · '
-              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}',
+              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
+              '${_todayMove(i)}',
           subColor: i.gain.isNegative ? Colors.red : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
@@ -238,6 +246,190 @@ class ProjectsListScreen extends ConsumerWidget {
   }
 }
 
+/// A budget on the list: the name wraps instead of being squeezed, the figures sit
+/// on their own lines, and the state (on track, close, over) is a clear chip.
+class _BudgetCard extends StatelessWidget {
+  const _BudgetCard({required this.budget, required this.onTap, required this.onEdit, required this.onDelete});
+
+  final BudgetItem budget;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final b = budget;
+    final percent = b.percentage.clamp(0, 999).toDouble();
+    final alerting = !b.isExceeded && b.alertThreshold > 0 && b.percentage / 100 >= b.alertThreshold;
+    final color = b.isExceeded
+        ? scheme.error
+        : alerting
+            ? const Color(0xFFB26A00)
+            : scheme.primary;
+    final state = b.isExceeded
+        ? 'budgetSpend.overBudget'.tr()
+        : alerting
+            ? 'budgetSpend.almostThere'.tr()
+            : 'budgetSpend.onTrack'.tr();
+    final left = b.limit.minorUnits - b.spent.minorUnits;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 4, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.pie_chart_outline, color: color, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          b.name.isEmpty ? 'budgetSpend.budget'.tr() : b.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, height: 1.2),
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(state,
+                                  style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            ),
+                            Text(
+                              b.period == 'weekly' ? 'form.weekly'.tr() : 'form.monthly_period'.tr(),
+                              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                            ),
+                            if (b.pending)
+                              Icon(Icons.cloud_upload_outlined, size: 14, color: scheme.tertiary),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (action) {
+                      if (action == 'edit') onEdit();
+                      if (action == 'delete') onDelete();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(value: 'edit', child: Text('form.edit'.tr())),
+                      PopupMenuItem(value: 'delete', child: Text('form.delete'.tr())),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: (percent / 100).clamp(0.0, 1.0),
+                        minHeight: 8,
+                        backgroundColor: scheme.surfaceContainerHigh,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _BudgetFigure(label: 'detail.spent'.tr(), value: b.spent.formatted, color: color),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _BudgetFigure(
+                            label: 'detail.limit'.tr(),
+                            value: b.limit.formatted,
+                            color: scheme.onSurface,
+                            alignEnd: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      b.isExceeded
+                          ? 'budgetSpend.overBy'.tr(args: [_overBy(b, -left)])
+                          : 'budgetSpend.percentUsed'.tr(args: [percent.toStringAsFixed(0)]),
+                      style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// "MK 12,500" style text for an amount in minor units, borrowing the format of the limit.
+  static String _overBy(BudgetItem b, int minor) {
+    final amount = (minor / 100).toStringAsFixed(minor % 100 == 0 ? 0 : 2);
+    final withCommas = amount.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
+    final symbol = b.limit.formatted.replaceAll(RegExp(r'[\d,. ]'), '').trim();
+    return '$symbol $withCommas';
+  }
+}
+
+class _BudgetFigure extends StatelessWidget {
+  const _BudgetFigure({required this.label, required this.value, required this.color, this.alignEnd = false});
+
+  final String label;
+  final String value;
+  final Color color;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(value, maxLines: 1, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15)),
+        ),
+      ],
+    );
+  }
+}
+
 class _PlanTile extends StatelessWidget {
   const _PlanTile({
     required this.title,
@@ -247,13 +439,16 @@ class _PlanTile extends StatelessWidget {
     this.subLabel,
     this.subColor,
     this.progress,
-    this.danger = false,
     this.onTap,
     required this.onEdit,
     required this.onDelete,
     this.extra,
     this.pending = false,
+    this.leading,
   });
+
+  /// Shown before the title (a company logo).
+  final Widget? leading;
 
   final String title;
   final String value;
@@ -262,7 +457,6 @@ class _PlanTile extends StatelessWidget {
   final String? subLabel;
   final Color? subColor;
   final double? progress;
-  final bool danger;
   final VoidCallback? onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -289,6 +483,7 @@ class _PlanTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: 12)],
                   Expanded(
                     child: Text.rich(
                       TextSpan(children: [
@@ -311,25 +506,34 @@ class _PlanTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: danger ? scheme.error : scheme.primary,
-                        ),
-                      ),
-                      if (valueLabel != null)
-                        Text(
-                          valueLabel!,
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 11,
+                  // The amount shrinks to fit instead of squeezing a long name, and never
+                  // takes more than its share of the row.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            value,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: scheme.primary,
+                            ),
                           ),
-                        ),
-                    ],
+                          if (valueLabel != null)
+                            Text(
+                              valueLabel!,
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 11,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                   PopupMenuButton<String>(
                     padding: EdgeInsets.zero,
@@ -370,11 +574,16 @@ class _PlanTile extends StatelessWidget {
                             fontSize: 11,
                           ),
                         ),
-                      Text(
-                        sub!,
-                        style: TextStyle(
-                          color: subColor ?? scheme.onSurfaceVariant,
-                          fontSize: 13,
+                      // Wraps onto a second line (then ends in "...") instead of running off the card.
+                      Expanded(
+                        child: Text(
+                          sub!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: subColor ?? scheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -393,7 +602,7 @@ class _PlanTile extends StatelessWidget {
                             value: clampedProgress,
                             minHeight: 8,
                             backgroundColor: scheme.surfaceContainerHigh,
-                            color: danger ? scheme.error : scheme.primary,
+                            color: scheme.primary,
                           ),
                         ),
                       ),

@@ -420,6 +420,7 @@ class InvestmentAdapter extends EntityAdapter {
       // Interest accrued so far is worked out by the server once it syncs.
       'value_source': body['current_value'] == null ? 'invested' : 'recorded',
       'accrual': null,
+      'details': body['details'] ?? const {},
       'expected_annual_return': body['expected_annual_return'],
       'interest_period': body['interest_period'],
       'started_at': body['started_at'],
@@ -436,6 +437,9 @@ class InvestmentAdapter extends EntityAdapter {
     final next = {...record};
     for (final key in const ['name', 'type', 'status', 'expected_annual_return', 'interest_period', 'started_at', 'maturity_date', 'notes']) {
       if (body.containsKey(key)) next[key] = body[key];
+    }
+    if (body['details'] is Map) {
+      next['details'] = {...((record['details'] as Map?) ?? const {}), ...(body['details'] as Map)};
     }
     final currency = (record['currency'] ?? 'MWK').toString();
     if (body['amount_invested'] != null) next['amount_invested'] = moneyJson(_num(body['amount_invested']), currency);
