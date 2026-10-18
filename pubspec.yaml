@@ -1,7 +1,7 @@
 name: mulinda_mobile
 description: "Mulinda — AI personal financial assistant"
 publish_to: 'none'
-version: 1.1.1+5
+version: 1.1.2+6
 
 environment:
   sdk: ^3.10.8

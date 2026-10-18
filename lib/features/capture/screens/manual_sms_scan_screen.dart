@@ -6,6 +6,7 @@ import 'package:another_telephony/telephony.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/inbox_repository.dart';
+import '../data/sms_auto_capture.dart';
 
 class ManualSmsScanScreen extends ConsumerStatefulWidget {
   const ManualSmsScanScreen({super.key});
@@ -123,32 +124,8 @@ class _ManualSmsScanScreenState extends ConsumerState<ManualSmsScanScreen> {
     }
   }
 
-  bool _isFinancialSms(String body) {
-    final b = body.toLowerCase();
-    const keywords = [
-      'mwk',
-      'kwacha',
-      'airtel',
-      'mpamba',
-      'tnm',
-      'mo626',
-      'received',
-      'sent',
-      'withdrawn',
-      'deposited',
-      'payment',
-      'balance',
-      'transaction',
-      'national bank',
-      'standard bank',
-      'fdh',
-      'nbs',
-      'paid',
-      'debited',
-      'credited',
-    ];
-    return keywords.any(b.contains);
-  }
+  /// One shared rule for what looks like a money SMS (see [SmsAutoCapture.isFinancialSms]).
+  bool _isFinancialSms(String body) => SmsAutoCapture.isFinancialSms(body);
 
   Future<void> _importSelectedSms() async {
     final selectedSms = _filteredSms
