@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -74,7 +75,10 @@ class PushService {
     try {
       await ref
           .read(dioProvider)
-          .post('/v1/devices', data: {'token': token, 'platform': 'android'});
+          .post('/v1/devices', data: {
+        'token': token,
+        'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+      });
     } catch (_) {}
   }
 

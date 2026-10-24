@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/permissions/permission_service.dart';
 import '../../../core/router/routes.dart';
 import '../../capture/data/sms_auto_capture.dart';
+import '../../capture/data/sms_capability.dart';
 import '../onboarding_prefs.dart';
 
 /// Explains and requests the permissions Mulinda uses, with an emphasis on the
@@ -54,8 +55,9 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
   Future<void> _refresh() async {
     final camera = await _perms.cameraStatus();
     final notifications = await _perms.notificationsStatus();
-    final sms = await _perms.smsStatus();
-    final smsPref = await SmsAutoCapture.isEnabled();
+    final canSms = SmsCapability.canReadSms;
+    final sms = canSms ? await _perms.smsStatus() : PermState.denied;
+    final smsPref = canSms && await SmsAutoCapture.isEnabled();
     if (!mounted) return;
     setState(() {
       _camera = camera;
@@ -118,18 +120,19 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
             const SizedBox(height: 20),
 
             // SMS — the most sensitive, with full privacy explanation + toggle.
-            _PermissionCard(
-              icon: Icons.sms_outlined,
-              title: 'permissions.smsTitle'.tr(),
-              body: 'permissions.smsBody'.tr(),
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text('permissions.smsToggle'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                value: _smsOn,
-                onChanged: _smsBusy ? null : _toggleSms,
+            if (SmsCapability.canReadSms)
+              _PermissionCard(
+                icon: Icons.sms_outlined,
+                title: 'permissions.smsTitle'.tr(),
+                body: 'permissions.smsBody'.tr(),
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('permissions.smsToggle'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  value: _smsOn,
+                  onChanged: _smsBusy ? null : _toggleSms,
+                ),
               ),
-            ),
 
             _PermissionCard(
               icon: Icons.photo_camera_outlined,

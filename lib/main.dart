@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,7 +34,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // iOS reads its config from GoogleService-Info.plist (added in Xcode), so it
+    // needs no generated options; other platforms use firebase_options.dart.
+    await Firebase.initializeApp(
+      options: !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
+          ? null
+          : DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (_) {
     // Firebase not configured for this platform (e.g. desktop dev) — skip.
   }

@@ -10,6 +10,7 @@ import '../../activity/data/activity_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../subscription/widgets/paywall_sheet.dart';
 import '../data/inbox_repository.dart';
+import '../data/sms_capability.dart';
 import '../data/sms_manual_scanner.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
@@ -106,22 +107,24 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       appBar: AppBar(
         title: Text('inbox.title'.tr()),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => context.pushNamed(Routes.manualSmsScan),
-            tooltip: 'Manual SMS Scan',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              final result = await SmsManualScanner.instance.scanFinancialSms(manual: true);
-              if (mounted) {
-                _snack(result.message);
-                ref.invalidate(pendingSmsProvider);
-                ref.invalidate(pendingReceiptsProvider);
-              }
-            },
-          ),
+          if (SmsCapability.canReadSms) ...[
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => context.pushNamed(Routes.manualSmsScan),
+              tooltip: 'Manual SMS Scan',
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () async {
+                final result = await SmsManualScanner.instance.scanFinancialSms(manual: true);
+                if (mounted) {
+                  _snack(result.message);
+                  ref.invalidate(pendingSmsProvider);
+                  ref.invalidate(pendingReceiptsProvider);
+                }
+              },
+            ),
+          ],
         ],
       ),
       body: RefreshIndicator(

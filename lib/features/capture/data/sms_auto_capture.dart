@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/notifications/notification_service.dart';
 import 'sms_background_sync.dart';
+import 'sms_capability.dart';
 import 'sms_outbox.dart';
 
 /// Debug-only trace of the SMS-capture pipeline. Shows in `flutter run` and
@@ -50,6 +51,7 @@ class SmsAutoCapture {
 
   /// Start listening if the user has enabled the feature (called at launch).
   Future<void> maybeStart() async {
+    if (!SmsCapability.canReadSms) return;
     if (await isEnabled()) {
       await _startListening();
       await SmsBackgroundSync.startPeriodic();
@@ -59,6 +61,7 @@ class SmsAutoCapture {
   /// Request SMS permission, enable, and start listening. Returns false if the
   /// user denied permission.
   Future<bool> enableAndStart() async {
+    if (!SmsCapability.canReadSms) return false;
     final granted = await _telephony.requestPhoneAndSmsPermissions ?? false;
     if (!granted) return false;
     await _setEnabled(true);
