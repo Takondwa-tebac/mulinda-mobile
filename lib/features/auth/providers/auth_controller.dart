@@ -193,6 +193,7 @@ class AuthController extends Notifier<AuthState> {
     final user = await _repo.appleToken(
       identityToken: identityToken,
       nonce: rawNonce,
+      authorizationCode: credential.authorizationCode,
       firstName: credential.givenName,
       lastName: credential.familyName,
     );

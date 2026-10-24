@@ -88,12 +88,16 @@ class AuthRepository {
   Future<User> appleToken({
     required String identityToken,
     required String nonce,
+    String? authorizationCode,
     String? firstName,
     String? lastName,
   }) {
     return _authRequest('/v1/auth/apple/token', {
       'identity_token': identityToken,
       'nonce': nonce,
+      // Lets the server keep Apple's token so it can revoke it on account deletion.
+      if (authorizationCode != null && authorizationCode.isNotEmpty)
+        'authorization_code': authorizationCode,
       if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
       if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
     });
