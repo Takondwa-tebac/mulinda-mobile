@@ -46,6 +46,8 @@
     "confirmPassword": "Confirm password",
     "haveAccount": "Already have an account?",
     "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "appleUnavailable": "Sign in with Apple is not available right now.",
     "or": "or",
     "resetTitle": "Reset password",
     "resetSubtitle": "Enter your email and we'll send you a reset link.",
@@ -151,6 +153,9 @@
     "body": "Message text",
     "sender": "Sender (optional)",
     "submit": "Read message",
+    "copyHint": "Copy the mobile-money message from Messages, then paste it here.",
+    "pasteClipboard": "Paste from clipboard",
+    "clipboardEmpty": "Nothing to paste. Copy the message first.",
     "queued": "Got it - we're reading your message. It'll appear once you approve it."
   },
   "receipt": {

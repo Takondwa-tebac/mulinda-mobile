@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/push_service.dart';
@@ -159,6 +164,47 @@ class AuthController extends Notifier<AuthState> {
     _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);
     return true;
+  }
+
+  /// Native Sign in with Apple (iOS) → exchange the identity token for a Mulinda
+  /// token. The nonce ties the token to this attempt. Returns false if the
+  /// user cancelled.
+  Future<bool> signInWithApple() async {
+    final rawNonce = _randomNonce();
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return false;
+      rethrow;
+    }
+
+    final identityToken = credential.identityToken;
+    if (identityToken == null) {
+      throw ApiException('Could not obtain an Apple identity token.');
+    }
+
+    final user = await _repo.appleToken(
+      identityToken: identityToken,
+      nonce: rawNonce,
+      firstName: credential.givenName,
+      lastName: credential.familyName,
+    );
+    _markOnboardingSeen();
+    state = AuthState(status: AuthStatus.authenticated, user: user);
+    return true;
+  }
+
+  static String _randomNonce([int length = 32]) {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
   }
 
   /// Declare the user's income bracket (first-run setup) and refresh the user.

@@ -10,6 +10,7 @@ import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
 import '../activity/data/activity_repository.dart';
 import '../capture/data/inbox_repository.dart';
+import '../capture/data/sms_capability.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
@@ -157,11 +158,12 @@ class _AppShellState extends ConsumerState<AppShell> {
               label: 'capture.pasteSms'.tr(),
               onTap: () => _open(context, Routes.pasteSms),
             ),
-            _CaptureTile(
-              icon: Icons.upload_file,
-              label: 'Bulk SMS Import',
-              onTap: () => _open(context, Routes.bulkSmsImport),
-            ),
+            if (SmsCapability.canReadSms)
+              _CaptureTile(
+                icon: Icons.upload_file,
+                label: 'Bulk SMS Import',
+                onTap: () => _open(context, Routes.bulkSmsImport),
+              ),
             _CaptureTile(
               icon: Icons.edit_outlined,
               label: 'capture.manual'.tr(),

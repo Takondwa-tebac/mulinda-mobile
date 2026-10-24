@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 
@@ -9,6 +10,7 @@ import '../../activity/data/activity_repository.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../subscription/data/subscription_models.dart';
 import '../../subscription/widgets/premium_lock.dart';
+import '../data/sms_capability.dart';
 
 class PasteSmsScreen extends ConsumerStatefulWidget {
   const PasteSmsScreen({super.key});
@@ -34,12 +36,15 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
   Future<void> _importFromInbox() async {
     setState(() => _importLoading = true);
     try {
-      final granted =
-          await ref.read(permissionServiceProvider).requestSms();
+      final granted = await ref.read(permissionServiceProvider).requestSms();
       if (!granted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('SMS permission denied. Please enable it in Settings.')),
+            const SnackBar(
+              content: Text(
+                'SMS permission denied. Please enable it in Settings.',
+              ),
+            ),
           );
         }
         return;
@@ -72,7 +77,9 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
 
       if (financial.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No financial SMS messages found in your inbox.')),
+          const SnackBar(
+            content: Text('No financial SMS messages found in your inbox.'),
+          ),
         );
         return;
       }
@@ -92,14 +99,26 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
     }
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (!mounted) return;
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('sms.clipboardEmpty'.tr())));
+      return;
+    }
+    _body.text = text;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(activityRepositoryProvider).ingestSms(
-            _body.text.trim(),
-            sender: _sender.text.trim(),
-          );
+      await ref
+          .read(activityRepositoryProvider)
+          .ingestSms(_body.text.trim(), sender: _sender.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -138,18 +157,21 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
       appBar: AppBar(
         title: Text('sms.title'.tr()),
         actions: [
-          TextButton.icon(
-            onPressed: (_loading || _importLoading) ? null : _importFromInbox,
-            icon: _importLoading
-                ? SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: scheme.primary),
-                  )
-                : const Icon(Icons.inbox_outlined, size: 18),
-            label: const Text('Import'),
-          ),
+          if (SmsCapability.canReadSms)
+            TextButton.icon(
+              onPressed: (_loading || _importLoading) ? null : _importFromInbox,
+              icon: _importLoading
+                  ? SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.primary,
+                      ),
+                    )
+                  : const Icon(Icons.inbox_outlined, size: 18),
+              label: const Text('Import'),
+            ),
         ],
       ),
       body: SafeArea(
@@ -160,8 +182,26 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('sms.subtitle'.tr(),
-                    style: TextStyle(color: scheme.onSurfaceVariant)),
+                Text(
+                  'sms.subtitle'.tr(),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                if (!SmsCapability.canReadSms) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'sms.copyHint'.tr(),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _loading ? null : _pasteFromClipboard,
+                      icon: const Icon(Icons.content_paste, size: 18),
+                      label: Text('sms.pasteClipboard'.tr()),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _body,
@@ -170,8 +210,9 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
                     labelText: 'sms.body'.tr(),
                     alignLabelWithHint: true,
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'auth.required'.tr() : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'auth.required'.tr()
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -186,7 +227,9 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: scheme.onPrimary),
+                            strokeWidth: 2.5,
+                            color: scheme.onPrimary,
+                          ),
                         )
                       : Text('sms.submit'.tr()),
                 ),
@@ -224,8 +267,10 @@ class _SmsPickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Select a message',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Select a message',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           const Divider(height: 1),
           Expanded(
@@ -239,8 +284,11 @@ class _SmsPickerSheet extends StatelessWidget {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: scheme.primaryContainer,
-                    child: Icon(Icons.sms_outlined,
-                        color: scheme.onPrimaryContainer, size: 18),
+                    child: Icon(
+                      Icons.sms_outlined,
+                      color: scheme.onPrimaryContainer,
+                      size: 18,
+                    ),
                   ),
                   title: Text(
                     msg.sender ?? 'Unknown',
@@ -255,7 +303,9 @@ class _SmsPickerSheet extends StatelessWidget {
                       ? Text(
                           '${date.day}/${date.month}',
                           style: TextStyle(
-                              color: scheme.onSurfaceVariant, fontSize: 12),
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         )
                       : null,
                   onTap: () => Navigator.of(context).pop(msg),

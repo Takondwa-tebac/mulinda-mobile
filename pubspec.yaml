@@ -83,6 +83,8 @@ dependencies:
   connectivity_plus: ^7.3.1
   path: ^1.9.1
   sqlite3: ^3.5.2
+  sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

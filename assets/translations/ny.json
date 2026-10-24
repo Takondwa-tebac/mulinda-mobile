@@ -46,6 +46,8 @@
     "confirmPassword": "Tsimikizani achinsinsi",
     "haveAccount": "Muli kale ndi akaunti?",
     "continueWithGoogle": "Pitirizani ndi Google",
+    "continueWithApple": "Pitirizani ndi Apple",
+    "appleUnavailable": "Kulowa ndi Apple sikukupezeka pakali pano."
     "or": "kapena",
     "resetTitle": "Konzani achinsinsi",
     "resetSubtitle": "Lowetsani imelo yanu ndipo tikutumizirani ulalo wokonzanso.",
@@ -151,6 +153,9 @@
     "body": "Mawu a uthenga",
     "sender": "Wotumiza (sikofunika)",
     "submit": "Werengani uthenga",
+    "copyHint": "Koperani uthenga wa mobile money mu Messages, kenako muuike pano.",
+    "pasteClipboard": "Ikani kuchokera pa clipboard",
+    "clipboardEmpty": "Palibe choti muike. Koperani uthengawo choyamba.",
     "queued": "Talandira - tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
   },
   "receipt": {
