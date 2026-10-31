@@ -9,6 +9,18 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/receipt_ocr.dart';
+import '../data/receipt_parser.dart';
+
+const _parser = ReceiptParser();
+
+/// One-line summary of what the parser made of a receipt.
+String _describe(ReceiptDraft d) => [
+      d.kind.name,
+      d.amount?.toStringAsFixed(2) ?? 'no amount',
+      if (d.merchant != null) d.merchant!,
+      '${(d.confidence * 100).round()}%',
+      if (d.needsFallback) '→ AI fallback',
+    ].join(' · ');
 
 /// Debug-only tool: runs on-device OCR over sample receipt photos and shares
 /// the results as `<image>.ocr.json` files, which become the receipt parser's
@@ -142,7 +154,8 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
                       final r = _results[i];
                       return ListTile(
                         title: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        subtitle: Text('${r.document.lines.length} lines · ${r.millis} ms'),
+                        subtitle: Text('${r.document.lines.length} lines · ${r.millis} ms\n${_describe(_parser.parse(r.document))}'),
+                        isThreeLine: true,
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showText(r),
                       );
