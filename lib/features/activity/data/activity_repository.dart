@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
+import '../../capture/data/receipt_scanner.dart';
 import 'activity_models.dart';
 
 class ActivityRepository {
@@ -177,10 +180,24 @@ class ActivityRepository {
     }
   }
 
-  Future<void> scanReceipt(String filePath) async {
+  /// Uploads a receipt photo, with what the phone read from it when it could
+  /// (JSON strings, since the request is multipart).
+  Future<ReceiptScanResult> scanReceipt(
+    String filePath, {
+    String? clientId,
+    Map<String, dynamic>? draft,
+    List<Map<String, dynamic>>? ocrLines,
+  }) async {
     try {
-      final form = FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
-      await _dio.post('/v1/receipt-scans', data: form);
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+        'client_id': ?clientId,
+        if (draft != null) 'draft': jsonEncode(draft),
+        if (ocrLines != null) 'ocr_lines': jsonEncode(ocrLines),
+      });
+      final res = await _dio.post('/v1/receipt-scans', data: form);
+      final data = (res.data is Map ? res.data['data'] : null) as Map?;
+      return ReceiptScanResult.fromJson(data?.cast<String, dynamic>() ?? const {});
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }

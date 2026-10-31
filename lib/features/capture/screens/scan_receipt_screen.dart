@@ -7,13 +7,15 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/features/feature_flags.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/permissions/permission_service.dart';
-import '../../activity/data/activity_repository.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../subscription/data/subscription_models.dart';
 import '../../subscription/widgets/premium_lock.dart';
+import '../data/inbox_repository.dart';
+import '../data/receipt_scanner.dart';
 
 class ScanReceiptScreen extends ConsumerStatefulWidget {
   const ScanReceiptScreen({super.key});
@@ -44,10 +46,22 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     if (image == null) return;
     setState(() => _loading = true);
     try {
-      await ref.read(activityRepositoryProvider).scanReceipt(image.path);
-      if (mounted) {
-        _snack('receipt.queued'.tr());
-        Navigator.of(context).pop();
+      final onDevice = ref.read(featureEnabledProvider(FeatureKeys.receiptOnDevice));
+      final result = await ref.read(receiptScannerProvider).scan(image.path, onDevice: onDevice);
+      if (!mounted) return;
+      ref.invalidate(pendingReceiptsProvider);
+      switch (result.outcome) {
+        case ReceiptScanOutcome.ready:
+          _snack(result.duplicateTransactionId != null
+              ? 'receipt.readyDuplicate'.tr()
+              : 'receipt.ready'.tr());
+          context.pushReplacement(Routes.inbox);
+        case ReceiptScanOutcome.pending:
+          _snack('receipt.queued'.tr());
+          Navigator.of(context).pop();
+        case ReceiptScanOutcome.notReceipt:
+          setState(() => _loading = false);
+          _snack('receipt.notReceipt'.tr());
       }
     } on ApiException catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -103,10 +117,15 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    // AI receipt extraction is premium — gate the screen behind a subscription.
+    // Reading on the phone is free for everyone; without it (kill switch, older
+    // server) scanning falls back to the server's AI, which is premium.
+    final onDevice = ref.watch(featureEnabledProvider(FeatureKeys.receiptOnDevice));
     final entitled =
         ref.watch(currentUserProvider)?.can(Entitlements.receiptScan) ?? false;
-    if (!entitled) {
+    if (!onDevice && !entitled && ref.watch(featureFlagsProvider).isLoading) {
+      return Scaffold(appBar: _appBar(), body: const Center(child: CircularProgressIndicator()));
+    }
+    if (!onDevice && !entitled) {
       return Scaffold(
         appBar: _appBar(),
         body: PremiumLockView(
