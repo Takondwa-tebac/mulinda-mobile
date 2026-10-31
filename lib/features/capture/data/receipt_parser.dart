@@ -31,6 +31,7 @@ class ReceiptDraft {
     this.amount,
     this.fee,
     this.merchant,
+    this.payee,
     this.reference,
     this.occurredAt,
     this.currency = 'MWK',
@@ -43,7 +44,11 @@ class ReceiptDraft {
   final double? amount;
   final double? fee;
   final String currency;
+  /// The shop, or the bank / operator for app transfer receipts.
   final String? merchant;
+
+  /// Who a bank or mobile-money transfer was sent to, when shown.
+  final String? payee;
   final String? reference;
   final DateTime? occurredAt;
 
@@ -62,6 +67,7 @@ class ReceiptDraft {
         'fee': fee,
         'currency': currency,
         'merchant': merchant,
+        'payee': payee,
         'reference': reference,
         'occurred_at': occurredAt?.toIso8601String(),
         'line_items': const <Map<String, dynamic>>[],
@@ -163,10 +169,14 @@ class ReceiptParser {
         .replaceAll(' ', '');
     final occurredAt = _date(doc, RegExp(r'^(On|Date and time|Date|Date & Time)\b\s*:?', caseSensitive: false));
 
+    // The merchant is the bank or operator whose receipt this is; who the
+    // money went to is kept as the payee (unless it is the sender's own
+    // account, as on a bundle purchase).
     final issuer = _named(doc);
-    var merchant = _payee(doc);
+    var payee = _payee(doc);
     final self = doc.valueFor(RegExp(r'^Account name\b', caseSensitive: false), (_) => true)?.value;
-    if (merchant == null || (self != null && squash(merchant) == squash(self))) merchant = issuer;
+    if (payee != null && self != null && squash(payee) == squash(self)) payee = null;
+    final merchant = issuer ?? payee;
 
     var confidence = 0.0;
     if (amount != null) confidence += 0.6;
@@ -178,6 +188,7 @@ class ReceiptParser {
       amount: amount,
       fee: fee,
       merchant: merchant,
+      payee: payee,
       reference: reference,
       occurredAt: occurredAt,
       confidence: confidence,

@@ -21,6 +21,7 @@ const _minimumAccuracy = {
   'amount': 0.95,
   'fee': 0.95,
   'merchant': 0.90,
+  'payee': 0.90,
   'reference': 0.90,
   'date': 0.95,
   'fallback': 0.95,
@@ -81,6 +82,10 @@ void main() {
     if (expected['merchant'] != null) {
       scores['merchant']!.check(id, expected['merchant'], draft.merchant,
           draft.merchant != null && squash(draft.merchant!) == squash(expected['merchant'] as String));
+    }
+    if (expected['payee'] != null) {
+      scores['payee']!.check(id, expected['payee'], draft.payee,
+          draft.payee != null && squash(draft.payee!) == squash(expected['payee'] as String));
     }
     if (expected['reference'] != null) {
       scores['reference']!.check(id, expected['reference'], draft.reference,
