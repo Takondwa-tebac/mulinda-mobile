@@ -76,6 +76,29 @@ and App Review rejects unused permission code.
   `sms.clipboardEmpty`, `auth.continueWithApple`, `auth.appleUnavailable`)
   should be reviewed by a Chichewa speaker.
 
+## Receipt parser feedback loop
+
+Receipts are read on the phone (ML Kit + `lib/features/capture/data/receipt_parser.dart`).
+Its accuracy is measured on redacted fixtures in `test/fixtures/receipts`. To grow them
+from real, user-approved scans:
+
+1. On the server, export scans read on the phone:
+
+   ```bash
+   sudo -u tk265 php artisan app:export-receipt-scans limitrova@gmail.com --sync --with-ocr --since=2026-11-01
+   ```
+
+2. Unzip each emailed part into its own folder under `../receipt-samples/` (never commit raw exports: they hold names and account numbers).
+3. Import them as fixtures. Names to hide go in `redact-names.txt`, one per line:
+
+   ```bash
+   dart run tool/import_receipt_export.dart --names ../receipt-samples/redact-names.txt ../receipt-samples/export-part-1
+   ```
+
+4. Check the new `scan_*` entries in `answers.json` against the photos, then set `verified: true`.
+5. Run `flutter test test/receipt_parser_fixtures_test.dart`. The misses it prints are what to tune.
+   Bump `ReceiptParser.version` when the rules change, so the admin analytics compare versions.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
