@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,6 +79,19 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     }
   }
 
+  /// Debug builds get a shortcut to the OCR fixture tool.
+  AppBar _appBar() => AppBar(
+        title: Text('receipt.title'.tr()),
+        actions: [
+          if (kDebugMode)
+            IconButton(
+              tooltip: 'Receipt OCR (debug)',
+              onPressed: () => context.push(Routes.receiptOcrDebug),
+              icon: const Icon(Icons.bug_report_outlined),
+            ),
+        ],
+      );
+
   void _snack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -94,7 +108,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
         ref.watch(currentUserProvider)?.can(Entitlements.receiptScan) ?? false;
     if (!entitled) {
       return Scaffold(
-        appBar: AppBar(title: Text('receipt.title'.tr())),
+        appBar: _appBar(),
         body: PremiumLockView(
           title: 'capture.lockedTitle'.tr(),
           message: 'capture.lockedReceipt'.tr(),
@@ -104,7 +118,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('receipt.title'.tr())),
+      appBar: _appBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
