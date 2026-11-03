@@ -128,4 +128,91 @@ void main() {
       expect(payload['parser_version'], ReceiptParser.version);
     });
   });
+
+  group('ReceiptParser v2 (photos of paper slips)', () {
+    final parser = ReceiptParser(now: DateTime(2026, 10, 31));
+
+    test('reads a card machine slip: the shop under the bank logo and its amount', () {
+      final draft = parser.parse(_doc([
+        ('Standard Bank', null),
+        ('BUYMORE', null),
+        ('PURCHASE', 'Date 02/06/2026'),
+        ('Amount: MWK 22,600.00', null),
+        ('Approved', null),
+        ('CUSTOMER COPY', null),
+      ]));
+
+      expect(draft.kind, ReceiptKind.cardSlip);
+      expect(draft.amount, 22600);
+      expect(draft.merchant, 'Buy More');
+      expect(draft.needsFallback, isFalse);
+    });
+
+    test('a declined card slip is not a payment', () {
+      final draft = parser.parse(_doc([
+        ('Standard Bank', null),
+        ('BUYMORE', null),
+        ('Amount: MWK 22,600.00', null),
+        ('Declined', null),
+        ('51- DO NOT HONOR', null),
+      ]));
+
+      expect(draft.kind, ReceiptKind.notPayment);
+      expect(draft.isReceipt, isFalse);
+    });
+
+    test('a total nothing confirms is not trusted, however it was labelled', () {
+      final draft = parser.parse(_doc([
+        ('*** START OF LEGAL RECEIPT ***', null),
+        ('TOTAL', '4,000.08'),
+        ('DATE 2026-06-18', null),
+      ]));
+
+      expect(draft.amount, 4000.08);
+      expect(draft.needsFallback, isTrue);
+    });
+
+    test('a missed TOTAL line is recovered from the VAT and the taxable amount', () {
+      // The TOTAL value was not read; 30,638.30 + 5,361.70 = 36,000.00 and
+      // 36,000 x 0.175 / 1.175 = 5,361.70 confirm the item line.
+      final draft = parser.parse(_doc([
+        ('*** START OF LEGAL RECEIPT ***', null),
+        ('GOODS 1 X 36.000.00', null),
+        ('TAXABLE A-17.5%', '30,638.30'),
+        ('VAT A-17.5%', '5,361.70'),
+        ('TOTAL', null),
+        ('CHANGE', '4,000.08'),
+      ]));
+
+      expect(draft.amount, 36000);
+    });
+
+    test('a VAT-rated item is not taken for the total', () {
+      final draft = parser.parse(_doc([
+        ('*** START OF LEGAL RECEIPT ***', null),
+        ('FRIED VEGETABLES', '291.60'),
+        ('RICE', '1,932.00'),
+        ('Sales VAT A', '43.43'),
+        ('Sub Total', '248.17'),
+        ('Tendered', '5,000.00'),
+        ('Cash Balance', '2,776.40'),
+        ('CASH', '2,223.60'),
+      ]));
+
+      expect(draft.amount, 2223.60);
+    });
+
+    test('0.00 lines confirm nothing and are never the total', () {
+      final draft = parser.parse(_doc([
+        ('*** START OF LEGAL RECEIPT ***', null),
+        ('ITEM', '8,650.00A'),
+        ('VAT B-0%:', '0.00'),
+        ('TOTAL:', '0.00'),
+        ('DATE: 2026-09-04', null),
+      ]));
+
+      expect(draft.amount, isNot(0));
+      expect(draft.needsFallback, isTrue);
+    });
+  });
 }
