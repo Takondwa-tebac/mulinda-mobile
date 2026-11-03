@@ -1030,15 +1030,15 @@
     "kind": "till_receipt",
     "is_receipt": true,
     "expect_fallback": true,
-    "type": "expense",
+    "type": "income",
     "amount": 909500.0,
     "fee": 0.0,
     "currency": "MWK",
-    "merchant": "Limitrova Systems",
+    "merchant": "Radio Entertainment Limited",
     "reference": "019",
     "date": "2026-08-25",
     "verified": false,
-    "note": "Handwritten receipt-book slip (No. 019) received from Radio Entertainment Limited for promotion materials, paid cash; the MWK 909,500.00 box and the date are handwritten and absent/garbled in OCR (date read as '9s/0s2o'); amount also written in words.",
+    "note": "Handwritten Limitrova Systems receipt-book slip (No. 019): income to Limitrova, paid in cash by Radio Entertainment Limited (the merchant here is who paid). Amount and date are handwritten and absent/garbled in OCR (date read as '9s/0s2o'). Type confirmed by the user.",
     "source": "receipt_20261103_095929_20"
   },
   "photo_21": {
