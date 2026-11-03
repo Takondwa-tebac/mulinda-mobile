@@ -47,7 +47,7 @@
     "haveAccount": "Muli kale ndi akaunti?",
     "continueWithGoogle": "Pitirizani ndi Google",
     "continueWithApple": "Pitirizani ndi Apple",
-    "appleUnavailable": "Kulowa ndi Apple sikukupezeka pakali pano."
+    "appleUnavailable": "Kulowa ndi Apple sikukupezeka pakali pano.",
     "or": "kapena",
     "resetTitle": "Konzani achinsinsi",
     "resetSubtitle": "Lowetsani imelo yanu ndipo tikutumizirani ulalo wokonzanso.",
@@ -103,7 +103,13 @@
     "rejected": "Zachotsedwa",
     "processing": "Tikuwerengabe…",
     "loadError": "Sitinathe kutsegula zoyembekezera.",
-    "retry": "Yesaninso"
+    "retry": "Yesaninso",
+    "merchant": "Wogulitsa",
+    "amount": "Ndalama",
+    "payee": "Analipidwa",
+    "fee": "Chindapusa",
+    "amountRequired": "Lembani ndalama zomwe zili pa risiti.",
+    "possibleDuplicate": "Mwina muli nazo kale zochitikazi: zina zosungidwa zili ndi nambala yofanana."
   },
   "addTxn": {
     "title": "Onjezani zochitika",
@@ -168,7 +174,10 @@
     "chooseImage": "Sankhani mu gallery",
     "submit": "Jambulani risiti",
     "queued": "Talandira - tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
-    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule."
+    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule.",
+    "ready": "Risiti yawerengedwa. Onani zomwe zili mmenemo ndipo muvomereze.",
+    "readyDuplicate": "Risiti yawerengedwa, koma ikuoneka ngati imene munalemba kale. Onani musanavomereze.",
+    "notReceipt": "Izi sizikuoneka ngati risiti ya malipiro, choncho palibe chomwe chawonjezedwa."
   },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",

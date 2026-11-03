@@ -103,7 +103,13 @@
     "rejected": "Dismissed",
     "processing": "Still reading…",
     "loadError": "Couldn't load pending items.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "merchant": "Merchant",
+    "amount": "Amount",
+    "payee": "Paid to",
+    "fee": "Fee",
+    "amountRequired": "Enter the amount on the receipt.",
+    "possibleDuplicate": "You may already have this transaction: a saved one has the same reference."
   },
   "addTxn": {
     "title": "Add transaction",
@@ -168,7 +174,10 @@
     "chooseImage": "Choose from gallery",
     "submit": "Scan receipt",
     "queued": "Got it - we're reading your receipt. It'll appear once you approve it.",
-    "cameraDenied": "Camera access is needed to take a photo."
+    "cameraDenied": "Camera access is needed to take a photo.",
+    "ready": "Receipt read. Check the details and approve it.",
+    "readyDuplicate": "Receipt read, but it looks like one you already recorded. Check before approving.",
+    "notReceipt": "This doesn't look like a payment receipt, so nothing was added."
   },
   "income": {
     "title": "What's your monthly income?",
