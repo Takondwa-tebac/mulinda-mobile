@@ -23,9 +23,10 @@ String _describe(ReceiptDraft d) => [
     ].join(' · ');
 
 /// Debug-only tool: runs on-device OCR over sample receipt photos and shares
-/// the results as `<image>.ocr.json` files, which become the receipt parser's
-/// test fixtures. Only routed in debug builds, so its strings are not
-/// localised.
+/// each one as a matching pair, `receipt_<time>_<n>.jpg` (the photo exactly
+/// as the parser saw it) and `receipt_<time>_<n>.ocr.json`, which become the
+/// receipt parser's test fixtures. Only routed in debug builds, so its
+/// strings are not localised.
 class ReceiptOcrDebugScreen extends ConsumerStatefulWidget {
   const ReceiptOcrDebugScreen({super.key});
 
@@ -34,9 +35,11 @@ class ReceiptOcrDebugScreen extends ConsumerStatefulWidget {
 }
 
 class _OcrResult {
-  const _OcrResult(this.name, this.file, this.document, this.millis);
+  const _OcrResult(this.name, this.image, this.file, this.document, this.millis);
 
+  /// The pair's shared name, without extension.
   final String name;
+  final File image;
   final File file;
   final OcrDocument document;
   final int millis;
@@ -63,17 +66,28 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
     final outDir = Directory(p.join((await getTemporaryDirectory()).path, 'receipt-ocr'));
     await outDir.create(recursive: true);
 
+    // The picker's own file names (scaled_1000785244.jpg) don't match the
+    // gallery, so each photo and its OCR share a name of our own instead.
+    final batch = _timestamp(DateTime.now());
+
     try {
-      for (final image in images) {
+      for (final (i, image) in images.indexed) {
+        final name = 'receipt_${batch}_${(i + 1).toString().padLeft(2, '0')}';
+        final ext = p.extension(image.name).isEmpty ? '.jpg' : p.extension(image.name).toLowerCase();
+        final photo = await File(image.path).copy(p.join(outDir.path, '$name$ext'));
+
         final watch = Stopwatch()..start();
-        final doc = await ocr.read(image.path, source: image.name);
+        final doc = await ocr.read(photo.path, source: '$name$ext');
         watch.stop();
 
-        final file = File(p.join(outDir.path, '${p.basenameWithoutExtension(image.name)}.ocr.json'));
-        await file.writeAsString(const JsonEncoder.withIndent('  ').convert(doc.toJson()));
+        // The parser's reading rides along to pre-fill the expected answers;
+        // the fixture tool keeps only the OCR lines.
+        final file = File(p.join(outDir.path, '$name.ocr.json'));
+        await file.writeAsString(const JsonEncoder.withIndent('  ')
+            .convert({...doc.toJson(), 'draft': _parser.parse(doc).toPayload()}));
 
         if (!mounted) return;
-        setState(() => _results.insert(0, _OcrResult(image.name, file, doc, watch.elapsedMilliseconds)));
+        setState(() => _results.insert(0, _OcrResult(name, photo, file, doc, watch.elapsedMilliseconds)));
       }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
@@ -82,11 +96,21 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
     }
   }
 
+  static String _timestamp(DateTime t) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${t.year}${two(t.month)}${two(t.day)}_${two(t.hour)}${two(t.minute)}${two(t.second)}';
+  }
+
   Future<void> _shareAll() async {
     if (_results.isEmpty) return;
     await Share.shareXFiles(
-      [for (final r in _results) XFile(r.file.path, mimeType: 'application/json')],
-      text: 'Receipt OCR fixtures (${_results.length})',
+      [
+        for (final r in _results.reversed) ...[
+          XFile(r.image.path),
+          XFile(r.file.path, mimeType: 'application/json'),
+        ],
+      ],
+      text: 'Receipt OCR fixtures (${_results.length} photos + JSON)',
     );
   }
 
@@ -116,7 +140,7 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
         title: const Text('Receipt OCR (debug)'),
         actions: [
           IconButton(
-            tooltip: 'Share JSON',
+            tooltip: 'Share photos + JSON',
             onPressed: _results.isEmpty || _running ? null : _shareAll,
             icon: const Icon(Icons.share_outlined),
           ),
@@ -142,7 +166,8 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32),
                       child: Text(
-                        'Pick receipt photos to read them on the device, then share the JSON files.',
+                        'Pick receipt photos to read them on the device, then share them: '
+                        'each photo comes with a matching .ocr.json.',
                         textAlign: TextAlign.center,
                       ),
                     ),
