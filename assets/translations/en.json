@@ -177,7 +177,12 @@
     "cameraDenied": "Camera access is needed to take a photo.",
     "ready": "Receipt read. Check the details and approve it.",
     "readyDuplicate": "Receipt read, but it looks like one you already recorded. Check before approving.",
-    "notReceipt": "This doesn't look like a payment receipt, so nothing was added."
+    "notReceipt": "This doesn't look like a payment receipt, so nothing was added.",
+    "tip": "Lay the receipt flat in good light and let it fill the frame. The scanner finds the edges for you.",
+    "crop": "Crop",
+    "retake": "Retake",
+    "cropTitle": "Crop the receipt",
+    "captureFailed": "Couldn't get the photo. Please try again."
   },
   "income": {
     "title": "What's your monthly income?",

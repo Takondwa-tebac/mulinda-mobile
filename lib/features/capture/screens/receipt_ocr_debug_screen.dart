@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../data/receipt_capture.dart';
 import '../data/receipt_ocr.dart';
 import '../data/receipt_parser.dart';
 
@@ -56,7 +57,21 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
     // parser will see in production.
     final images = await _picker.pickMultiImage(imageQuality: 80);
     if (images.isEmpty) return;
+    await _read([for (final i in images) i.path], prefix: 'receipt');
+  }
 
+  /// One receipt through the document scanner, exactly as the scan screen
+  /// takes it (cropped and straightened), named `scan_<time>_01`.
+  Future<void> _scanAndRead() async {
+    try {
+      final path = await ReceiptCapture(ref.read(receiptCaptureDeviceProvider)).fromCamera();
+      if (path != null) await _read([path], prefix: 'scan');
+    } catch (e) {
+      if (mounted) setState(() => _error = '$e');
+    }
+  }
+
+  Future<void> _read(List<String> images, {required String prefix}) async {
     setState(() {
       _running = true;
       _error = null;
@@ -72,9 +87,9 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
 
     try {
       for (final (i, image) in images.indexed) {
-        final name = 'receipt_${batch}_${(i + 1).toString().padLeft(2, '0')}';
-        final ext = p.extension(image.name).isEmpty ? '.jpg' : p.extension(image.name).toLowerCase();
-        final photo = await File(image.path).copy(p.join(outDir.path, '$name$ext'));
+        final name = '${prefix}_${batch}_${(i + 1).toString().padLeft(2, '0')}';
+        final ext = p.extension(image).isEmpty ? '.jpg' : p.extension(image).toLowerCase();
+        final photo = await File(image).copy(p.join(outDir.path, '$name$ext'));
 
         final watch = Stopwatch()..start();
         final doc = await ocr.read(photo.path, source: '$name$ext');
@@ -139,6 +154,11 @@ class _ReceiptOcrDebugScreenState extends ConsumerState<ReceiptOcrDebugScreen> {
       appBar: AppBar(
         title: const Text('Receipt OCR (debug)'),
         actions: [
+          IconButton(
+            tooltip: 'Scan with camera',
+            onPressed: _running ? null : _scanAndRead,
+            icon: const Icon(Icons.document_scanner_outlined),
+          ),
           IconButton(
             tooltip: 'Share photos + JSON',
             onPressed: _results.isEmpty || _running ? null : _shareAll,

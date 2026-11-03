@@ -86,6 +86,8 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   crypto: ^3.0.7
   google_mlkit_text_recognition: ^0.17.1
+  cunning_document_scanner: ^3.0.4
+  image_cropper: ^13.0.0
 
 dev_dependencies:
   flutter_test:
