@@ -1,4 +1,60 @@
 {
+  "paywall": {
+    "title": "Mulinda Premium",
+    "seePlans": "See passes",
+    "choosePass": "Choose a pass",
+    "noAutoRenew": "No auto-renew: you pay once per pass, and premium simply ends when the pass does. Your records and the free features stay yours.",
+    "trialNote": "Your free trial is on, with about {hours} h left. Choose a pass only if you want premium after it ends.",
+    "headline": {
+      "coachChat": "Ask the coach anything about your money",
+      "coachHistory": "Pick up past coach conversations where you left off",
+      "insights": "See where your money is heading with advanced insights and forecasts",
+      "aiCapture": "Let AI read receipts and any SMS into transactions for you",
+      "offline": "Keep using Mulinda with no connection",
+      "smsCapture": "Capture every mobile-money SMS, with no limit",
+      "default": "More help with your money, when you want it"
+    },
+    "compare": {
+      "free": "Free",
+      "premium": "Premium",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "manual": "Manual entry",
+      "balances": "Account balances",
+      "budgetsGoals": "Budgets & goals",
+      "smsCapture": "SMS capture",
+      "smsFree": "{limit} free",
+      "unlimited": "Unlimited",
+      "coach": "AI coach",
+      "insights": "Advanced insights",
+      "aiReading": "AI receipt & SMS reading",
+      "offline": "Offline mode",
+      "offlineNote": "3-day pass & longer",
+      "exports": "Records export",
+      "exportsFree": "Small fee each",
+      "exportsPremium": "Free on paid passes"
+    },
+    "plan": {
+      "oneDay": "1 day",
+      "days": "{days} days",
+      "perDay": "{price}/day",
+      "total": "total",
+      "lowestPerDay": "Lowest price per day",
+      "includesOffline": "Includes offline mode"
+    },
+    "checkout": {
+      "title": "Secure payment",
+      "paid": "Premium is on. Enjoy!",
+      "pending": "We're still confirming your payment. If money left your account, your pass switches on by itself and we'll let you know.",
+      "failed": "The payment didn't go through, so nothing was activated. You can try again.",
+      "cancelled": "Checkout closed. Nothing was activated; you can choose a pass any time.",
+      "retry": "Try again",
+      "leaveTitle": "Leave payment?",
+      "leaveBody": "If you've already approved the payment on your phone, stay a moment so we can confirm it.",
+      "stay": "Stay",
+      "leave": "Leave"
+    }
+  },
   "app": {
     "name": "Mulinda",
     "tagline": "Your money, coached."
@@ -11,6 +67,10 @@
     "back": "Back"
   },
   "onboarding": {
+    "trial": {
+      "title": "Try premium free for 24 hours",
+      "body": "Your account starts with a 24-hour free trial of premium: the AI coach, advanced insights, AI reading of receipts and SMS, and unlimited SMS capture. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
+    },
     "chooseLanguage": "Choose your language",
     "skip": "Skip",
     "next": "Next",
@@ -445,6 +505,22 @@
     "moneySecurity": "Money & security"
   },
   "subscription": {
+    "tile": {
+      "free": "Free plan · core tracking is free",
+      "freeSms": "Free plan · {remaining} of {limit} free SMS captures left",
+      "trialEnds": "Free trial · about {hours} h left",
+      "activeUntil": "{plan} · active until {date}"
+    },
+    "trialBanner": {
+      "title": "Free trial: about {hours} h left",
+      "body": "Premium features are on. Your records stay free after it ends."
+    },
+    "sms": {
+      "remaining": "{remaining} of {limit} free SMS captures left",
+      "freeIntro": "Your free plan includes {limit} SMS captures",
+      "usedUp": "You've used your free SMS captures. You can still add transactions by hand for free, or choose a pass for unlimited capture.",
+      "howItWorks": "Messages from known banks and mobile money are read for free. Others wait in your inbox for you to fill in."
+    },
     "title": "Subscription",
     "active": "Active",
     "free": "Free plan",
