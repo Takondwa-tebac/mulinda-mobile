@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/capture/data/receipt_ocr.dart';
 import 'package:mulinda_mobile/features/capture/data/receipt_parser.dart';
 import 'package:mulinda_mobile/features/capture/data/receipt_scanner.dart';
@@ -30,27 +28,18 @@ class _BrokenParser extends ReceiptParser {
   ReceiptDraft parse(OcrDocument doc) => throw StateError('parser bug');
 }
 
-/// Records the upload instead of sending it.
-class _RecordingRepository extends ActivityRepository {
-  _RecordingRepository() : super(Dio());
-
-  String? clientId;
-  Map<String, dynamic>? draft;
-  List<Map<String, dynamic>>? ocrLines;
-  int uploads = 0;
+/// A parser that never returns: the isolate must be killed, not left running.
+class _HangingParser extends ReceiptParser {
+  const _HangingParser();
 
   @override
-  Future<ReceiptScanResult> scanReceipt(
-    String filePath, {
-    String? clientId,
-    Map<String, dynamic>? draft,
-    List<Map<String, dynamic>>? ocrLines,
-  }) async {
-    uploads++;
-    this.clientId = clientId;
-    this.draft = draft;
-    this.ocrLines = ocrLines;
-    return const ReceiptScanResult(outcome: ReceiptScanOutcome.ready);
+  ReceiptDraft parse(OcrDocument doc) {
+    var spins = 0;
+    while (true) {
+      spins++;
+      if (spins < 0) break;
+    }
+    return const ReceiptDraft(kind: ReceiptKind.unknown, confidence: 0);
   }
 }
 
@@ -61,90 +50,73 @@ OcrDocument _fixture(String id) => OcrDocument.fromJson(
 void main() {
   final parser = ReceiptParser(now: DateTime(2026, 10, 31));
 
-  test('uploads the photo with the draft and OCR lines read on the phone', () async {
-    final repo = _RecordingRepository();
-    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
+  test('reads a receipt on the phone: the draft, the upload-ready lines and the timings', () async {
+    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
+    final reading = await scanner.read('receipt.jpg');
 
-    expect(repo.draft, isNotNull);
-    expect(repo.draft!['parser'], 'device');
-    expect(repo.draft!['parser_version'], ReceiptParser.version);
-    expect(repo.draft!['merchant'], 'National Bank of Malawi');
-    expect(repo.ocrLines, isNotEmpty);
-    expect(repo.ocrLines!.first.keys, containsAll(['text', 'box', 'block']));
-    expect(repo.clientId, 'client-1');
+    expect(reading, isNotNull);
+    expect(reading!.draft.merchant, 'National Bank of Malawi');
+    expect(reading.draft.toPayload()['parser_version'], ReceiptParser.version);
+    expect(reading.ocrLines.first.keys, containsAll(['text', 'box', 'block']));
+    expect(reading.ocrMs, isNotNull);
+    expect(reading.parseMs, isNotNull);
   });
 
-  test('the kill switch skips the phone and uploads the photo alone', () async {
-    final repo = _RecordingRepository();
-    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
+  test('the background isolate reads exactly what the main isolate would', () async {
+    final document = _fixture('efd_chipiku');
+    final scanner = ReceiptScanner(ocr: _FakeOcr(document), parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: false, clientId: 'client-1');
+    final reading = await scanner.read('receipt.jpg');
 
-    expect(repo.uploads, 1);
-    expect(repo.draft, isNull);
-    expect(repo.ocrLines, isNull);
+    expect(reading!.draft.toPayload(), parser.parse(document).toPayload());
+    expect(reading.ocrLines, DeviceReading.linesFor(document));
   });
 
-  test('a parser crash in the background isolate falls back to the photo alone, not an app crash', () async {
-    final repo = _RecordingRepository();
-    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: const _BrokenParser());
+  test('a failing OCR gives no reading, so the photo is uploaded alone', () async {
+    final scanner = ReceiptScanner(ocr: _FakeOcr(null), parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
-
-    expect(repo.uploads, 1);
-    expect(repo.draft, isNull);
-    expect(repo.ocrLines, isNull);
+    expect(await scanner.read('receipt.jpg'), isNull);
   });
 
-  test('a failing OCR falls back to uploading the photo alone', () async {
-    final repo = _RecordingRepository();
-    final scanner = ReceiptScanner(ocr: _FakeOcr(null), repository: repo, parser: parser);
+  test('a parser crash in the background isolate gives no reading, not an app crash', () async {
+    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), parser: const _BrokenParser());
 
-    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
-
-    expect(repo.uploads, 1);
-    expect(repo.draft, isNull);
+    expect(await scanner.read('receipt.jpg'), isNull);
   });
 
-  test('OCR lines are capped to what the server accepts', () {
-    final long = OcrLine(text: 'x' * 600, left: 0, top: 0, right: 1, bottom: 1, block: 0);
-    final reading = DeviceReading(
-      document: OcrDocument(lines: List.filled(1200, long)),
-      draft: parser.parse(const OcrDocument(lines: [])),
+  test('a parse that never ends is killed at the timeout', () async {
+    // Were the isolate left spinning, this test run would never finish.
+    final scanner = ReceiptScanner(
+      ocr: _FakeOcr(_fixture('nbm_payment_01')),
+      parser: const _HangingParser(),
+      parseTimeout: const Duration(milliseconds: 300),
     );
 
-    expect(reading.ocrLines, hasLength(1000));
-    expect(reading.ocrLines.first['text'], hasLength(500));
+    final watch = Stopwatch()..start();
+    expect(await scanner.read('receipt.jpg'), isNull);
+    expect(watch.elapsed, lessThan(const Duration(seconds: 5)));
+  });
+
+  test('only the first 1000 OCR lines are parsed and uploaded', () async {
+    const line = OcrLine(text: 'x', left: 0, top: 0, right: 1, bottom: 1, block: 0);
+    final scanner = ReceiptScanner(ocr: _FakeOcr(OcrDocument(lines: List.filled(1500, line))), parser: parser);
+
+    final reading = await scanner.read('receipt.jpg');
+
+    expect(reading!.document.lines, hasLength(DeviceReading.maxLines));
+    expect(reading.ocrLines, hasLength(DeviceReading.maxLines));
+  });
+
+  test('uploaded OCR lines are capped to 500 characters', () {
+    final long = OcrLine(text: 'x' * 600, left: 0, top: 0, right: 1, bottom: 1, block: 0);
+
+    expect(DeviceReading.linesFor(OcrDocument(lines: [long])).single['text'], hasLength(500));
   });
 
   test('client ids are unique per image', () {
     expect(ReceiptScanner.newClientId(), hasLength(32));
     expect(ReceiptScanner.newClientId(), isNot(ReceiptScanner.newClientId()));
-  });
-
-  test('retrying an upload sends the same client id, so the server stores it once', () async {
-    final repo = _RecordingRepository();
-    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
-
-    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
-    final first = repo.clientId;
-    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
-
-    expect(repo.uploads, 2);
-    expect(repo.clientId, first);
-  });
-
-  test('the parser runs on a background isolate and reads the same as on the main one', () async {
-    final document = _fixture('efd_chipiku');
-    final scanner = ReceiptScanner(ocr: _FakeOcr(document), repository: _RecordingRepository(), parser: parser);
-
-    final reading = await scanner.read('receipt.jpg');
-
-    expect(reading, isNotNull);
-    expect(reading!.draft.toPayload(), parser.parse(document).toPayload());
-    expect(reading.ocrLines, DeviceReading.linesFor(document));
   });
 
   test('the server response maps to an outcome', () {

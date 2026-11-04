@@ -6,6 +6,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../../../core/offline/mutation_sync.dart';
 import 'sms_auto_capture.dart' show smsCaptureLog;
+import 'receipt_outbox.dart';
 import 'sms_outbox.dart';
 
 const _taskName = 'mulinda_sms_outbox_sync';
@@ -22,9 +23,11 @@ void smsSyncCallbackDispatcher() {
       // Changes made offline first (they may depend on each other), then SMS.
       await MutationSync.instance.flush();
       final result = await SmsOutbox.instance.flush();
+      // Receipts saved while offline, with the app closed.
+      final receipts = await ReceiptOutbox.instance.flush();
       smsCaptureLog(
         'background sync: created=${result.created} dup=${result.duplicates} '
-        'pending=${result.pending}',
+        'pending=${result.pending} receipts=$receipts',
       );
       return true;
     } catch (e) {

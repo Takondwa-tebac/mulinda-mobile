@@ -21,6 +21,7 @@ import 'core/offline/trusted_clock.dart';
 import 'core/offline/offline_sync_runner.dart';
 import 'core/security/app_lock.dart';
 import 'core/security/screenshot_protection.dart';
+import 'features/capture/data/receipt_outbox.dart';
 import 'features/capture/data/sms_auto_capture.dart';
 import 'features/capture/data/sms_background_sync.dart';
 import 'features/capture/data/sms_manual_scanner.dart';
@@ -161,6 +162,9 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       await runMutationSync(ProviderScope.containerOf(context));
       if (await SmsOutbox.instance.pendingCount() > 0) {
         await SmsOutbox.instance.flush();
+      }
+      if (await ReceiptOutbox.instance.pendingCount() > 0) {
+        await ReceiptOutbox.instance.flush();
       }
     } catch (_) {}
   }

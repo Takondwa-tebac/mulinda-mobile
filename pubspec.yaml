@@ -88,6 +88,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.17.1
   cunning_document_scanner: ^3.0.4
   image_cropper: ^13.0.0
+  flutter_image_compress: ^2.5.1
+  device_info_plus: ^12.4.0
 
 dev_dependencies:
   flutter_test:
