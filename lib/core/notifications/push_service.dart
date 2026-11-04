@@ -3,7 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/insights/data/insights_repository.dart';
+import '../../features/auth/providers/auth_controller.dart';
 import '../../features/capture/data/inbox_repository.dart';
+import '../../features/subscription/data/subscription_repository.dart';
 import '../network/dio_client.dart';
 import '../router/app_router.dart';
 import '../router/routes.dart';
@@ -85,6 +87,11 @@ class PushService {
     if (type == 'inbox') {
       ref.invalidate(pendingSmsProvider);
       ref.invalidate(pendingReceiptsProvider);
+    } else if (isSubscriptionPushType(type)) {
+      // A plan switched on, a payment failed, or access is ending: reload the
+      // plan and entitlements, and the invoice list.
+      ref.read(authControllerProvider.notifier).refresh();
+      ref.invalidate(invoicesProvider);
     } else {
       ref.invalidate(unreadInsightsCountProvider);
       ref.invalidate(insightsProvider);
@@ -109,9 +116,8 @@ class PushService {
         router.go(Routes.review);
       } else if (type == 'inbox') {
         router.go(Routes.inbox);
-      } else if (type == 'subscription_prompt' ||
-          type == 'subscription_expiration') {
-        // Show subscription screen for SMS capture limit or expiration reminders
+      } else if (isSubscriptionPushType(type)) {
+        // Plan activated, payment failed, SMS capture limit or expiry reminders.
         router.go(Routes.subscription);
       } else if (type == 'announcement' && data['insight_id'] != null) {
         // Admin broadcast: open the list, then the notification itself.
@@ -123,3 +129,11 @@ class PushService {
     });
   }
 }
+
+/// Push types that open the Subscription screen.
+bool isSubscriptionPushType(String? type) => const {
+  'subscription',
+  'payment_failed',
+  'subscription_prompt',
+  'subscription_expiration',
+}.contains(type);
