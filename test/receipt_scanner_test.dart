@@ -22,6 +22,14 @@ class _FakeOcr implements ReceiptOcr {
   Future<void> close() async {}
 }
 
+/// A parser bug, thrown inside the background isolate.
+class _BrokenParser extends ReceiptParser {
+  const _BrokenParser();
+
+  @override
+  ReceiptDraft parse(OcrDocument doc) => throw StateError('parser bug');
+}
+
 /// Records the upload instead of sending it.
 class _RecordingRepository extends ActivityRepository {
   _RecordingRepository() : super(Dio());
@@ -73,6 +81,17 @@ void main() {
     final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
 
     await scanner.scan('receipt.jpg', onDevice: false, clientId: 'client-1');
+
+    expect(repo.uploads, 1);
+    expect(repo.draft, isNull);
+    expect(repo.ocrLines, isNull);
+  });
+
+  test('a parser crash in the background isolate falls back to the photo alone, not an app crash', () async {
+    final repo = _RecordingRepository();
+    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: const _BrokenParser());
+
+    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
 
     expect(repo.uploads, 1);
     expect(repo.draft, isNull);

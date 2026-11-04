@@ -79,20 +79,35 @@ class ReceiptScanner {
   /// parser is Dart, and on an entry-level phone a long receipt takes long
   /// enough to drop frames, so it runs on a background isolate; the UI keeps
   /// animating while it works.
+  ///
+  /// Any failure (OCR, the isolate, the parser, or a parse slower than
+  /// [parseTimeout]) gives no reading, and the photo is uploaded alone.
   Future<DeviceReading?> read(String imagePath) async {
     try {
       final document = await ocr.read(imagePath);
-      final parser = this.parser;
-      final (draft, ocrLines) = await Isolate.run(() {
-        final reading = DeviceReading(document: document, draft: parser.parse(document));
-        return (reading.draft, reading.ocrLines);
-      }, debugName: 'receipt-parser');
+      final (draft, ocrLines) = await _parseInBackground(parser, document).timeout(parseTimeout);
       return DeviceReading(document: document, draft: draft, ocrLines: ocrLines);
     } catch (e, st) {
       debugPrint('receipt on-device read failed: $e\n$st');
       return null;
     }
   }
+
+  /// Far beyond any real parse (~150 ms on an entry-level phone). The isolate
+  /// can't be cancelled; one that overruns finishes unseen and is discarded.
+  static const parseTimeout = Duration(seconds: 10);
+
+  /// Static, so the isolate is sent only the parser and the OCR text: a
+  /// closure inside an instance method could capture `this`, whose network
+  /// client cannot cross isolates.
+  static Future<(ReceiptDraft, List<Map<String, dynamic>>)> _parseInBackground(
+    ReceiptParser parser,
+    OcrDocument document,
+  ) =>
+      Isolate.run(
+        () => (parser.parse(document), DeviceReading.linesFor(document)),
+        debugName: 'receipt-parser',
+      );
 
   /// [onDevice] off skips the phone reading (the kill switch). [clientId]
   /// stays the same for every upload of one image, so a retry after a
