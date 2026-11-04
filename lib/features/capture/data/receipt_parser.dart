@@ -337,6 +337,10 @@ class ReceiptParser {
   /// Malawi's VAT rates, current and past.
   static const _vatRates = [0.165, 0.175];
 
+  /// How many of a receipt's largest amounts are paired up when confirming
+  /// a total: 80 makes at most 3,160 pairs.
+  static const _maxPairTerms = 80;
+
   /// Confirms the total against the rest of the receipt. Each of these is
   /// one confirmation: the VAT printed for it (VAT = total x r / (1 + r)),
   /// two printed values that differ by it (cash less change) or add up to it
@@ -361,13 +365,16 @@ class ReceiptParser {
     ];
     // Zero-rated VAT lines print 0.00, and x + 0 confirms nothing.
     final values = {for (final v in printed) for (final f in _eightsAsZeros(v)) if (f > 0) cents(f)}.toList();
+    // Pairs grow with the square of the amounts printed, so a long receipt
+    // pairs only its largest amounts: totals, cash, change and the big terms
+    // are among them, and an entry-level phone stays fast.
+    final terms = ([...values]..sort((a, b) => b.compareTo(a))).take(_maxPairTerms).toList();
     final sums = <int>{};
     final differences = <int>{};
-    for (var i = 0; i < values.length; i++) {
-      for (var j = 0; j < values.length; j++) {
-        if (i == j) continue;
-        sums.add(values[i] + values[j]);
-        if (values[i] > values[j]) differences.add(values[i] - values[j]);
+    for (var i = 0; i < terms.length; i++) {
+      for (var j = i + 1; j < terms.length; j++) {
+        sums.add(terms[i] + terms[j]);
+        if (terms[i] != terms[j]) differences.add(terms[i] - terms[j]);
       }
     }
     final seen = <int, int>{};

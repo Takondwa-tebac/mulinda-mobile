@@ -214,5 +214,28 @@ void main() {
       expect(draft.amount, isNot(0));
       expect(draft.needsFallback, isTrue);
     });
+
+    test('a very long receipt still parses quickly (entry-level phones)', () {
+      // 400 item lines, each with its own amount: confirming the total pairs
+      // amounts, which must stay bounded however long the receipt is.
+      final rows = <(String, String?)>[
+        ('*** START OF LEGAL RECEIPT ***', null),
+        for (var i = 1; i <= 400; i++) ('ITEM $i', '${(i * 137 % 9000) + 100}.${i % 100}'.padRight(6, '0')),
+        ('TAXABLE A-17.5%', '30,638.30'),
+        ('VAT A-17.5%', '5,361.70'),
+        ('TOTAL', '36,000.00'),
+      ];
+      final parser = ReceiptParser(now: DateTime(2026, 10, 31));
+      final doc = _doc(rows);
+      parser.parse(doc); // warm up
+
+      final watch = Stopwatch()..start();
+      final draft = parser.parse(doc);
+      watch.stop();
+
+      expect(draft.amount, 36000);
+      // ~10x headroom over a desktop run, so only a blow-up fails this.
+      expect(watch.elapsedMilliseconds, lessThan(500));
+    });
   });
 }
