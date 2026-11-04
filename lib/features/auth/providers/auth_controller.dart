@@ -12,6 +12,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/push_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/offline/cache_store.dart';
+import '../../capture/data/receipt_outbox.dart';
 import '../../capture/data/sms_outbox.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
@@ -286,6 +287,7 @@ class AuthController extends Notifier<AuthState> {
     await _repo.clearCachedUser();
     await _clearOfflineData();
     await SmsOutbox.instance.clear();
+    await ReceiptOutbox.instance.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

@@ -182,7 +182,9 @@
     "crop": "Dulani",
     "retake": "Jambulaninso",
     "cropTitle": "Dulani risiti",
-    "captureFailed": "Sitinathe kupeza chithunzi. Yesaninso."
+    "captureFailed": "Sitinathe kupeza chithunzi. Yesaninso.",
+    "savedOffline": "Yasungidwa. Risiti idzatumizidwa mukangolumikizana ndi intaneti.",
+    "queueFull": "Pali marisiti ambiri omwe akudikira kutumizidwa. Lumikizanani ndi intaneti, kenako yesaninso."
   },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",
