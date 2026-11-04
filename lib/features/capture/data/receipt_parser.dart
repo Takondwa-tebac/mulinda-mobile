@@ -15,6 +15,9 @@ enum ReceiptKind {
   /// An ATM withdrawal slip.
   atmSlip,
 
+  /// A bank card machine (POS) slip from paying at a shop.
+  cardSlip,
+
   /// A bill, quote or form that is not proof of a payment.
   notPayment,
 
@@ -94,6 +97,19 @@ const knownMerchants = [
   KnownMerchant('Ekhaya Farm Foods', tin: '70113247'),
 ];
 
+/// Shops whose names OCR mangles in known ways ("BUY MOkL", "BLY-MU",
+/// "EKhaya Fars Foods"). Checked before the issuing bank, which also heads
+/// card slips.
+final _shops = [
+  KnownMerchant('Buy More', pattern: RegExp(r'\bB[UL]Y[\s-]*M(ORE|OKL|GRE|U)\b', caseSensitive: false)),
+  KnownMerchant('Sana Cash & Carry', pattern: RegExp(r'\bSANA\b', caseSensitive: false)),
+  KnownMerchant('PEP Stores', pattern: RegExp(r'\bPEP\s+(STORES|MAL)', caseSensitive: false)),
+  KnownMerchant('Easy Mart', pattern: RegExp(r'\bEASY\s*MART\b', caseSensitive: false)),
+  KnownMerchant('Lilongwe Dairy', pattern: RegExp(r'\bL\w?l?ongwe\s*Dairy', caseSensitive: false)),
+  KnownMerchant('Ekhaya Farm Foods', pattern: RegExp(r'\bE[kK]h?l?i?aya\b|\bFar[mns]\s*Foods\b', caseSensitive: false)),
+  KnownMerchant('Lucky Shopping Center', pattern: RegExp(r'\bLUCKY\s*SHO', caseSensitive: false)),
+];
+
 final _namedMerchants = [
   KnownMerchant('ESCOM', pattern: RegExp(r'\bESCOM\b|ELECTRICITY SUPPLY CORPORATION', caseSensitive: false)),
   KnownMerchant('NBS Bank', pattern: RegExp(r'^NBS BANK\b', caseSensitive: false)),
@@ -112,7 +128,7 @@ class ReceiptParser {
   const ReceiptParser({this.merchants = knownMerchants, this.now});
 
   /// Bump when parsing rules change, so accuracy can be compared per version.
-  static const version = 1;
+  static const version = 2;
 
   final List<KnownMerchant> merchants;
 
@@ -135,10 +151,14 @@ class ReceiptParser {
     if (flat.contains('withdraw') && RegExp(r'card|atm|avail').hasMatch(flat)) {
       return _atmSlip(doc);
     }
-    if (RegExp(r'legal+receipt|taxinvoice|vatregistered|regi.tered').hasMatch(flat) ||
-        (RegExp(r'\bT?I?N\s*:', caseSensitive: false).hasMatch(text) && flat.contains('total'))) {
-      return _tillReceipt(doc);
+    final till = RegExp(r'legal+receipt|taxin\w*oice|vatregistered|regi.tered|cash[sg]ale|laybye|salesreceipt|totalamount')
+            .hasMatch(flat) ||
+        (RegExp(r'\bT?I?N\s*:', caseSensitive: false).hasMatch(text) && flat.contains('total'));
+    if (!till && _cardSignals.hasMatch(flat)) {
+      if (_declined.hasMatch(flat)) return const ReceiptDraft(kind: ReceiptKind.notPayment, confidence: 0.9);
+      return _cardSlip(doc);
     }
+    if (till) return _tillReceipt(doc);
     return _unknown(doc);
   }
 
@@ -146,6 +166,55 @@ class ReceiptParser {
   static final _notPayment = RegExp(
     r'p(ro|re)forma|quotation|jobcard|deliverynote|estimate|statementfor|ministatement|orderform',
   );
+
+  // ---------------------------------------------------------------------------
+  // Card machine (POS) slips: the bank's logo, the shop, then one amount.
+
+  static final _cardSignals =
+      RegExp(r'approv|au[it]hori[sz]|authcode|declined|donothonor|terminalid|merchantid|c?ardho\w*cop|customercop|visadeb');
+  static final _declined = RegExp(r'declined|donothonor|notapproved|transactionfailed');
+
+  ReceiptDraft _cardSlip(OcrDocument doc) {
+    double? amount;
+    for (final l in doc.lines) {
+      amount = _slipAmount(l.text);
+      if (amount != null) break;
+    }
+    final reference = doc
+        .valueFor(RegExp(r'^(RRN|Receipt\s*No|Recept\s*INO)\b\s*:?', caseSensitive: false),
+            (v) => RegExp(r'^[A-Za-z0-9]{5,}$').hasMatch(v.replaceAll(' ', '')))
+        ?.value
+        .replaceAll(' ', '');
+    final occurredAt = _date(doc, RegExp(r'^(DATE|Date)\b\s*:?', caseSensitive: false));
+    final merchant = _shop(doc);
+    final approved = RegExp(r'approv|authori[sz]ed').hasMatch(squash(doc.text));
+
+    var confidence = 0.0;
+    if (amount != null) confidence += 0.6;
+    if (approved) confidence += 0.15;
+    if (occurredAt != null) confidence += 0.1;
+    if (merchant != null) confidence += 0.15;
+    return ReceiptDraft(
+      kind: ReceiptKind.cardSlip,
+      amount: amount,
+      merchant: merchant,
+      reference: reference,
+      occurredAt: occurredAt,
+      confidence: confidence > 1 ? 1 : confidence,
+    );
+  }
+
+  /// The slip's amount: a decimal number with only money words around it
+  /// ("Amount: MWK 22,600.00", "MYIK60830.00", "168, 166.00 MWK"), so card
+  /// numbers, times and ids don't count.
+  static double? _slipAmount(String text) {
+    final m = RegExp(r'(\d{1,3}(?:,\s?\d{3})+|\d{1,3}(?:\s\d{3})+|\d+)\s?\.\s?(\d{2})(?!\d)').firstMatch(text);
+    if (m == null) return null;
+    final rest = text.replaceFirst(m[0]!, ' ');
+    if (!RegExp(r'^(\W|A?r?mount|AMT|MWK|MK|M[YVW]+I?K|M|K|\s)*$', caseSensitive: false).hasMatch(rest)) return null;
+    final value = double.tryParse('${m[1]!.replaceAll(RegExp(r'[,\s]'), '')}.${m[2]}');
+    return value != null && value > 0 ? value : null;
+  }
 
   // ---------------------------------------------------------------------------
   // Bank and mobile-money app screens: "Label    value" rows.
@@ -224,7 +293,11 @@ class ReceiptParser {
   // MRA fiscal till receipts: a header, items, then a totals block.
 
   static final _roles = <String, RegExp>{
-    'total': RegExp(r'^(GRAND\s*TOTAL|TOTAL(?!\s*VAT)(\s*\(?Incl.*)?|Amount Due|Balance Due|Total Charges)\s*:?-?\s*$', caseSensitive: false),
+    // "Payment": what a PEP layby slip says was paid.
+    'total': RegExp(
+      r'^(GRAND\s*TOTAL|TOTAL(?!\s*VAT)(\s*\(?Incl.*)?|TOTAL\s*AMOUNT|Amount Due|Balance Due|Total Charges|Payment)\s*:?-?\s*$',
+      caseSensitive: false,
+    ),
     'tendered': RegExp(r'^(CASH|Amount Paid|Tendered|Paid)\s*:?\s*$', caseSensitive: false),
     'change': RegExp(r'^(CHANGE|Cash Balance)\s*:?\s*$', caseSensitive: false),
     'subtotal': RegExp(r'^(Sub\s*Tota\s*l|Subtotal|TAXABLE\b.*)$', caseSensitive: false),
@@ -232,8 +305,8 @@ class ReceiptParser {
   };
 
   ReceiptDraft _tillReceipt(OcrDocument doc) {
-    final totals = _readTotals(doc);
-    final merchant = _merchantByTin(doc) ?? _named(doc) ?? _headerName(doc);
+    final totals = _checkTotal(doc, _readTotals(doc));
+    final merchant = _merchantByTin(doc) ?? _shop(doc) ?? _named(doc) ?? _headerName(doc);
     final reference = doc
         .valueFor(
           RegExp(r'^(EIS\s*)?(Re)?ce\s*ipt\s*(#|No\.?|Number)?\s*[:\-]*|^Invoice\s*(#|No\.?)\s*:?', caseSensitive: false),
@@ -243,12 +316,14 @@ class ReceiptParser {
         .replaceAll(' ', '');
     final occurredAt = _date(doc, RegExp(r'^(Date\s*&\s*Time|DATE|Date)\b\s*:?', caseSensitive: false));
 
+    // A total nothing else on the receipt confirms is never trusted: on a
+    // photo, the TOTAL label is easily paired with the change or a 0.00.
     var confidence = 0.0;
-    if (totals.amount != null) confidence += totals.labelled ? 0.5 : 0.25;
-    if (totals.consistent) confidence += 0.15;
+    if (totals.amount != null) confidence += totals.supported ? 0.65 : 0.25;
     if (merchant != null) confidence += 0.15;
     if (occurredAt != null) confidence += 0.1;
     if (reference != null) confidence += 0.1;
+    if (!totals.supported && confidence >= ReceiptDraft.fallbackBelow) confidence = ReceiptDraft.fallbackBelow - 0.05;
     return ReceiptDraft(
       kind: ReceiptKind.tillReceipt,
       amount: totals.amount,
@@ -259,17 +334,122 @@ class ReceiptParser {
     );
   }
 
+  /// Malawi's VAT rates, current and past.
+  static const _vatRates = [0.165, 0.175];
+
+  /// How many of a receipt's largest amounts are paired up when confirming
+  /// a total: 80 makes at most 3,160 pairs.
+  static const _maxPairTerms = 80;
+
+  /// Confirms the total against the rest of the receipt. Each of these is
+  /// one confirmation: the VAT printed for it (VAT = total x r / (1 + r)),
+  /// two printed values that differ by it (cash less change) or add up to it
+  /// (taxable plus VAT, or items), and the same value printed twice.
+  ///
+  /// The total paired with its label needs one. When it has none (the TOTAL
+  /// line may not have been read at all), the printed value with the most
+  /// confirmations, at least two, is used instead: one is not enough there,
+  /// as a single VAT-rated item is confirmed by its own VAT line. OCR'd 8s may
+  /// really be 0s, so values are also tried with them folded. Works in cents.
+  ({double? amount, bool supported}) _checkTotal(
+    OcrDocument doc,
+    ({double? amount, bool labelled, bool consistent, bool inline}) totals,
+  ) {
+    int cents(double v) => (v * 100).round();
+    final printed = [for (final l in doc.lines) ..._amountsIn(l.text)];
+    // Whole-number receipts (PEP prints "18870") count bare numbers as
+    // candidates, but not as terms of sums, where ids would add up by chance.
+    final bare = [
+      for (final l in doc.lines)
+        if (RegExp(r'^\d{3,7}$').hasMatch(l.text.trim())) double.parse(l.text.trim()),
+    ];
+    // Zero-rated VAT lines print 0.00, and x + 0 confirms nothing.
+    final values = {for (final v in printed) for (final f in _eightsAsZeros(v)) if (f > 0) cents(f)}.toList();
+    // Pairs grow with the square of the amounts printed, so a long receipt
+    // pairs only its largest amounts: totals, cash, change and the big terms
+    // are among them, and an entry-level phone stays fast.
+    final terms = ([...values]..sort((a, b) => b.compareTo(a))).take(_maxPairTerms).toList();
+    final sums = <int>{};
+    final differences = <int>{};
+    for (var i = 0; i < terms.length; i++) {
+      for (var j = i + 1; j < terms.length; j++) {
+        sums.add(terms[i] + terms[j]);
+        if (terms[i] != terms[j]) differences.add(terms[i] - terms[j]);
+      }
+    }
+    final seen = <int, int>{};
+    for (final v in [...printed, ...bare]) {
+      for (final c in {for (final f in _eightsAsZeros(v)) cents(f)}) {
+        seen[c] = (seen[c] ?? 0) + 1;
+      }
+    }
+    int confirmations(int total) {
+      final vat = values.any((v) => v < total && _vatRates.any((r) => (total * r / (1 + r) - v).abs() <= 1.5));
+      return (vat ? 1 : 0) +
+          (differences.contains(total) ? 1 : 0) +
+          (sums.contains(total) ? 1 : 0) +
+          ((seen[total] ?? 0) >= 2 ? 1 : 0);
+    }
+
+    final confirmed = {
+      for (final c in {...values, for (final v in bare) cents(v)})
+        if (c > 0 && confirmations(c) >= 2) c: confirmations(c),
+    };
+    // One part of a larger confirmed total is a subtotal (an item, the
+    // VAT-rated part), however well confirmed itself.
+    bool isPart(int c) => confirmed.keys.any((bigger) => bigger > c && values.contains(bigger - c));
+    ({int cents, int score})? best;
+    for (final MapEntry(key: c, value: score) in confirmed.entries) {
+      if (isPart(c)) continue;
+      if (best == null || score > best.score || (score == best.score && c > best.cents)) best = (cents: c, score: score);
+    }
+
+    final total = totals.amount;
+    if (total != null && total > 0) {
+      if (totals.inline || totals.consistent) return (amount: total, supported: true);
+      for (final t in _eightsAsZeros(total)) {
+        if (confirmations(cents(t)) < 1 || isPart(cents(t))) continue;
+        return (amount: t, supported: true);
+      }
+    }
+    if (best != null) return (amount: best.cents / 100, supported: true);
+    return (amount: total != null && total > 0 ? total : null, supported: false);
+  }
+
+  /// Every decimal amount printed in [text] ("30,638.30", "X 36.000.00").
+  static Iterable<double> _amountsIn(String text) sync* {
+    for (final m in RegExp(r'\d{1,3}(?:[,.]\d{3})+[.,]\d{2}(?!\d)|\d+[.,]\d{2}(?!\d)').allMatches(text)) {
+      final v = parseAmountLine(m[0]!);
+      if (v != null) yield v;
+    }
+  }
+
+  /// [value] as read, then with its 8s turned into 0s (dot-matrix printers).
+  static Iterable<double> _eightsAsZeros(double value) sync* {
+    yield value;
+    final digits = value.toStringAsFixed(2);
+    final eights = [for (var i = 0; i < digits.length; i++) if (digits[i] == '8') i];
+    if (eights.isEmpty || eights.length > 4) return;
+    for (var mask = 1; mask < 1 << eights.length; mask++) {
+      final chars = digits.split('');
+      for (var b = 0; b < eights.length; b++) {
+        if (mask & (1 << b) != 0) chars[eights[b]] = '0';
+      }
+      yield double.parse(chars.join());
+    }
+  }
+
   /// Pairs totals-block labels with amounts. Till printers do not always put
   /// a value on its label's row (Chipiku prints each value a row higher), so
   /// several row offsets are tried and the one whose numbers make sense wins:
   /// one value per label, TOTAL no more than the cash tendered, change less
   /// than the cash.
-  ({double? amount, bool labelled, bool consistent}) _readTotals(OcrDocument doc) {
+  ({double? amount, bool labelled, bool consistent, bool inline}) _readTotals(OcrDocument doc) {
     // "Total:- MK 5,000.00" carries its own value.
     for (final l in doc.lines) {
       final m = RegExp(r'^(GRAND\s*)?TOTAL\s*:-?\s*(.+)$', caseSensitive: false).firstMatch(l.text.trim());
       final amount = m == null ? null : parseAmountLine(m[2]!);
-      if (amount != null) return (amount: amount, labelled: true, consistent: false);
+      if (amount != null && amount > 0) return (amount: amount, labelled: true, consistent: false, inline: true);
     }
 
     final labels = <({OcrLine line, String role})>[
@@ -277,9 +457,14 @@ class ReceiptParser {
         for (final MapEntry(key: role, value: re) in _roles.entries)
           if (re.hasMatch(l.text.trim())) (line: l, role: role),
     ];
-    final values = [for (final l in doc.lines) if (l.left > doc.width * 0.45 && parseAmountLine(l.text) != null) l];
+    // PEP prints whole numbers only ("47800"): when nothing has decimals,
+    // bare numbers in the value column count.
+    final wholeNumbers = !doc.lines.any((l) => parseAmountLine(l.text) != null);
+    double? valueOf(OcrLine l) =>
+        parseAmountLine(l.text) ?? (wholeNumbers && RegExp(r'^\d{3,7}$').hasMatch(l.text.trim()) ? double.parse(l.text.trim()) : null);
+    final values = [for (final l in doc.lines) if (l.left > doc.width * 0.45 && valueOf(l) != null) l];
     if (labels.where((l) => l.role == 'total').isEmpty || values.isEmpty) {
-      return (amount: null, labelled: false, consistent: false);
+      return (amount: null, labelled: false, consistent: false, inline: false);
     }
 
     final gaps = [for (var i = 1; i < values.length; i++) values[i].centerY - values[i - 1].centerY]..sort();
@@ -306,7 +491,7 @@ class ReceiptParser {
         cost += residual;
         if (!used.add(nearest)) cost += 1.5;
         // The last TOTAL-type label wins ("Sub Total" … "Grand Total").
-        byRole[label.role] = parseAmountLine(nearest.text)!;
+        byRole[label.role] = valueOf(nearest)!;
       }
       final total = byRole['total'];
       final tendered = byRole['tendered'];
@@ -322,7 +507,7 @@ class ReceiptParser {
     final tendered = best.byRole['tendered'];
     final change = best.byRole['change'];
     final consistent = total != null && tendered != null && change != null && (tendered - total - change).abs() < 0.01;
-    return (amount: total, labelled: total != null, consistent: consistent);
+    return (amount: total, labelled: total != null, consistent: consistent, inline: false);
   }
 
   /// MRA receipts print the seller's TIN, which OCR reads more reliably than
@@ -335,6 +520,13 @@ class ReceiptParser {
       for (final known in merchants) {
         if (known.tin != null && fold(known.tin!) == fold(m[1]!)) return known.name;
       }
+    }
+    return null;
+  }
+
+  String? _shop(OcrDocument doc) {
+    for (final known in _shops) {
+      if (doc.lines.any((l) => known.pattern!.hasMatch(l.text.trim()))) return known.name;
     }
     return null;
   }
@@ -399,8 +591,8 @@ class ReceiptParser {
     final totals = _readTotals(doc);
     return ReceiptDraft(
       kind: ReceiptKind.unknown,
-      amount: totals.amount,
-      merchant: _merchantByTin(doc) ?? _named(doc),
+      amount: totals.amount != null && totals.amount! > 0 ? totals.amount : null,
+      merchant: _merchantByTin(doc) ?? _shop(doc) ?? _named(doc),
       occurredAt: _date(doc, null),
       confidence: totals.amount == null ? 0.1 : 0.4,
     );
@@ -413,8 +605,13 @@ class ReceiptParser {
       final labelled = doc.valueFor(label, (v) => parseDate(v, now: now) != null);
       if (labelled != null) return parseDate(labelled.value, now: now);
     }
+    // EFD receipts print the "EJ ACTIVATION DATE" value on its own line, often
+    // a row off its label, so dates near that label are skipped too.
+    final skip = RegExp(r'ACTIVATION|EXPIR|PRINTED|Opened', caseSensitive: false);
+    final skipped = doc.lines.where((l) => skip.hasMatch(l.text)).toList();
     for (final l in doc.lines) {
-      if (RegExp(r'ACTIVATION|EXPIR|PRINTED|Opened', caseSensitive: false).hasMatch(l.text)) continue;
+      if (skip.hasMatch(l.text)) continue;
+      if (skipped.any((s) => (s.centerY - l.centerY).abs() < doc.lineHeight * 2.2)) continue;
       final date = parseDate(l.text, now: now);
       if (date != null) return date;
     }
