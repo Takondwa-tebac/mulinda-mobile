@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/features/feature_flags.dart';
 import '../../../core/network/api_exception.dart';
@@ -15,6 +14,7 @@ import '../../auth/providers/auth_controller.dart';
 import '../../subscription/data/subscription_models.dart';
 import '../../subscription/widgets/premium_lock.dart';
 import '../data/inbox_repository.dart';
+import '../data/receipt_capture.dart';
 import '../data/receipt_scanner.dart';
 
 class ScanReceiptScreen extends ConsumerStatefulWidget {
@@ -25,20 +25,34 @@ class ScanReceiptScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
-  final _picker = ImagePicker();
-  XFile? _image;
+  /// The receipt image to upload: cropped to the receipt where possible, as
+  /// the on-device reader (and the AI fallback) read a tight crop far better.
+  String? _image;
+
+  /// One per image: a retry after a timeout must not store the receipt twice.
+  String _clientId = ReceiptScanner.newClientId();
   bool _loading = false;
 
-  Future<void> _pick(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final granted = await ref.read(permissionServiceProvider).requestCamera();
-      if (!granted) {
-        _snack('receipt.cameraDenied'.tr());
-        return;
+  ReceiptCapture get _capture => ReceiptCapture(
+        ref.read(receiptCaptureDeviceProvider),
+        requestCamera: ref.read(permissionServiceProvider).requestCamera,
+      );
+
+  Future<void> _take(Future<String?> Function() capture) async {
+    try {
+      final path = await capture();
+      if (path != null && mounted) {
+        setState(() {
+          _image = path;
+          _clientId = ReceiptScanner.newClientId();
+        });
       }
+    } on CameraDenied {
+      _snack('receipt.cameraDenied'.tr());
+    } catch (e) {
+      debugPrint('receipt capture failed: $e');
+      _snack('receipt.captureFailed'.tr());
     }
-    final picked = await _picker.pickImage(source: source, imageQuality: 80);
-    if (picked != null) setState(() => _image = picked);
   }
 
   Future<void> _submit() async {
@@ -46,8 +60,20 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     if (image == null) return;
     setState(() => _loading = true);
     try {
-      final onDevice = ref.read(featureEnabledProvider(FeatureKeys.receiptOnDevice));
-      final result = await ref.read(receiptScannerProvider).scan(image.path, onDevice: onDevice);
+      // Wait for the flags rather than read "off" while they are still
+      // loading: that sent the photo alone to the AI, and the same receipt
+      // scanned again a moment later was read on the phone, a second scan.
+      Future<Map<String, bool>> readFlags() => ref
+          .read(featureFlagsProvider.future)
+          .timeout(const Duration(seconds: 5), onTimeout: () => const <String, bool>{});
+      var flags = await readFlags();
+      if (flags.isEmpty) {
+        // A failed fetch is remembered for the session; try once more.
+        ref.invalidate(featureFlagsProvider);
+        flags = await readFlags();
+      }
+      final onDevice = flags[FeatureKeys.receiptOnDevice] ?? false;
+      final result = await ref.read(receiptScannerProvider).scan(image, onDevice: onDevice, clientId: _clientId);
       if (!mounted) return;
       ref.invalidate(pendingReceiptsProvider);
       switch (result.outcome) {
@@ -145,7 +171,18 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('receipt.subtitle'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.tips_and_updates_outlined, size: 18, color: scheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('receipt.tip'.tr(), style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -156,7 +193,21 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                   clipBehavior: Clip.antiAlias,
                   child: _image == null
                       ? Center(child: Icon(Icons.receipt_long, size: 56, color: scheme.outline))
-                      : Image.file(File(_image!.path), fit: BoxFit.contain),
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.file(File(_image!), fit: BoxFit.contain),
+                            Positioned(
+                              right: 8,
+                              bottom: 8,
+                              child: FilledButton.tonalIcon(
+                                onPressed: _loading ? null : () => _take(() async => await _capture.recrop(_image!) ?? _image),
+                                icon: const Icon(Icons.crop),
+                                label: Text('receipt.crop'.tr()),
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -164,15 +215,15 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _loading ? null : () => _pick(ImageSource.camera),
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text('receipt.takePhoto'.tr()),
+                      onPressed: _loading ? null : () => _take(_capture.fromCamera),
+                      icon: const Icon(Icons.document_scanner_outlined),
+                      label: Text(_image == null ? 'receipt.takePhoto'.tr() : 'receipt.retake'.tr()),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _loading ? null : () => _pick(ImageSource.gallery),
+                      onPressed: _loading ? null : () => _take(_capture.fromGallery),
                       icon: const Icon(Icons.photo_library_outlined),
                       label: Text('receipt.chooseImage'.tr()),
                     ),

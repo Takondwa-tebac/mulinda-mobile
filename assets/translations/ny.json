@@ -177,7 +177,12 @@
     "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule.",
     "ready": "Risiti yawerengedwa. Onani zomwe zili mmenemo ndipo muvomereze.",
     "readyDuplicate": "Risiti yawerengedwa, koma ikuoneka ngati imene munalemba kale. Onani musanavomereze.",
-    "notReceipt": "Izi sizikuoneka ngati risiti ya malipiro, choncho palibe chomwe chawonjezedwa."
+    "notReceipt": "Izi sizikuoneka ngati risiti ya malipiro, choncho palibe chomwe chawonjezedwa.",
+    "tip": "Ikani risiti pansi bwino pamalo owala ndipo idzaze chithunzi chonse. Makina adzapeza m’mbali mwake.",
+    "crop": "Dulani",
+    "retake": "Jambulaninso",
+    "cropTitle": "Dulani risiti",
+    "captureFailed": "Sitinathe kupeza chithunzi. Yesaninso."
   },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",
