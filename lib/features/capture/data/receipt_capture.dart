@@ -51,6 +51,9 @@ class NativeReceiptCaptureDevice implements ReceiptCaptureDevice {
 
   final _picker = ImagePicker();
 
+  /// Longest side of a cropped receipt image.
+  static const maxImageSide = 2400;
+
   @override
   Future<String?> scan() async {
     try {
@@ -84,6 +87,11 @@ class NativeReceiptCaptureDevice implements ReceiptCaptureDevice {
     final cropped = await ImageCropper().cropImage(
       sourcePath: path,
       compressQuality: 85,
+      // The crop is taken from the full photo, then capped: 2400 px is ample
+      // for ML Kit to read receipt print, and a 12 MP photo decoded for OCR
+      // would cost an entry-level phone seconds and ~50 MB of memory.
+      maxWidth: maxImageSide,
+      maxHeight: maxImageSide,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: cropTitle(),

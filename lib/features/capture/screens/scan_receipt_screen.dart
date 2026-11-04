@@ -28,6 +28,9 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   /// The receipt image to upload: cropped to the receipt where possible, as
   /// the on-device reader (and the AI fallback) read a tight crop far better.
   String? _image;
+
+  /// One per image: a retry after a timeout must not store the receipt twice.
+  String _clientId = ReceiptScanner.newClientId();
   bool _loading = false;
 
   ReceiptCapture get _capture => ReceiptCapture(
@@ -38,7 +41,12 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   Future<void> _take(Future<String?> Function() capture) async {
     try {
       final path = await capture();
-      if (path != null && mounted) setState(() => _image = path);
+      if (path != null && mounted) {
+        setState(() {
+          _image = path;
+          _clientId = ReceiptScanner.newClientId();
+        });
+      }
     } on CameraDenied {
       _snack('receipt.cameraDenied'.tr());
     } catch (e) {
@@ -52,8 +60,20 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     if (image == null) return;
     setState(() => _loading = true);
     try {
-      final onDevice = ref.read(featureEnabledProvider(FeatureKeys.receiptOnDevice));
-      final result = await ref.read(receiptScannerProvider).scan(image, onDevice: onDevice);
+      // Wait for the flags rather than read "off" while they are still
+      // loading: that sent the photo alone to the AI, and the same receipt
+      // scanned again a moment later was read on the phone, a second scan.
+      Future<Map<String, bool>> readFlags() => ref
+          .read(featureFlagsProvider.future)
+          .timeout(const Duration(seconds: 5), onTimeout: () => const <String, bool>{});
+      var flags = await readFlags();
+      if (flags.isEmpty) {
+        // A failed fetch is remembered for the session; try once more.
+        ref.invalidate(featureFlagsProvider);
+        flags = await readFlags();
+      }
+      final onDevice = flags[FeatureKeys.receiptOnDevice] ?? false;
+      final result = await ref.read(receiptScannerProvider).scan(image, onDevice: onDevice, clientId: _clientId);
       if (!mounted) return;
       ref.invalidate(pendingReceiptsProvider);
       switch (result.outcome) {

@@ -57,7 +57,7 @@ void main() {
     final repo = _RecordingRepository();
     final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: true);
+    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
 
     expect(repo.draft, isNotNull);
     expect(repo.draft!['parser'], 'device');
@@ -65,14 +65,14 @@ void main() {
     expect(repo.draft!['merchant'], 'National Bank of Malawi');
     expect(repo.ocrLines, isNotEmpty);
     expect(repo.ocrLines!.first.keys, containsAll(['text', 'box', 'block']));
-    expect(repo.clientId, hasLength(32));
+    expect(repo.clientId, 'client-1');
   });
 
   test('the kill switch skips the phone and uploads the photo alone', () async {
     final repo = _RecordingRepository();
     final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: false);
+    await scanner.scan('receipt.jpg', onDevice: false, clientId: 'client-1');
 
     expect(repo.uploads, 1);
     expect(repo.draft, isNull);
@@ -83,7 +83,7 @@ void main() {
     final repo = _RecordingRepository();
     final scanner = ReceiptScanner(ocr: _FakeOcr(null), repository: repo, parser: parser);
 
-    await scanner.scan('receipt.jpg', onDevice: true);
+    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
 
     expect(repo.uploads, 1);
     expect(repo.draft, isNull);
@@ -100,8 +100,32 @@ void main() {
     expect(reading.ocrLines.first['text'], hasLength(500));
   });
 
-  test('client ids are unique per upload', () {
+  test('client ids are unique per image', () {
+    expect(ReceiptScanner.newClientId(), hasLength(32));
     expect(ReceiptScanner.newClientId(), isNot(ReceiptScanner.newClientId()));
+  });
+
+  test('retrying an upload sends the same client id, so the server stores it once', () async {
+    final repo = _RecordingRepository();
+    final scanner = ReceiptScanner(ocr: _FakeOcr(_fixture('nbm_payment_01')), repository: repo, parser: parser);
+
+    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
+    final first = repo.clientId;
+    await scanner.scan('receipt.jpg', onDevice: true, clientId: 'client-1');
+
+    expect(repo.uploads, 2);
+    expect(repo.clientId, first);
+  });
+
+  test('the parser runs on a background isolate and reads the same as on the main one', () async {
+    final document = _fixture('efd_chipiku');
+    final scanner = ReceiptScanner(ocr: _FakeOcr(document), repository: _RecordingRepository(), parser: parser);
+
+    final reading = await scanner.read('receipt.jpg');
+
+    expect(reading, isNotNull);
+    expect(reading!.draft.toPayload(), parser.parse(document).toPayload());
+    expect(reading.ocrLines, DeviceReading.linesFor(document));
   });
 
   test('the server response maps to an outcome', () {
