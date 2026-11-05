@@ -19,6 +19,7 @@ import '../data/activity_repository.dart';
 import '../widgets/category_quick_fix.dart';
 import '../widgets/txn_view.dart';
 import '../../../shared/plural.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Review queue for transactions auto-recorded from SMS. The user confirms the
 /// ones that are right and bulk-deletes (soft) the ones that aren't, and can fix
@@ -408,7 +409,7 @@ class _CategoryButton extends StatelessWidget {
                 ),
                 if (txn.hasSuggestedCategory) ...[
                   const SizedBox(width: 4),
-                  Icon(Icons.auto_awesome_outlined, size: 13, color: fg),
+                  Icon(AppIcons.suggestion, size: 13, color: fg),
                 ],
                 if (onTap != null) ...[const SizedBox(width: 2), Icon(Icons.expand_more, size: 16, color: fg)],
               ],

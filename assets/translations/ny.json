@@ -187,6 +187,7 @@
     "approve": "Vomerezani",
     "reject": "Kanani",
     "empty": "Palibe zoyang'ana. SMS zotumizidwa ndi marisiti ojambulidwa zimaonekera pano.",
+    "emptyTitle": "Mwamaliza zonse",
     "approved": "Zawonjezedwa ku zochitika zanu",
     "rejected": "Zachotsedwa",
     "processing": "Tikuwerengabe…",

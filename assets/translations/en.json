@@ -187,6 +187,7 @@
     "approve": "Approve",
     "reject": "Reject",
     "empty": "Nothing to review. Forwarded SMS and scanned receipts show up here.",
+    "emptyTitle": "You're all caught up",
     "approved": "Added to your transactions",
     "rejected": "Dismissed",
     "processing": "Still reading…",

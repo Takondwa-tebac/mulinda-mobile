@@ -6,6 +6,7 @@ import '../theme/app_spacing.dart';
 import 'amount_text.dart';
 import 'category_icons.dart';
 import 'status_chip.dart';
+import '../theme/app_icons.dart';
 
 /// What a [TransactionTile] shows. Kept free of feature models so Home
 /// (dashboard rows) and Activity (full transactions) can both use it.
@@ -187,7 +188,7 @@ class TransactionTile extends StatelessWidget {
                             label: d.categoryName == null
                                 ? 'activity2.addCategory'.tr()
                                 : 'activity2.confirmCategory'.tr(),
-                            icon: Icons.auto_awesome_outlined,
+                            icon: AppIcons.suggestion,
                             tone: StatusTone.warning,
                             onTap: onConfirmCategory,
                           ),

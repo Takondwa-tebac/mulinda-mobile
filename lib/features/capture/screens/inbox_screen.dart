@@ -12,6 +12,8 @@ import '../../subscription/paywall_prompt.dart';
 import '../../subscription/widgets/paywall_sheet.dart';
 import '../data/inbox_repository.dart';
 import '../data/sms_manual_scanner.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
@@ -140,46 +142,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 child: Center(child: CircularProgressIndicator()),
               ),
             if (hasError)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  children: [
-                    const Icon(Icons.wifi_off_outlined, size: 48),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Could not load inbox',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      errorMessage ?? 'Unknown error',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () {
-                        ref.invalidate(pendingSmsProvider);
-                        ref.invalidate(pendingReceiptsProvider);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+              ErrorRetry(
+                message: errorMessage,
+                onRetry: () {
+                  ref.invalidate(pendingSmsProvider);
+                  ref.invalidate(pendingReceiptsProvider);
+                },
               ),
             if (empty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 64),
-                child: Text(
-                  'inbox.empty'.tr(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
+              EmptyState(
+                icon: Icons.inbox_outlined,
+                title: 'inbox.emptyTitle'.tr(),
+                body: 'inbox.empty'.tr(),
               ),
             if (smsList.isNotEmpty) ...[
               _Header('inbox.messages'.tr()),

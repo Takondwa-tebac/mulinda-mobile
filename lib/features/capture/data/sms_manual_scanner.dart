@@ -55,7 +55,7 @@ class SmsManualScanner {
         return ScanResult.success(
           preFlush.created,
           preFlush.failed,
-          'Offline or not signed in — will retry',
+          'Offline or not signed in - will retry',
           preFlush.duplicates + preFlush.skipped,
         );
       }
@@ -100,7 +100,7 @@ class SmsManualScanner {
       }
 
       final message = result.offline
-          ? 'Offline — ${result.pending} queued, will sync automatically'
+          ? 'Offline - ${result.pending} queued, will sync automatically'
           : 'Scan completed';
       return ScanResult.success(
         result.created + preFlush.created,

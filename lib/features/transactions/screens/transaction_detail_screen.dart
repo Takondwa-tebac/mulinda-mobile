@@ -21,6 +21,7 @@ import '../../activity/widgets/category_picker.dart';
 import '../../activity/widgets/category_quick_fix.dart';
 import '../../activity/widgets/txn_view.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Robust transaction detail: a share-ready receipt (bank-style), the fee/levy
 /// breakdown, and — for auto-captured transactions — the exact source SMS.
@@ -285,7 +286,7 @@ class _CategoryCard extends StatelessWidget {
                               ? 'activity2.addCategory'.tr()
                               : 'activity2.confirmCategory'.tr(),
                           tone: StatusTone.warning,
-                          icon: Icons.auto_awesome_outlined,
+                          icon: AppIcons.suggestion,
                         ),
                       ],
                     ],

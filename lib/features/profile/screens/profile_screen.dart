@@ -13,6 +13,7 @@ import '../../auth/data/user.dart';
 import '../../subscription/widgets/subscription_status_tile.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../widgets/offline_sync_section.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Profile: the account header, then grouped settings — Account, Money &
 /// accounts, Notifications & preferences, Security & privacy, Subscription,
@@ -132,7 +133,7 @@ class ProfileScreen extends ConsumerWidget {
             title: 'profile2.help'.tr(),
             children: [
               _Row(
-                icon: Icons.auto_awesome_outlined,
+                icon: AppIcons.coach,
                 title: 'profile2.askCoach'.tr(),
                 subtitle: 'profile2.askCoachSub'.tr(),
                 onTap: () => context.push(Routes.coach),

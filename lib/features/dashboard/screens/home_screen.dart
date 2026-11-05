@@ -26,6 +26,7 @@ import '../data/spending_insight.dart';
 import '../widgets/spending_chart.dart';
 import '../../subscription/widgets/trial_banner.dart';
 import '../../../shared/plural.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Home, the command centre: balance, where the money went, what needs
 /// attention, budgets at a glance, recent activity, then health and coach.
@@ -52,7 +53,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.auto_awesome_outlined),
+            icon: const Icon(AppIcons.coach),
             tooltip: 'home.askCoach'.tr(),
             onPressed: () => context.push(Routes.coach),
           ),
@@ -428,7 +429,7 @@ class _AttentionCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
-              Icon(Icons.auto_awesome_outlined, color: s.warning),
+              Icon(AppIcons.suggestion, color: s.warning),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -584,7 +585,7 @@ class _CoachCard extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
-          child: const Icon(Icons.auto_awesome),
+          child: const Icon(AppIcons.coachFilled),
         ),
         title: Text(
           'home.askCoach'.tr(),
