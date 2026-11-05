@@ -97,6 +97,22 @@
     }
   },
   "onboarding": {
+    "anim": {
+      "balance": "Ndalama zonse",
+      "food": "Chakudya",
+      "foodQuestion": "Chakudya?",
+      "transport": "Mayendedwe",
+      "rent": "Lendi",
+      "sms": "Mwalipira {} kwa SHOPRITE AREA 47. Ref MP2411…",
+      "goalName": "Cholinga cha fizi ya sukulu",
+      "toGo": "{} zatsala",
+      "hours": "Maola 24",
+      "benefitChat": "Chezani ndi Mulinda",
+      "benefitInsights": "Malangizo apamwamba",
+      "benefitAi": "AI imawerenga marisiti ndi ma SMS",
+      "benefitSms": "Kujambula ma SMS opanda malire",
+      "noCard": "Palibe khadi. Palibe chimene chimapitirira chokha."
+    },
     "trial": {
       "title": "Yesani premium kwaulere kwa maola 24",
       "body": "Akaunti yanu imayamba ndi maola 24 oyesa premium kwaulere: mlangizi wa AI, malangizo apamwamba, AI yowerenga marisiti ndi ma SMS, komanso kujambula ma SMS opanda malire. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."

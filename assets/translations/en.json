@@ -97,6 +97,22 @@
     }
   },
   "onboarding": {
+    "anim": {
+      "balance": "Total balance",
+      "food": "Food",
+      "foodQuestion": "Food?",
+      "transport": "Transport",
+      "rent": "Rent",
+      "sms": "You paid {} to SHOPRITE AREA 47. Ref MP2411…",
+      "goalName": "School fees goal",
+      "toGo": "{} to go",
+      "hours": "24 h",
+      "benefitChat": "Chat with Mulinda",
+      "benefitInsights": "Advanced insights",
+      "benefitAi": "AI reads receipts and SMS",
+      "benefitSms": "Unlimited SMS capture",
+      "noCard": "No card. Nothing renews by itself."
+    },
     "trial": {
       "title": "Try premium free for 24 hours",
       "body": "Your account starts with a 24-hour free trial of premium: the AI coach, advanced insights, AI reading of receipts and SMS, and unlimited SMS capture. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
