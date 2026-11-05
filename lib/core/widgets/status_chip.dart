@@ -40,7 +40,9 @@ class StatusChip extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              maxLines: 1,
+              // Wrap rather than cut a status short on narrow rows (360 px,
+              // longer Chichewa labels); two lines is still compact.
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w700),
             ),

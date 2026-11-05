@@ -94,30 +94,38 @@ class _CategoryQuickFixSheetState extends State<CategoryQuickFixSheet> {
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: AppRadius.card),
-                  child: Row(
+                  // The suggestion gets the full width and the button sits
+                  // below it, so long category names are never cut short.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'activity2.weThink'.tr(),
-                              style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
+                      Row(
+                        children: [
+                          CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'activity2.weThink'.tr(),
+                                  style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
+                                ),
+                                Text(
+                                  txn.categoryName ?? '',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
+                                ),
+                              ],
                             ),
-                            Text(
-                              txn.categoryName ?? '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: AppSpacing.md),
                       FilledButton.icon(
                         key: const ValueKey('quick-fix-confirm'),
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, AppSpacing.minTouch)),
+                        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(AppSpacing.minTouch)),
                         onPressed: () =>
                             Navigator.of(context).pop(QuickFixChoice.confirm(applyToSimilar: _applyToSimilar)),
                         icon: const Icon(Icons.check, size: 18),

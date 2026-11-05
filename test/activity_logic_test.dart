@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_models.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/activity/data/day_grouping.dart';
+import 'package:mulinda_mobile/features/transactions/screens/transaction_detail_screen.dart';
 
 Map<String, dynamic> _money(int minor) => {
   'minor_units': minor,
@@ -175,6 +176,24 @@ void main() {
         perPage: 2,
       );
       expect(noMeta.hasMore, isTrue);
+    });
+  });
+
+  group('detailAmountLabel', () {
+    test('income is "+", spending "-", and money moved between own accounts is unsigned', () {
+      final income = Txn.fromJson({'id': '1', 'type': 'income', 'amount': _money(5000)});
+      final spend = Txn.fromJson({'id': '2', 'type': 'expense', 'amount': _money(5000)});
+      final moved = Txn.fromJson({
+        'id': '3',
+        'type': 'expense',
+        'amount': _money(5000),
+        'category': {'id': 'c', 'name': 'Moving my money', 'kind': 'expense', 'is_spending': false},
+      });
+
+      expect(detailAmountLabel(income), '+MK 50');
+      expect(detailAmountLabel(spend), '-MK 50');
+      expect(moved.notSpending, isTrue);
+      expect(detailAmountLabel(moved), 'MK 50');
     });
   });
 }

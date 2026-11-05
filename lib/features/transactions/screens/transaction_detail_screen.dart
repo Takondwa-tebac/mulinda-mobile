@@ -137,7 +137,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
               child: ReceiptView(
                 title: _title(txn),
                 subtitle: txn.merchant ?? txn.counterparty ?? txn.categoryName,
-                amountLine: '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
+                amountLine: detailAmountLabel(txn),
                 amountColor: txn.isIncome
                     ? context.semantic.income
                     : (txn.notSpending ? Theme.of(context).colorScheme.onSurfaceVariant : context.semantic.expense),
@@ -176,7 +176,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
     final levy = txn.children.where((c) => c.isLevy).firstOrNull;
 
     // Build amount breakdown string
-    String amountText = '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}';
+    String amountText = detailAmountLabel(txn);
     if (fee != null || levy != null) {
       final parts = <String>[amountText];
       if (levy != null) parts.add('+ ${levy.amount.formatted} ${'activity2.detail.levyShort'.tr()}');
@@ -251,47 +251,60 @@ class _CategoryCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Row(
+        // Info on top at full width, the action below it, so chips and the
+        // explanation are not squeezed by a trailing button on narrow phones.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor, fallbackIcon: Icons.help_outline),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    txn.categoryName ?? 'activity2.uncategorised'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor, fallbackIcon: Icons.help_outline),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        txn.categoryName ?? 'activity2.uncategorised'.tr(),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        categorisationExplanation(txn),
+                        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                      ),
+                      if (txn.notSpending) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        StatusChip(label: 'activity2.notSpending'.tr(), icon: Icons.swap_horiz),
+                      ],
+                      if (needs) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        StatusChip(
+                          label: txn.categoryId == null
+                              ? 'activity2.addCategory'.tr()
+                              : 'activity2.confirmCategory'.tr(),
+                          tone: StatusTone.warning,
+                          icon: Icons.auto_awesome_outlined,
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(categorisationExplanation(txn), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                  if (txn.notSpending) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    StatusChip(label: 'activity2.notSpending'.tr(), icon: Icons.swap_horiz),
-                  ],
-                  if (needs) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    StatusChip(
-                      label: txn.categoryId == null ? 'activity2.addCategory'.tr() : 'activity2.confirmCategory'.tr(),
-                      tone: StatusTone.warning,
-                      icon: Icons.auto_awesome_outlined,
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             needs
                 ? FilledButton.tonal(
                     onPressed: onChange,
-                    style: FilledButton.styleFrom(minimumSize: const Size(0, AppSpacing.minTouch)),
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(AppSpacing.minTouch)),
                     child: Text(
                       txn.categoryId == null ? 'activity2.detail.choose'.tr() : 'activity2.detail.review'.tr(),
                     ),
                   )
-                : TextButton(
+                : OutlinedButton(
                     onPressed: onChange,
-                    style: TextButton.styleFrom(minimumSize: const Size(AppSpacing.minTouch, AppSpacing.minTouch)),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(AppSpacing.minTouch)),
                     child: Text('activity2.detail.change'.tr()),
                   ),
           ],
@@ -564,4 +577,13 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
       ),
     );
   }
+}
+
+/// The amount with its direction sign, matching the Activity list: income "+",
+/// spending "-", and money moved between the user's own accounts (a
+/// non-spending category) unsigned, because it is neither.
+@visibleForTesting
+String detailAmountLabel(Txn txn) {
+  if (txn.notSpending) return txn.amount.formatted;
+  return '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}';
 }
