@@ -8,6 +8,7 @@ import '../../../core/money/currency_picker.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/section_header.dart';
 import '../../../core/security/biometric_service.dart';
 import '../../../core/theme/theme_mode_controller.dart';
 import '../../auth/providers/auth_controller.dart';
@@ -35,8 +36,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
   }
 
-  String _fmtHm(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  String _fmtHm(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Future<void> _toggleDailySummary(bool value) async {
     setState(() => _summaryBusy = true);
@@ -54,11 +54,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   Future<void> _pickSummaryTime() async {
     final current = _parseHm(ref.read(currentUserProvider)?.dailySummaryTime ?? '18:00');
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current,
-      helpText: 'Send my daily summary at',
-    );
+    final picked = await showTimePicker(context: context, initialTime: current, helpText: 'Send my daily summary at');
     if (picked == null || !mounted) return;
     try {
       await ref.read(authControllerProvider.notifier).updateProfile(dailySummaryTime: _fmtHm(picked));
@@ -140,7 +136,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         // stays scrollable/tappable on gesture-nav devices.
         padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + MediaQuery.of(context).padding.bottom),
         children: [
-          _Label('profile.language'.tr()),
+          SectionHeader('profile.language'.tr(), dense: true),
           Card(
             child: RadioGroup<bool>(
               groupValue: isNyanja,
@@ -154,7 +150,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          _Label('profile.theme'.tr()),
+          SectionHeader('profile.theme'.tr(), dense: true),
           Card(
             child: RadioGroup<ThemeMode>(
               groupValue: themeMode,
@@ -169,7 +165,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          _Label('profile.moneySecurity'.tr()),
+          SectionHeader('profile.moneySecurity'.tr(), dense: true),
           Card(
             child: Column(
               children: [
@@ -194,14 +190,14 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          _Label('Notifications'),
+          SectionHeader('profile2.notifications'.tr(), dense: true),
           Card(
             child: Column(
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.notifications_active_outlined),
-                  title: const Text('Daily spending summary'),
-                  subtitle: const Text('A recap of what you spent, each day'),
+                  title: Text('profile2.dailySummary'.tr()),
+                  subtitle: Text('profile2.dailySummarySub'.tr()),
                   value: summaryEnabled,
                   onChanged: _summaryBusy ? null : _toggleDailySummary,
                 ),
@@ -209,7 +205,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 ListTile(
                   enabled: summaryEnabled,
                   leading: const Icon(Icons.schedule_outlined),
-                  title: const Text('Send at'),
+                  title: Text('profile2.sendAt'.tr()),
                   subtitle: Text(summaryTime.format(context)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: summaryEnabled ? _pickSummaryTime : null,
@@ -217,7 +213,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.history_outlined),
-                  title: const Text('Past summaries'),
+                  title: Text('profile2.pastSummaries'.tr()),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push(Routes.dailySummaries),
                 ),
@@ -226,23 +222,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  const _Label(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              )),
     );
   }
 }
