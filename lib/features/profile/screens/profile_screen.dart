@@ -10,6 +10,7 @@ import '../../../core/security/screenshot_protection.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../auth/data/user.dart';
+import '../../subscription/widgets/subscription_status_tile.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../widgets/offline_sync_section.dart';
 
@@ -125,12 +126,7 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
 
-          _Section(
-            title: 'subscription.title'.tr(),
-            // Kept as one self-contained widget so it can be swapped for the
-            // Growth workstream's SubscriptionStatusTile at integration.
-            children: [_SubscriptionRow(user: user)],
-          ),
+          _Section(title: 'subscription.title'.tr(), children: const [SubscriptionStatusTile()]),
 
           _Section(
             title: 'profile2.help'.tr(),
@@ -254,44 +250,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// The current plan and, on the free tier, the SMS captures left. Isolated on
-/// purpose: the orchestrator replaces this with `SubscriptionStatusTile` from
-/// the subscription feature. Its logic (incl. the remaining count) is unchanged.
-class _SubscriptionRow extends StatelessWidget {
-  const _SubscriptionRow({required this.user});
-
-  final User? user;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final user = this.user;
-    return ListTile(
-      leading: const Icon(Icons.workspace_premium_outlined),
-      title: Text('subscription.title'.tr()),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            user?.subscription.active == true
-                ? (user!.subscription.isTrial
-                      ? 'subscription.trialActive'.tr()
-                      : user.subscription.planLabel ?? 'subscription.active'.tr())
-                : 'subscription.free'.tr(),
-          ),
-          if (user?.subscription.active != true && user != null)
-            Text(
-              'profile2.freeSmsLeft'.tr(args: ['${10 - user.smsCaptureCount}']),
-              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
-            ),
-        ],
-      ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push(Routes.subscription),
     );
   }
 }

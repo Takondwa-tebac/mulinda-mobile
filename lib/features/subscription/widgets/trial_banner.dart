@@ -10,7 +10,10 @@ import 'paywall_sheet.dart';
 /// running (hidden otherwise). States the real time left; no countdown timer or
 /// pressure. Tapping shows what stays free and what the passes cost.
 class TrialBanner extends ConsumerWidget {
-  const TrialBanner({super.key});
+  const TrialBanner({super.key, this.margin = EdgeInsets.zero});
+
+  /// Space around the banner, applied only while it is visible.
+  final EdgeInsetsGeometry margin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +24,7 @@ class TrialBanner extends ConsumerWidget {
     if (hours == null) return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
-    return Material(
+    final banner = Material(
       key: const ValueKey('trial-banner'),
       color: scheme.secondaryContainer,
       borderRadius: BorderRadius.circular(14),
@@ -67,5 +70,6 @@ class TrialBanner extends ConsumerWidget {
         ),
       ),
     );
+    return Padding(padding: margin, child: banner);
   }
 }

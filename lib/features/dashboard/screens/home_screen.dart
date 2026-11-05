@@ -24,6 +24,7 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import '../data/spending_insight.dart';
 import '../widgets/spending_chart.dart';
+import '../../subscription/widgets/trial_banner.dart';
 import '../../../shared/plural.dart';
 
 /// Home, the command centre: balance, where the money went, what needs
@@ -104,6 +105,9 @@ class _Dashboard extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         _BalanceHero(data: data),
         const SizedBox(height: AppSpacing.lg),
+
+        // Renders nothing unless a free trial is running.
+        const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
 
         if (data.isFirstRun) ...[const _FirstRunCard(), const SizedBox(height: AppSpacing.lg)],
 

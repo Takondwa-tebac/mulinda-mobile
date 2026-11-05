@@ -10,7 +10,6 @@ import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
 import '../activity/data/activity_repository.dart';
 import '../capture/data/inbox_repository.dart';
-import '../dashboard/data/dashboard_repository.dart';
 import '../../shared/plural.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
@@ -210,12 +209,11 @@ class _ActivityIcon extends StatelessWidget {
 }
 
 /// The number on the Activity tab: inbox proposals waiting for approval plus
-/// rows that need a look. Auto-recorded rows awaiting review are often the same
-/// rows whose category needs attention, so the larger of the two is used
-/// rather than their sum (which would count those rows twice).
+/// auto-recorded rows waiting for review. Rows that only need a category are
+/// left out on purpose: most real accounts have many of them, so the badge
+/// would sit at 99+ and stop meaning anything. Home's attention card covers them.
 final activityBadgeCountProvider = Provider.autoDispose<int>((ref) {
   final inbox = ref.watch(pendingCountProvider);
   final review = ref.watch(reviewCountProvider).valueOrNull ?? 0;
-  final needs = ref.watch(dashboardProvider).valueOrNull?.needsAttention ?? 0;
-  return inbox + (review > needs ? review : needs);
+  return inbox + review;
 });

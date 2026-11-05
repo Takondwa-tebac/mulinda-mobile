@@ -8,6 +8,7 @@ import '../../../core/router/routes.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../subscription/paywall_prompt.dart';
 import '../../subscription/widgets/paywall_sheet.dart';
 import '../data/inbox_repository.dart';
 import '../data/sms_manual_scanner.dart';
@@ -269,13 +270,21 @@ class _ReviewSheetState extends State<_ReviewSheet> {
       _error = null;
     });
     try {
-      await widget.onApprove(_selectedAccount!.id);
+      // This screen shows its own paywall below, so the global 402 prompt
+      // must not also fire for this save.
+      await PaywallPrompter.instance.guardSave(
+        () => widget.onApprove(_selectedAccount!.id),
+      );
       if (mounted) Navigator.of(context).pop('approved');
     } on ApiException catch (e) {
       if (e.code == 'sms_capture_limit_reached') {
         if (mounted) {
           Navigator.of(context).pop();
-          showPaywall(context, feature: 'SMS auto-capture');
+          showPaywall(
+            context,
+            entitlement: smsCaptureEntitlement,
+            surface: 'inbox_approve',
+          );
         }
       } else if (mounted) {
         setState(() => _error = e.displayMessage);
