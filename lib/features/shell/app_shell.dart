@@ -10,6 +10,8 @@ import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
 import '../activity/data/activity_repository.dart';
 import '../capture/data/inbox_repository.dart';
+import '../dashboard/data/dashboard_repository.dart';
+import '../../shared/plural.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
@@ -44,10 +46,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
-  void _goBranch(int index) => widget.navigationShell.goBranch(
-        index,
-        initialLocation: index == widget.navigationShell.currentIndex,
-      );
+  void _goBranch(int index) =>
+      widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +55,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     // Catch the user loading (or changing) after the first frame.
     ref.listen(currentUserProvider, (_, _) => _maybePromptTerms());
 
-    // Watch for pending items to animate activity tab
-    final pendingCount = ref.watch(pendingCountProvider);
-    final reviewCount = ref.watch(reviewCountProvider).maybeWhen(data: (n) => n, orElse: () => 0);
-    final hasPendingItems = pendingCount > 0 || reviewCount > 0;
+    final badgeCount = ref.watch(activityBadgeCountProvider);
 
     return Scaffold(
       body: Column(
@@ -75,10 +72,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                   navigationShell,
                   // Floats over the content so it never shifts the layout.
                   const SafeArea(
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: AppUpdateBanner(),
-                    ),
+                    child: Align(alignment: Alignment.topCenter, child: AppUpdateBanner()),
                   ),
                 ],
               ),
@@ -91,6 +85,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       floatingActionButton: navigationShell.currentIndex == 3
           ? null
           : FloatingActionButton(
+              tooltip: 'capture.title'.tr(),
               onPressed: () => _showCaptureSheet(context),
               child: const Icon(Icons.add),
             ),
@@ -104,8 +99,8 @@ class _AppShellState extends ConsumerState<AppShell> {
             label: 'nav.home'.tr(),
           ),
           NavigationDestination(
-            icon: _ActivityIcon(hasPending: hasPendingItems),
-            selectedIcon: _ActivityIcon(hasPending: hasPendingItems, selected: true),
+            icon: _ActivityIcon(count: badgeCount),
+            selectedIcon: _ActivityIcon(count: badgeCount, selected: true),
             label: 'nav.activity'.tr(),
           ),
           NavigationDestination(
@@ -143,8 +138,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('capture.title'.tr(),
-                    style: Theme.of(context).textTheme.titleLarge),
+                child: Text('capture.title'.tr(), style: Theme.of(context).textTheme.titleLarge),
               ),
             ),
             _CaptureTile(
@@ -159,7 +153,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
             _CaptureTile(
               icon: Icons.upload_file,
-              label: 'Bulk SMS Import',
+              label: 'activity2.bulkSmsImport'.tr(),
               onTap: () => _open(context, Routes.bulkSmsImport),
             ),
             _CaptureTile(
@@ -199,41 +193,29 @@ class _CaptureTile extends StatelessWidget {
 }
 
 class _ActivityIcon extends StatelessWidget {
-  const _ActivityIcon({required this.hasPending, this.selected = false});
+  const _ActivityIcon({required this.count, this.selected = false});
 
-  final bool hasPending;
+  final int count;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(
-          selected ? Icons.receipt_long : Icons.receipt_long_outlined,
-        ),
-        if (hasPending)
-          Positioned(
-            right: -2,
-            top: -2,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: scheme.error,
-                shape: BoxShape.circle,
-              ),
-              child: const Text(
-                '!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-      ],
+    final icon = Icon(selected ? Icons.receipt_long : Icons.receipt_long_outlined);
+    if (count <= 0) return icon;
+    return Semantics(
+      label: trCount('activity2.badgeSemantics', count),
+      child: Badge(label: Text(count > 99 ? '99+' : '$count'), child: icon),
     );
   }
 }
+
+/// The number on the Activity tab: inbox proposals waiting for approval plus
+/// rows that need a look. Auto-recorded rows awaiting review are often the same
+/// rows whose category needs attention, so the larger of the two is used
+/// rather than their sum (which would count those rows twice).
+final activityBadgeCountProvider = Provider.autoDispose<int>((ref) {
+  final inbox = ref.watch(pendingCountProvider);
+  final review = ref.watch(reviewCountProvider).valueOrNull ?? 0;
+  final needs = ref.watch(dashboardProvider).valueOrNull?.needsAttention ?? 0;
+  return inbox + (review > needs ? review : needs);
+});
