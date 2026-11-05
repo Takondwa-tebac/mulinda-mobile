@@ -30,10 +30,7 @@ class AmountRecordCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
+  static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   String? get _date {
     final raw = rawDate;
@@ -48,7 +45,7 @@ class AmountRecordCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final trimmedNote = note?.trim();
     final hasNote = trimmedNote != null && trimmedNote.isNotEmpty;
-    final date = _date ?? (pending ? 'Waiting to sync' : null);
+    final date = _date ?? (pending ? 'activity2.waitingToSync'.tr() : null);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -64,10 +61,7 @@ class AmountRecordCard extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, size: 20, color: scheme.onPrimaryContainer),
           ),
           const SizedBox(width: 12),
@@ -78,11 +72,7 @@ class AmountRecordCard extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    amount,
-                    maxLines: 1,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                  ),
+                  child: Text(amount, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                 ),
                 if (date != null) ...[
                   const SizedBox(height: 2),
@@ -127,19 +117,23 @@ class AmountRecordCard extends StatelessWidget {
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'edit',
-                child: Row(children: [
-                  const Icon(Icons.edit_outlined, size: 18),
-                  const SizedBox(width: 10),
-                  Text('form.edit'.tr()),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_outlined, size: 18),
+                    const SizedBox(width: 10),
+                    Text('form.edit'.tr()),
+                  ],
+                ),
               ),
               PopupMenuItem(
                 value: 'delete',
-                child: Row(children: [
-                  Icon(Icons.delete_outline, size: 18, color: scheme.error),
-                  const SizedBox(width: 10),
-                  Text('form.delete'.tr(), style: TextStyle(color: scheme.error)),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 18, color: scheme.error),
+                    const SizedBox(width: 10),
+                    Text('form.delete'.tr(), style: TextStyle(color: scheme.error)),
+                  ],
+                ),
               ),
             ],
           ),

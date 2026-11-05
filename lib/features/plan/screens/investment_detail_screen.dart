@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/money/currencies.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/info_row.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/investment_types.dart';
 import '../widgets/mse_logo.dart';
@@ -24,10 +26,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
     final inv = ref
         .watch(investmentsListProvider)
         .maybeWhen(
-          data: (list) => list.firstWhere(
-            (e) => e.id == investment.id,
-            orElse: () => investment,
-          ),
+          data: (list) => list.firstWhere((e) => e.id == investment.id, orElse: () => investment),
           orElse: () => investment,
         );
 
@@ -75,10 +74,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             'invest.type.${inv.type}'.tr(),
-                            style: TextStyle(
-                              color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 13),
                           ),
                         ),
                       ],
@@ -96,19 +92,13 @@ class InvestmentDetailScreen extends ConsumerWidget {
                       inv.isEstimated
                           ? '${'invest.currentValue'.tr()} · ${'invest.estimated'.tr()}'
                           : 'invest.currentValue'.tr(),
-                      style: TextStyle(
-                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 12),
                     ),
                     if (inv.isEstimated) ...[
                       const SizedBox(height: 8),
                       Text(
                         '${'invest.interestSoFar'.tr()}: ${inv.gain.formatted}',
-                        style: TextStyle(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ],
@@ -117,8 +107,7 @@ class InvestmentDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            if (accrual != null)
-              _ProjectionCard(accrual: accrual, maturity: maturity),
+            if (accrual != null) _ProjectionCard(accrual: accrual, maturity: maturity),
 
             if (inv.type == 'shares') _SharePriceCard(investment: inv),
             _ForecastCard(investment: inv),
@@ -128,30 +117,26 @@ class InvestmentDetailScreen extends ConsumerWidget {
             Card(
               child: Column(
                 children: [
-                  _InfoRow(
+                  InfoRow(
                     icon: Icons.savings_outlined,
                     label: 'invest.amountInvested'.tr(),
                     value: inv.amountInvested.formatted,
                   ),
                   if (rate != null)
-                    _InfoRow(
+                    InfoRow(
                       icon: Icons.percent,
                       label: 'invest.annualRate'.tr(),
                       value: '${(rate * 100).toStringAsFixed(2)}%',
                     ),
                   if (inv.startedAt != null)
-                    _InfoRow(
-                      icon: Icons.event_outlined,
-                      label: 'invest.started'.tr(),
-                      value: inv.startedAt!,
-                    ),
+                    InfoRow(icon: Icons.event_outlined, label: 'invest.started'.tr(), value: inv.startedAt!),
                   if (inv.maturityDate != null)
-                    _InfoRow(
+                    InfoRow(
                       icon: Icons.event_available_outlined,
                       label: 'invest.maturity'.tr(),
                       value: inv.maturityDate!,
                     ),
-                  _InfoRow(
+                  InfoRow(
                     icon: Icons.flag_outlined,
                     label: 'form.status'.tr(),
                     value: 'form.investStatus.${inv.status}'.tr(),
@@ -166,25 +151,15 @@ class InvestmentDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    InvestmentItem inv,
-  ) async {
+  Future<void> _delete(BuildContext context, WidgetRef ref, InvestmentItem inv) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: Text('form.confirmDeleteTitle'.tr()),
         content: Text('form.confirmDeleteBody'.tr()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text('form.cancel'.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text('form.delete'.tr()),
-          ),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('form.delete'.tr())),
         ],
       ),
     );
@@ -230,7 +205,10 @@ class _ForecastCard extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(f.expectedPayout!.formatted, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24)),
+                  child: Text(
+                    f.expectedPayout!.formatted,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24),
+                  ),
                 ),
                 Text(
                   f.isEstimate ? 'investForm.payoutEstimate'.tr() : 'investForm.payoutEntered'.tr(),
@@ -243,9 +221,16 @@ class _ForecastCard extends StatelessWidget {
               if (f.roundsRemaining != null)
                 _MiniRow(icon: Icons.repeat, label: 'investForm.roundsLeft'.tr(), value: '${f.roundsRemaining}'),
               if (f.cycleTotal != null)
-                _MiniRow(icon: Icons.savings_outlined, label: 'investForm.cycleTotal'.tr(), value: f.cycleTotal!.formatted),
+                _MiniRow(
+                  icon: Icons.savings_outlined,
+                  label: 'investForm.cycleTotal'.tr(),
+                  value: f.cycleTotal!.formatted,
+                ),
               const SizedBox(height: 6),
-              Text('investForm.forecastNote'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5, height: 1.35)),
+              Text(
+                'investForm.forecastNote'.tr(),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5, height: 1.35),
+              ),
             ],
           ),
         ),
@@ -270,7 +255,9 @@ class _MiniRow extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
-          Expanded(child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
+          Expanded(
+            child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+          ),
           const SizedBox(width: 8),
           Flexible(
             child: FittedBox(
@@ -361,15 +348,21 @@ class _ContributionsCard extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('investForm.contributions'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: Text(
+                      'investForm.contributions'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   if (def.contributions)
-                  FilledButton.tonal(
-                    onPressed: () => _add(context, ref, regular),
-                    style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 16)),
-                    child: Text('investForm.addContribution'.tr()),
-                  ),
+                    FilledButton.tonal(
+                      onPressed: () => _add(context, ref, regular),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 40),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      child: Text('investForm.addContribution'.tr()),
+                    ),
                 ],
               ),
               if (def.reminders.isNotEmpty)
@@ -393,7 +386,11 @@ class _ContributionsCard extends ConsumerWidget {
                 ),
               if (summary != null && summary.count > 0) ...[
                 const SizedBox(height: 8),
-                _MiniRow(icon: Icons.functions, label: 'investForm.contributedSoFar'.tr(), value: summary.total.formatted),
+                _MiniRow(
+                  icon: Icons.functions,
+                  label: 'investForm.contributedSoFar'.tr(),
+                  value: summary.total.formatted,
+                ),
               ],
               if (due != null) ...[
                 _MiniRow(
@@ -404,37 +401,46 @@ class _ContributionsCard extends ConsumerWidget {
               ],
               const SizedBox(height: 4),
               if (def.contributions)
-              list.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-                ),
-                error: (_, _) => const SizedBox.shrink(),
-                data: (items) {
-                  if (items.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text('investForm.noContributions'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35)),
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (final c in items.take(8))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          title: Text(c.amount.formatted, style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: Text([c.contributedOn, if (c.note != null) c.note!].join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 20),
-                            tooltip: 'form.delete'.tr(),
-                            onPressed: () => _remove(context, ref, c),
-                          ),
+                list.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Center(
+                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                  ),
+                  error: (_, _) => const SizedBox.shrink(),
+                  data: (items) {
+                    if (items.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'investForm.noContributions'.tr(),
+                          style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35),
                         ),
-                    ],
-                  );
-                },
-              ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (final c in items.take(8))
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(c.amount.formatted, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(
+                              [c.contributedOn, if (c.note != null) c.note!].join(' · '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              tooltip: 'form.delete'.tr(),
+                              onPressed: () => _remove(context, ref, c),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -459,8 +465,8 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     text: widget.suggestedAmount == null
         ? ''
         : (widget.suggestedAmount! == widget.suggestedAmount!.roundToDouble()
-            ? widget.suggestedAmount!.toInt().toString()
-            : widget.suggestedAmount!.toString()),
+              ? widget.suggestedAmount!.toInt().toString()
+              : widget.suggestedAmount!.toString()),
   );
   final _note = TextEditingController();
   DateTime _day = DateTime.now();
@@ -477,12 +483,9 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await ref.read(planRepositoryProvider).addContribution(
-            widget.investment.id,
-            double.parse(_amount.text.trim()),
-            day: _day,
-            note: _note.text.trim(),
-          );
+      await ref
+          .read(planRepositoryProvider)
+          .addContribution(widget.investment.id, double.parse(_amount.text.trim()), day: _day, note: _note.text.trim());
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context)
@@ -507,7 +510,10 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('investForm.addContribution'.tr(), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              'investForm.addContribution'.tr(),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _amount,
@@ -537,7 +543,10 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(controller: _note, decoration: InputDecoration(labelText: 'investForm.contributionNote'.tr())),
+            TextFormField(
+              controller: _note,
+              decoration: InputDecoration(labelText: 'investForm.contributionNote'.tr()),
+            ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _saving ? null : _save,
@@ -579,7 +588,7 @@ class _SharePriceCard extends ConsumerWidget {
     final trade = investment.lastTrade;
     final up = trade?.isUp ?? false;
     final down = trade?.isDown ?? false;
-    final color = up ? Colors.green.shade700 : (down ? scheme.error : scheme.onSurfaceVariant);
+    final color = up ? context.semantic.success : (down ? scheme.error : scheme.onSurfaceVariant);
 
     return Padding(
       padding: const EdgeInsets.only(top: 16),
@@ -592,14 +601,20 @@ class _SharePriceCard extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('investForm.priceTitle'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: Text(
+                      'investForm.priceTitle'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   // The app's buttons are full width by default; here it sits beside the
                   // title, so it takes only the room its label needs.
                   FilledButton.tonal(
                     onPressed: () => _update(context, ref),
-                    style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 16)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
                     child: Text('investForm.updatePrice'.tr()),
                   ),
                 ],
@@ -615,7 +630,10 @@ class _SharePriceCard extends ConsumerWidget {
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: Text(trade.price.formatted, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24)),
+                        child: Text(
+                          trade.price.formatted,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 24),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -644,7 +662,10 @@ class _SharePriceCard extends ConsumerWidget {
                     ],
                   )
                 else
-                  Text('investForm.needSecondPrice'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+                  Text(
+                    'investForm.needSecondPrice'.tr(),
+                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35),
+                  ),
               ],
             ],
           ),
@@ -681,11 +702,9 @@ class _PriceSheetState extends ConsumerState<_PriceSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await ref.read(planRepositoryProvider).recordSharePrice(
-            widget.investment.id,
-            double.parse(_price.text.trim()),
-            day: _day,
-          );
+      await ref
+          .read(planRepositoryProvider)
+          .recordSharePrice(widget.investment.id, double.parse(_price.text.trim()), day: _day);
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context)
@@ -711,9 +730,15 @@ class _PriceSheetState extends ConsumerState<_PriceSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('investForm.updatePrice'.tr(), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              'investForm.updatePrice'.tr(),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 6),
-            Text('investForm.priceHint'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.35)),
+            Text(
+              'investForm.priceHint'.tr(),
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.35),
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _price,
@@ -775,7 +800,7 @@ class _DetailsCard extends ConsumerWidget {
     for (final f in def.fields) {
       final raw = investment.details[f.key];
       if (raw == null || raw.toString().isEmpty) continue;
-      rows.add(_InfoRow(icon: Icons.notes_outlined, label: f.label(lang), value: _show(f, raw, lang)));
+      rows.add(InfoRow(icon: Icons.notes_outlined, label: f.label(lang), value: _show(f, raw, lang)));
     }
     if (rows.isEmpty) return const SizedBox.shrink();
 
@@ -831,10 +856,7 @@ class _ProjectionCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'invest.maturityProjection'.tr(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
               ],
             ),
@@ -842,9 +864,7 @@ class _ProjectionCard extends StatelessWidget {
             Text(
               accrual.matured || maturity == null
                   ? 'invest.matured'.tr()
-                  : 'invest.maturesOn'.tr(
-                      args: [_fmtDate(maturity!), '${accrual.daysToMaturity}'],
-                    ),
+                  : 'invest.maturesOn'.tr(args: [_fmtDate(maturity!), '${accrual.daysToMaturity}']),
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 14),
@@ -887,12 +907,7 @@ class _ProjectionCard extends StatelessWidget {
 }
 
 class _EstRow extends StatelessWidget {
-  const _EstRow({
-    required this.label,
-    required this.value,
-    required this.sub,
-    this.highlight = false,
-  });
+  const _EstRow({required this.label, required this.value, required this.sub, this.highlight = false});
   final String label;
   final String value;
   final String sub;
@@ -910,10 +925,7 @@ class _EstRow extends StatelessWidget {
             children: [
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(
-                sub,
-                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
-              ),
+              Text(sub, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
             ],
           ),
         ),
@@ -926,33 +938,6 @@ class _EstRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-      title: Text(
-        label,
-        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
-      ),
-      trailing: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
     );
   }
 }

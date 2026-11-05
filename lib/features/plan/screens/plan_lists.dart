@@ -3,8 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
+import '../../../core/widgets/progress_bar.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../data/budget_pace.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../data/plan_models.dart';
 import '../widgets/mse_logo.dart';
@@ -21,31 +29,21 @@ Widget _body<T>({
   return RefreshIndicator(
     onRefresh: onRefresh,
     child: async.when(
-      loading: () => const _Fill(child: CircularProgressIndicator()),
-      error: (_, _) => _Fill(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('plan.loadError'.tr()),
-            const SizedBox(height: 12),
-            FilledButton.tonal(onPressed: onRetry, child: Text('plan.retry'.tr())),
-          ],
-        ),
+      loading: () => const SkeletonList(count: 5),
+      error: (_, _) => ScrollFill(
+        child: ErrorRetry(message: 'plan.loadError'.tr(), onRetry: onRetry),
       ),
       data: (list) => list.isEmpty
-          ? _Fill(child: Text('plan.empty'.tr()))
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-              children: list.map(tile).toList(),
-            ),
+          ? ScrollFill(
+              child: EmptyState(icon: Icons.inbox_outlined, title: 'plan.empty'.tr()),
+            )
+          : ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 96), children: list.map(tile).toList()),
     ),
   );
 }
 
-Widget _fab(BuildContext context, String route) => FloatingActionButton(
-      onPressed: () => context.push(route),
-      child: const Icon(Icons.add),
-    );
+Widget _fab(BuildContext context, String route) =>
+    FloatingActionButton(tooltip: 'plan2.add'.tr(), onPressed: () => context.push(route), child: const Icon(Icons.add));
 
 Future<bool> _confirmDelete(BuildContext context) async {
   final ok = await showDialog<bool>(
@@ -136,7 +134,8 @@ class BudgetsListScreen extends ConsumerWidget {
           budget: b,
           onTap: () => context.push(Routes.budgetDetail, extra: b),
           onEdit: () => context.push(Routes.budgetForm, extra: b),
-          onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
+          onDelete: () =>
+              _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
         ),
       ),
     );
@@ -202,13 +201,19 @@ class InvestmentsListScreen extends ConsumerWidget {
           value: i.value.formatted,
           // Term investments show the interest earned so far (estimated by the
           // API from the rate and elapsed days); others show the plain gain.
-          sub: '${'invest.type.${i.type}'.tr()} · '
+          sub:
+              '${'invest.type.${i.type}'.tr()} · '
               '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
               '${_todayMove(i)}',
-          subColor: i.gain.isNegative ? Colors.red : null,
+          subColor: i.gain.isNegative ? context.semantic.danger : null,
           onTap: () => context.push(Routes.investmentDetail, extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
-          onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteInvestment(i.id), investmentsListProvider),
+          onDelete: () => _delete(
+            context,
+            ref,
+            () => ref.read(planRepositoryProvider).deleteInvestment(i.id),
+            investmentsListProvider,
+          ),
         ),
       ),
     );
@@ -239,7 +244,8 @@ class ProjectsListScreen extends ConsumerWidget {
           progress: p.completionPercentage,
           onTap: () => context.push(Routes.projectDetail, extra: p),
           onEdit: () => context.push(Routes.projectForm, extra: p),
-          onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
+          onDelete: () =>
+              _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
         ),
       ),
     );
@@ -261,17 +267,24 @@ class _BudgetCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final b = budget;
     final percent = b.percentage.clamp(0, 999).toDouble();
-    final alerting = !b.isExceeded && b.alertThreshold > 0 && b.percentage / 100 >= b.alertThreshold;
-    final color = b.isExceeded
-        ? scheme.error
-        : alerting
-            ? const Color(0xFFB26A00)
-            : scheme.primary;
-    final state = b.isExceeded
-        ? 'budgetSpend.overBudget'.tr()
-        : alerting
-            ? 'budgetSpend.almostThere'.tr()
-            : 'budgetSpend.onTrack'.tr();
+    final pace = budgetPace(
+      spentMinor: b.spent.minorUnits,
+      limitMinor: b.limit.minorUnits,
+      from: b.periodFrom,
+      to: b.periodTo,
+      alertThreshold: b.alertThreshold,
+    );
+    final health = b.isExceeded ? BudgetHealth.over : pace.health;
+    final color = switch (health) {
+      BudgetHealth.over => context.semantic.danger,
+      BudgetHealth.atRisk => context.semantic.warning,
+      BudgetHealth.onTrack => context.semantic.brandInk,
+    };
+    final state = switch (health) {
+      BudgetHealth.over => 'budgetSpend.overBudget'.tr(),
+      BudgetHealth.atRisk => 'plan2.status.atRisk'.tr(),
+      BudgetHealth.onTrack => 'budgetSpend.onTrack'.tr(),
+    };
     final left = b.limit.minorUnits - b.spent.minorUnits;
 
     return Card(
@@ -313,28 +326,26 @@ class _BudgetCard extends StatelessWidget {
                           runSpacing: 4,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(state,
-                                  style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            StatusChip(
+                              label: state,
+                              tone: switch (health) {
+                                BudgetHealth.over => StatusTone.danger,
+                                BudgetHealth.atRisk => StatusTone.warning,
+                                BudgetHealth.onTrack => StatusTone.success,
+                              },
                             ),
                             Text(
                               b.period == 'weekly' ? 'form.weekly'.tr() : 'form.monthly_period'.tr(),
                               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
                             ),
-                            if (b.pending)
-                              Icon(Icons.cloud_upload_outlined, size: 14, color: scheme.tertiary),
+                            if (b.pending) Icon(Icons.cloud_upload_outlined, size: 14, color: scheme.tertiary),
                           ],
                         ),
                       ],
                     ),
                   ),
                   PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
+                    tooltip: 'common.more'.tr(),
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (action) {
                       if (action == 'edit') onEdit();
@@ -353,15 +364,7 @@ class _BudgetCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: (percent / 100).clamp(0.0, 1.0),
-                        minHeight: 8,
-                        backgroundColor: scheme.surfaceContainerHigh,
-                        color: color,
-                      ),
-                    ),
+                    ProgressBar(value: percent / 100, health: health, semanticsLabel: b.name),
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -382,7 +385,7 @@ class _BudgetCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       b.isExceeded
-                          ? 'budgetSpend.overBy'.tr(args: [_overBy(b, -left)])
+                          ? 'budgetSpend.overBy'.tr(args: [formatMoney(-left / 100, b.limit.currency)])
                           : 'budgetSpend.percentUsed'.tr(args: [percent.toStringAsFixed(0)]),
                       style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
                     ),
@@ -394,14 +397,6 @@ class _BudgetCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// "MK 12,500" style text for an amount in minor units, borrowing the format of the limit.
-  static String _overBy(BudgetItem b, int minor) {
-    final amount = (minor / 100).toStringAsFixed(minor % 100 == 0 ? 0 : 2);
-    final withCommas = amount.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-    final symbol = b.limit.formatted.replaceAll(RegExp(r'[\d,. ]'), '').trim();
-    return '$symbol $withCommas';
   }
 }
 
@@ -423,7 +418,11 @@ class _BudgetFigure extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: Text(value, maxLines: 1, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15)),
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15),
+          ),
         ),
       ],
     );
@@ -486,20 +485,22 @@ class _PlanTile extends StatelessWidget {
                   if (leading != null) ...[leading!, const SizedBox(width: 12)],
                   Expanded(
                     child: Text.rich(
-                      TextSpan(children: [
-                        if (pending)
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: Tooltip(
-                                message: 'Waiting to sync',
-                                child: Icon(Icons.cloud_upload_outlined, size: 16, color: scheme.tertiary),
+                      TextSpan(
+                        children: [
+                          if (pending)
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Tooltip(
+                                  message: 'activity2.waitingToSync'.tr(),
+                                  child: Icon(Icons.cloud_upload_outlined, size: 16, color: scheme.tertiary),
+                                ),
                               ),
                             ),
-                          ),
-                        TextSpan(text: title),
-                      ]),
+                          TextSpan(text: title),
+                        ],
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
@@ -518,25 +519,16 @@ class _PlanTile extends StatelessWidget {
                           Text(
                             value,
                             maxLines: 1,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: scheme.primary,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w700, color: scheme.primary),
                           ),
                           if (valueLabel != null)
-                            Text(
-                              valueLabel!,
-                              style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontSize: 11,
-                              ),
-                            ),
+                            Text(valueLabel!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
                         ],
                       ),
                     ),
                   ),
                   PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
+                    tooltip: 'common.more'.tr(),
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (action) {
                       if (action == 'extra' && extra != null) extra!.$2();
@@ -544,19 +536,9 @@ class _PlanTile extends StatelessWidget {
                       if (action == 'delete') onDelete();
                     },
                     itemBuilder: (context) => [
-                      if (extra != null)
-                        PopupMenuItem(
-                          value: 'extra',
-                          child: Text(extra!.$1),
-                        ),
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Text('form.edit'.tr()),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Text('form.delete'.tr()),
-                      ),
+                      if (extra != null) PopupMenuItem(value: 'extra', child: Text(extra!.$1)),
+                      PopupMenuItem(value: 'edit', child: Text('form.edit'.tr())),
+                      PopupMenuItem(value: 'delete', child: Text('form.delete'.tr())),
                     ],
                   ),
                 ],
@@ -567,23 +549,14 @@ class _PlanTile extends StatelessWidget {
                   child: Row(
                     children: [
                       if (subLabel != null)
-                        Text(
-                          '$subLabel: ',
-                          style: TextStyle(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 11,
-                          ),
-                        ),
+                        Text('$subLabel: ', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
                       // Wraps onto a second line (then ends in "...") instead of running off the card.
                       Expanded(
                         child: Text(
                           sub!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: subColor ?? scheme.onSurfaceVariant,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: subColor ?? scheme.onSurfaceVariant, fontSize: 13),
                         ),
                       ),
                     ],
@@ -596,24 +569,12 @@ class _PlanTile extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: clampedProgress,
-                            minHeight: 8,
-                            backgroundColor: scheme.surfaceContainerHigh,
-                            color: scheme.primary,
-                          ),
-                        ),
+                        child: ProgressBar(value: clampedProgress, semanticsLabel: title),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${(clampedProgress * 100).toStringAsFixed(0)}%',
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -625,19 +586,4 @@ class _PlanTile extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Fill extends StatelessWidget {
-  const _Fill({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: Center(child: Padding(padding: const EdgeInsets.all(24), child: child)),
-          ),
-        ],
-      );
 }

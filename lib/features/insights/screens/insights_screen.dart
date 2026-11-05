@@ -2,9 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../data/insights_repository.dart';
 import 'notification_detail_screen.dart' show iconForInsightType;
 
@@ -24,22 +28,14 @@ class InsightsScreen extends ConsumerWidget {
           await ref.read(insightsProvider.future);
         },
         child: async.when(
-          loading: () => const _Fill(child: CircularProgressIndicator()),
-          error: (_, _) => _Fill(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('insights.loadError'.tr()),
-                const SizedBox(height: 12),
-                FilledButton.tonal(
-                  onPressed: () => ref.invalidate(insightsProvider),
-                  child: Text('insights.retry'.tr()),
-                ),
-              ],
-            ),
+          loading: () => const SkeletonList(count: 5),
+          error: (_, _) => ScrollFill(
+            child: ErrorRetry(message: 'insights.loadError'.tr(), onRetry: () => ref.invalidate(insightsProvider)),
           ),
           data: (list) => list.isEmpty
-              ? _Fill(child: Text('insights.empty'.tr(), textAlign: TextAlign.center))
+              ? ScrollFill(
+                  child: EmptyState(icon: Icons.notifications_none, title: 'insights.empty'.tr()),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   itemCount: list.length,
@@ -75,10 +71,8 @@ class _InsightCard extends StatelessWidget {
                 imageUrl: insight.imageUrl!,
                 height: 160,
                 fit: BoxFit.cover,
-                placeholder: (_, _) => const SizedBox(
-                  height: 160,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
+                placeholder: (_, _) =>
+                    const SizedBox(height: 160, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
                 errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
             ListTile(
@@ -100,10 +94,7 @@ class _InsightCard extends StatelessWidget {
                   if (insight.date.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        insight.date,
-                        style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
-                      ),
+                      child: Text(insight.date, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
                     ),
                 ],
               ),
@@ -121,19 +112,4 @@ class _InsightCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Fill extends StatelessWidget {
-  const _Fill({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: Center(child: Padding(padding: const EdgeInsets.all(24), child: child)),
-          ),
-        ],
-      );
 }
