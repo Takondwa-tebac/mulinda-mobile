@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/scroll_aware_fab.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/widgets/info_row.dart';
@@ -29,158 +30,162 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
     final text = Theme.of(context).textTheme;
     final pct = (widget.goal.progress * 100).toStringAsFixed(1);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.goal.name, overflow: TextOverflow.ellipsis),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'form.edit'.tr(),
-            onPressed: () => context.push(Routes.goalForm, extra: widget.goal),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'form.delete'.tr(),
-            onPressed: () => _delete(context, ref),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          children: [
-            // Progress ring-style card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor: scheme.primaryContainer,
-                          foregroundColor: scheme.onPrimaryContainer,
-                          child: const Icon(Icons.flag_outlined, size: 26),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(widget.goal.name, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                              Text(
-                                'goal.type.${widget.goal.type}'.tr(),
-                                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '$pct%',
-                          style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: widget.goal.progress,
-                        minHeight: 12,
-                        backgroundColor: scheme.surfaceContainerHigh,
-                        color: scheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _AmountCol(
-                          label: 'goal.saved'.tr(),
-                          value: widget.goal.current.formatted,
-                          color: scheme.primary,
-                        ),
-                        _AmountCol(
-                          label: 'goal.target'.tr(),
-                          value: widget.goal.target.formatted,
-                          color: scheme.onSurfaceVariant,
-                          align: CrossAxisAlignment.end,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+    return ScrollAwareFabScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.goal.name, overflow: TextOverflow.ellipsis),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'form.edit'.tr(),
+              onPressed: () => context.push(Routes.goalForm, extra: widget.goal),
             ),
-            const SizedBox(height: 16),
-
-            // Detail rows
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  children: [
-                    if (widget.goal.targetDate != null)
-                      InfoRow(
-                        icon: Icons.calendar_today_outlined,
-                        label: 'goal.targetDate'.tr(),
-                        value: widget.goal.targetDate!,
-                      ),
-                    if (widget.goal.monthlyContribution != null)
-                      InfoRow(
-                        icon: Icons.repeat_outlined,
-                        label: 'goal.monthly'.tr(),
-                        value: widget.goal.monthlyContribution!.formatted,
-                      ),
-                    InfoRow(
-                      icon: Icons.savings_outlined,
-                      label: 'goal.remaining'.tr(),
-                      value: (widget.goal.target.minorUnits - widget.goal.current.minorUnits) > 0
-                          ? _remaining(widget.goal)
-                          : 'goal.complete'.tr(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Contributions section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'goal.contributions'.tr(),
-                          style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
-                        ),
-                        TextButton.icon(
-                          onPressed: () => showContributeSheet(context, ref, widget.goal.id),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text('form.add'.tr()),
-                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _ContributionsList(goalId: widget.goal.id),
-                  ],
-                ),
-              ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'form.delete'.tr(),
+              onPressed: () => _delete(context, ref),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showContributeSheet(context, ref, widget.goal.id),
-        icon: const Icon(Icons.add),
-        label: Text('form.contribute'.tr()),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            children: [
+              // Progress ring-style card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: scheme.primaryContainer,
+                            foregroundColor: scheme.onPrimaryContainer,
+                            child: const Icon(Icons.flag_outlined, size: 26),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(widget.goal.name, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                Text(
+                                  'goal.type.${widget.goal.type}'.tr(),
+                                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '$pct%',
+                            style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: widget.goal.progress,
+                          minHeight: 12,
+                          backgroundColor: scheme.surfaceContainerHigh,
+                          color: scheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _AmountCol(
+                            label: 'goal.saved'.tr(),
+                            value: widget.goal.current.formatted,
+                            color: scheme.primary,
+                          ),
+                          _AmountCol(
+                            label: 'goal.target'.tr(),
+                            value: widget.goal.target.formatted,
+                            color: scheme.onSurfaceVariant,
+                            align: CrossAxisAlignment.end,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Detail rows
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    children: [
+                      if (widget.goal.targetDate != null)
+                        InfoRow(
+                          icon: Icons.calendar_today_outlined,
+                          label: 'goal.targetDate'.tr(),
+                          value: widget.goal.targetDate!,
+                        ),
+                      if (widget.goal.monthlyContribution != null)
+                        InfoRow(
+                          icon: Icons.repeat_outlined,
+                          label: 'goal.monthly'.tr(),
+                          value: widget.goal.monthlyContribution!.formatted,
+                        ),
+                      InfoRow(
+                        icon: Icons.savings_outlined,
+                        label: 'goal.remaining'.tr(),
+                        value: (widget.goal.target.minorUnits - widget.goal.current.minorUnits) > 0
+                            ? _remaining(widget.goal)
+                            : 'goal.complete'.tr(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Contributions section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'goal.contributions'.tr(),
+                            style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => showContributeSheet(context, ref, widget.goal.id),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: Text('form.add'.tr()),
+                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _ContributionsList(goalId: widget.goal.id),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: ScrollAwareFab(
+          child: FloatingActionButton.extended(
+            onPressed: () => showContributeSheet(context, ref, widget.goal.id),
+            icon: const Icon(Icons.add),
+            label: Text('form.contribute'.tr()),
+          ),
+        ),
       ),
     );
   }

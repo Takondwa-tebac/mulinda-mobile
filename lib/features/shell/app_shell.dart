@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/routes.dart';
 import '../../core/offline/offline_status.dart';
 import '../../core/widgets/app_update_banner.dart';
+import '../../core/widgets/scroll_aware_fab.dart';
 import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
 import '../activity/data/activity_repository.dart';
@@ -27,6 +28,15 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   bool _termsPrompted = false;
 
+  /// Hides the capture button while a tab's list scrolls.
+  final _fab = ScrollAwareFabController();
+
+  @override
+  void dispose() {
+    _fab.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,8 +55,11 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
-  void _goBranch(int index) =>
-      widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+  void _goBranch(int index) {
+    // A new tab starts with the capture button showing.
+    _fab.show();
+    widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,63 +69,69 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final badgeCount = ref.watch(activityBadgeCountProvider);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          // Offline mode: "showing saved data" bar. It handles the status-bar
-          // inset itself, so the content below drops its own top padding.
-          const OfflineBanner(),
-          Expanded(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeTop: ref.watch(offlineBannerVisibleProvider),
-              child: Stack(
-                children: [
-                  navigationShell,
-                  // Floats over the content so it never shifts the layout.
-                  const SafeArea(
-                    child: Align(alignment: Alignment.topCenter, child: AppUpdateBanner()),
-                  ),
-                ],
+    // Scroll notifications from every tab bubble up to this scope.
+    return ScrollAwareFabScope(
+      controller: _fab,
+      child: Scaffold(
+        body: Column(
+          children: [
+            // Offline mode: "showing saved data" bar. It handles the status-bar
+            // inset itself, so the content below drops its own top padding.
+            const OfflineBanner(),
+            Expanded(
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: ref.watch(offlineBannerVisibleProvider),
+                child: Stack(
+                  children: [
+                    navigationShell,
+                    // Floats over the content so it never shifts the layout.
+                    const SafeArea(
+                      child: Align(alignment: Alignment.topCenter, child: AppUpdateBanner()),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      // Hide the capture FAB on the Profile tab (index 3) — it only clutters
-      // and overlaps content there.
-      floatingActionButton: navigationShell.currentIndex == 3
-          ? null
-          : FloatingActionButton(
-              tooltip: 'capture.title'.tr(),
-              onPressed: () => _showCaptureSheet(context),
-              child: const Icon(Icons.add),
+          ],
+        ),
+        // Hide the capture FAB on the Profile tab (index 3) — it only clutters
+        // and overlaps content there.
+        floatingActionButton: navigationShell.currentIndex == 3
+            ? null
+            : ScrollAwareFab(
+                child: FloatingActionButton(
+                  tooltip: 'capture.title'.tr(),
+                  onPressed: () => _showCaptureSheet(context),
+                  child: const Icon(Icons.add),
+                ),
+              ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: _goBranch,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: 'nav.home'.tr(),
             ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _goBranch,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: 'nav.home'.tr(),
-          ),
-          NavigationDestination(
-            icon: _ActivityIcon(count: badgeCount),
-            selectedIcon: _ActivityIcon(count: badgeCount, selected: true),
-            label: 'nav.activity'.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.insights_outlined),
-            selectedIcon: const Icon(Icons.insights),
-            label: 'nav.plan'.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: 'nav.profile'.tr(),
-          ),
-        ],
+            NavigationDestination(
+              icon: _ActivityIcon(count: badgeCount),
+              selectedIcon: _ActivityIcon(count: badgeCount, selected: true),
+              label: 'nav.activity'.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.insights_outlined),
+              selectedIcon: const Icon(Icons.insights),
+              label: 'nav.plan'.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person),
+              label: 'nav.profile'.tr(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -121,11 +140,13 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// captured before popping so the sheet context can be safely torn down.
   void _open(BuildContext context, String route) {
     final router = GoRouter.of(context);
+    _fab.show();
     Navigator.of(context).pop();
     router.push(route);
   }
 
   void _showCaptureSheet(BuildContext context) {
+    _fab.show();
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
