@@ -2,9 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/analytics/analytics.dart';
 import '../../../core/router/routes.dart';
 
-/// Three branded intro slides with a persistent language toggle (Chichewa
+/// Four branded intro slides (the last one explains the free trial honestly) with a persistent language toggle (Chichewa
 /// default, switchable here) and Skip / Next / Get started controls.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -21,6 +22,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _SlideData(Icons.account_balance_wallet_rounded, 'onboarding.slide1.title', 'onboarding.slide1.body'),
     _SlideData(Icons.bolt_rounded, 'onboarding.slide2.title', 'onboarding.slide2.body'),
     _SlideData(Icons.trending_up_rounded, 'onboarding.slide3.title', 'onboarding.slide3.body'),
+    // What the free trial includes, how long it lasts, and that no card is needed.
+    _SlideData(Icons.workspace_premium_rounded, 'onboarding.trial.title', 'onboarding.trial.body'),
   ];
 
   bool get _isLast => _index == _slides.length - 1;
@@ -33,11 +36,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // Hand off to the permissions screen, which explains each permission and
   // then marks onboarding seen + proceeds to login.
-  void _goPermissions() => context.go('${Routes.permissions}?onboarding=true');
+  void _goPermissions({required bool skipped}) {
+    Analytics.track('onboarding_completed', {
+      'step': _index + 1,
+      'reason': skipped ? 'skipped' : 'finished',
+      'locale': context.locale.languageCode,
+    });
+    context.go('${Routes.permissions}?onboarding=true');
+  }
 
   void _next() {
     if (_isLast) {
-      _goPermissions();
+      _goPermissions(skipped: false);
     } else {
       _controller.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -60,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   const _LanguageToggle(),
                   TextButton(
-                    onPressed: _goPermissions,
+                    onPressed: () => _goPermissions(skipped: true),
                     child: Text('onboarding.skip'.tr()),
                   ),
                 ],

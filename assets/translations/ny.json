@@ -1,4 +1,60 @@
 {
+  "paywall": {
+    "title": "Mulinda Premium",
+    "seePlans": "Onani mapasi",
+    "choosePass": "Sankhani pasi",
+    "noAutoRenew": "Palibe kudzilipira kokha: mumalipira kamodzi pa pasi iliyonse, ndipo premium imatha pasi ikatha. Zolemba zanu ndi zinthu zaulere zimakhalabe zanu.",
+    "trialNote": "Nthawi yanu yoyesa yaulere ikupitirira, yatsala pafupifupi maola {hours}. Sankhani pasi pokhapokha ngati mukufuna premium ikatha.",
+    "headline": {
+      "coachChat": "Funsani mlangizi chilichonse chokhudza ndalama zanu",
+      "coachHistory": "Pitirizani zokambirana zakale ndi mlangizi pomwe munasiyira",
+      "insights": "Onani komwe ndalama zanu zikupita ndi malangizo apamwamba ndi maneneratu",
+      "aiCapture": "Lolani AI iwerenge marisiti ndi SMS iliyonse kukhala zochitika",
+      "offline": "Pitirizani kugwiritsa ntchito Mulinda popanda intaneti",
+      "smsCapture": "Jambulani SMS iliyonse ya mobile money, popanda malire",
+      "default": "Thandizo lowonjezera pa ndalama zanu, nthawi yomwe mukufuna"
+    },
+    "compare": {
+      "free": "Zaulere",
+      "premium": "Premium",
+      "included": "Zilipo",
+      "notIncluded": "Palibe",
+      "manual": "Kulemba pamanja",
+      "balances": "Ndalama zotsala mu akaunti",
+      "budgetsGoals": "Bajeti ndi zolinga",
+      "smsCapture": "Kujambula ma SMS",
+      "smsFree": "{limit} zaulere",
+      "unlimited": "Popanda malire",
+      "coach": "Mlangizi wa AI",
+      "insights": "Malangizo apamwamba",
+      "aiReading": "AI yowerenga marisiti ndi SMS",
+      "offline": "Kugwira ntchito popanda intaneti",
+      "offlineNote": "Pasi ya masiku 3 kapena kupitirira",
+      "exports": "Kutulutsa zolemba",
+      "exportsFree": "Ndalama yochepa nthawi iliyonse",
+      "exportsPremium": "Zaulere pa mapasi olipira"
+    },
+    "plan": {
+      "oneDay": "Tsiku limodzi",
+      "days": "Masiku {days}",
+      "perDay": "{price} pa tsiku",
+      "total": "zonse",
+      "lowestPerDay": "Mtengo wotsika pa tsiku",
+      "includesOffline": "Ili ndi kugwira ntchito popanda intaneti"
+    },
+    "checkout": {
+      "title": "Kulipira kotetezeka",
+      "paid": "Premium yatsegulidwa. Sangalalani!",
+      "pending": "Tikutsimikizirabe malipiro anu. Ngati ndalama zachoka mu akaunti yanu, pasi yanu idzatseguka yokha ndipo tidzakudziwitsani.",
+      "failed": "Malipiro sanadutse, choncho palibe chomwe chatsegulidwa. Mutha kuyesanso.",
+      "cancelled": "Mwatseka malipiro. Palibe chomwe chatsegulidwa; mutha kusankha pasi nthawi iliyonse.",
+      "retry": "Yesaninso",
+      "leaveTitle": "Kusiya kulipira?",
+      "leaveBody": "Ngati mwavomereza kale malipiro pa foni yanu, dikirani pang'ono kuti titsimikizire.",
+      "stay": "Khalani",
+      "leave": "Chokani"
+    }
+  },
   "app": {
     "name": "Mulinda",
     "tagline": "Uphungu Wabwino , Pa ndalama zanu."
@@ -41,6 +97,10 @@
     }
   },
   "onboarding": {
+    "trial": {
+      "title": "Yesani premium kwaulere kwa maola 24",
+      "body": "Akaunti yanu imayamba ndi maola 24 oyesa premium kwaulere: mlangizi wa AI, malangizo apamwamba, AI yowerenga marisiti ndi ma SMS, komanso kujambula ma SMS opanda malire. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."
+    },
     "chooseLanguage": "Sankhani Chiyankhulo chanu",
     "skip": "Dumphani",
     "next": "Tsatira",
@@ -475,6 +535,22 @@
     "moneySecurity": "Ndalama & chitetezo"
   },
   "subscription": {
+    "tile": {
+      "free": "Pulani yaulere · kusunga ndalama ndi kwaulere",
+      "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala",
+      "trialEnds": "Nthawi yoyesa · yatsala pafupifupi maola {hours}",
+      "activeUntil": "{plan} · ikugwira ntchito mpaka {date}"
+    },
+    "trialBanner": {
+      "title": "Nthawi yoyesa yaulere: yatsala pafupifupi maola {hours}",
+      "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha."
+    },
+    "sms": {
+      "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala",
+      "freeIntro": "Pulani yanu yaulere ili ndi ma SMS {limit}",
+      "usedUp": "Mwagwiritsa ntchito ma SMS anu aulere onse. Mutha kulembabe zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
+      "howItWorks": "Mauthenga ochokera ku mabanki ndi mobile money odziwika amawerengedwa kwaulere. Ena amadikira mu inbox kuti mudzaze nokha."
+    },
     "title": "Kulembetsa",
     "active": "Yogwira",
     "free": "Pulani yaulere",
