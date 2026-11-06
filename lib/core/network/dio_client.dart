@@ -21,6 +21,7 @@ import '../offline/offline_mode.dart';
 import '../offline/offline_status.dart';
 import '../router/app_router.dart';
 import '../storage/token_storage.dart';
+import 'client_headers_interceptor.dart';
 
 /// A configured [Dio] instance: base URL, JSON headers, bearer-token injection,
 /// 401 handling that clears the stored token, and 402 handling that offers the
@@ -34,6 +35,9 @@ final dioProvider = Provider<Dio>((ref) {
       headers: {'Accept': 'application/json'},
     ),
   );
+
+  // App version, platform, OS version and a request id on every call.
+  dio.interceptors.add(ClientHeadersInterceptor());
 
   final tokens = ref.read(tokenStorageProvider);
 
