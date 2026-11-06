@@ -38,6 +38,8 @@ Future<bool> showPaywall(
   try {
     result = await showModalBottomSheet<bool>(
       context: context,
+      // Above the shell, so the capture button never sits over the paywall.
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,

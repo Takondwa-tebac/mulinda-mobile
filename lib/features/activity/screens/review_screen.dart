@@ -272,7 +272,7 @@ class _ReviewCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final muted = scheme.onSurfaceVariant;
     final direction = txn.isIncome ? MoneyDirection.income : MoneyDirection.expense;
-    final title = txn.merchant ?? txn.counterparty ?? txn.reference ?? 'activity2.type.${txn.type}'.tr();
+    final title = displayMerchant(txn);
     final meta = [
       if (txn.accountName != null) txn.accountName!,
       if (txn.occurredLocal != null) '${dayHeaderLabel(txn.occurredLocal)} ${timeOfDay(txn.occurredLocal)}',

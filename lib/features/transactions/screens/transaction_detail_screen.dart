@@ -137,7 +137,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
               key: _receiptKey,
               child: ReceiptView(
                 title: _title(txn),
-                subtitle: txn.merchant ?? txn.counterparty ?? txn.categoryName,
+                subtitle: displayMerchant(txn),
                 amountLine: detailAmountLabel(txn),
                 amountColor: txn.isIncome
                     ? context.semantic.income
@@ -188,16 +188,16 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
     return [
       if (txn.accountName != null) ReceiptRow('activity2.detail.from'.tr(), txn.accountName!),
       if ((txn.counterparty ?? txn.merchant) != null)
-        ReceiptRow(
-          txn.isIncome ? 'activity2.detail.fromParty'.tr() : 'activity2.detail.to'.tr(),
-          (txn.counterparty ?? txn.merchant)!,
-        ),
+        ReceiptRow(txn.isIncome ? 'activity2.detail.fromParty'.tr() : 'activity2.detail.to'.tr(), displayMerchant(txn)),
       ReceiptRow('activity2.detail.amount'.tr(), amountText, emphasize: true),
       // Show individual fee/levy breakdown for clarity
       if (fee != null) ReceiptRow('activity2.detail.fee'.tr(), '-${fee.amount.formatted}', muted: true),
       if (levy != null) ReceiptRow('activity2.detail.levy'.tr(), '-${levy.amount.formatted}', muted: true),
       if (txn.categoryName != null) ReceiptRow('activity2.detail.category'.tr(), txn.categoryName!),
       if (txn.reference != null) ReceiptRow('activity2.detail.reference'.tr(), txn.reference!),
+      // A bank reference that arrived as the "merchant" is kept here, in full.
+      if (looksLikeReference(txn.merchant) && txn.merchant != txn.reference)
+        ReceiptRow('activity2.detail.bankReference'.tr(), txn.merchant!.trim()),
       ReceiptRow('activity2.detail.date'.tr(), _prettyDateTime(txn.occurredAt)),
       if (txn.balanceAfter != null) ReceiptRow('activity2.detail.balanceAfter'.tr(), txn.balanceAfter!.formatted),
       if (txn.status != null)

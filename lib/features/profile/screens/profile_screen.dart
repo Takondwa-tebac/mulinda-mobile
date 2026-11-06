@@ -199,6 +199,7 @@ class ProfileScreen extends ConsumerWidget {
     final current = ref.read(currentUserProvider)?.declaredIncomeBracket;
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) => DraggableScrollableSheet(

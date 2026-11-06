@@ -11,6 +11,7 @@ import '../../plan/data/plan_repository.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 import 'category_picker.dart';
+import 'txn_view.dart';
 import '../../../shared/plural.dart';
 
 /// What the user chose in the quick-fix sheet.
@@ -40,128 +41,153 @@ class CategoryQuickFixSheet extends StatefulWidget {
 class _CategoryQuickFixSheetState extends State<CategoryQuickFixSheet> {
   bool _applyToSimilar = false;
 
+  /// The search field has focus or text: the suggestion card and the switch
+  /// step aside so the results get the room above the keyboard.
+  bool _searching = false;
+
   Txn get txn => widget.txn;
-  String? get _merchant => (txn.merchant?.trim().isNotEmpty ?? false) ? txn.merchant!.trim() : null;
+
+  /// A real merchant name; bank references never get "apply to all".
+  String? get _merchant => cleanMerchant(txn);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final media = MediaQuery.of(context);
-    final height = (media.size.height * 0.88).clamp(
-      0.0,
-      media.size.height - media.viewInsets.bottom - media.padding.top - 40,
-    );
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final kind = txn.isIncome ? 'income' : 'expense';
     final suggestion = txn.categoryId != null && txn.needsCategory;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-      child: SizedBox(
-        height: height,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, AppSpacing.md),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'activity2.quickFixTitle'.tr(),
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          _merchant ?? 'activity2.thisTransaction'.tr(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AmountText(txn.amount, direction: txn.isIncome ? MoneyDirection.income : MoneyDirection.expense),
-                ],
-              ),
+    Widget collapsible(Widget child) => SliverToBoxAdapter(
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: _searching ? const SizedBox(width: double.infinity) : child,
+      ),
+    );
+
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'activity2.quickFixTitle'.tr(),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  displayMerchant(txn),
+                  key: const ValueKey('quick-fix-merchant'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ],
             ),
-            if (suggestion)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: AppRadius.card),
-                  // The suggestion gets the full width and the button sits
-                  // below it, so long category names are never cut short.
+          ),
+          AmountText(txn.amount, direction: txn.isIncome ? MoneyDirection.income : MoneyDirection.expense),
+        ],
+      ),
+    );
+
+    final card = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, AppSpacing.sm),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: AppRadius.card),
+        // The suggestion gets the full width and the button sits below it, so
+        // long category names are never cut short.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          CategoryAvatar(icon: txn.categoryIcon, color: txn.categoryColor),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'activity2.weThink'.tr(),
-                                  style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
-                                ),
-                                Text(
-                                  txn.categoryName ?? '',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      FilledButton.icon(
-                        key: const ValueKey('quick-fix-confirm'),
-                        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(AppSpacing.minTouch)),
-                        onPressed: () =>
-                            Navigator.of(context).pop(QuickFixChoice.confirm(applyToSimilar: _applyToSimilar)),
-                        icon: const Icon(Icons.check, size: 18),
-                        label: Text('activity2.yesCorrect'.tr()),
+                      Text('activity2.weThink'.tr(), style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer)),
+                      Text(
+                        txn.categoryName ?? '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
                       ),
                     ],
                   ),
                 ),
-              ),
-            if (_merchant != null)
-              SwitchListTile(
-                key: const ValueKey('quick-fix-similar'),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                value: _applyToSimilar,
-                onChanged: (v) => setState(() => _applyToSimilar = v),
-                title: Text('activity2.applyToMerchant'.tr(args: [_merchant!])),
-                subtitle: Text('activity2.applyToMerchantSub'.tr()),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, AppSpacing.sm, 20, AppSpacing.sm),
-              child: Text(
-                suggestion ? 'activity2.orChooseAnother'.tr() : 'activity2.chooseCategory'.tr(),
-                style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
-              ),
+              ],
             ),
-            Expanded(
-              child: CategoryPickerList(
-                kind: kind,
-                createKind: kind,
-                selectedId: txn.categoryId,
-                showNone: false,
-                onSelected: (choice) =>
-                    Navigator.of(context).pop(QuickFixChoice.pick(choice.id, applyToSimilar: _applyToSimilar)),
-              ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              key: const ValueKey('quick-fix-confirm'),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(AppSpacing.minTouch)),
+              onPressed: () => Navigator.of(context).pop(QuickFixChoice.confirm(applyToSimilar: _applyToSimilar)),
+              icon: const Icon(Icons.check, size: 18),
+              label: Text('activity2.yesCorrect'.tr()),
             ),
           ],
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, box) => Padding(
+        padding: EdgeInsets.only(bottom: keyboard),
+        child: SizedBox(
+          height: sheetHeight(box, keyboard),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Pinned: always visible, even with the keyboard open.
+              header,
+              Expanded(
+                child: CategoryPickerList(
+                  kind: kind,
+                  createKind: kind,
+                  selectedId: txn.categoryId,
+                  showNone: false,
+                  onSearchingChanged: (v) => setState(() => _searching = v),
+                  onSelected: (choice) =>
+                      Navigator.of(context).pop(QuickFixChoice.pick(choice.id, applyToSimilar: _applyToSimilar)),
+                  leading: [
+                    if (suggestion) collapsible(card),
+                    if (_merchant != null)
+                      collapsible(
+                        SwitchListTile(
+                          key: const ValueKey('quick-fix-similar'),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                          value: _applyToSimilar,
+                          onChanged: (v) => setState(() => _applyToSimilar = v),
+                          title: Text(
+                            'activity2.applyToMerchant'.tr(args: [_merchant!]),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text('activity2.applyToMerchantSub'.tr()),
+                        ),
+                      ),
+                    collapsible(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, AppSpacing.sm, 20, AppSpacing.sm),
+                        child: Text(
+                          suggestion ? 'activity2.orChooseAnother'.tr() : 'activity2.chooseCategory'.tr(),
+                          style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -186,6 +212,9 @@ Future<Txn?> openCategoryQuickFix(
   final messenger = ScaffoldMessenger.maybeOf(context);
   final choice = await showModalBottomSheet<QuickFixChoice>(
     context: context,
+    // Above the shell: the keyboard inset reaches the sheet and no tab button
+    // is drawn over it.
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     constraints: const BoxConstraints(maxWidth: 560),

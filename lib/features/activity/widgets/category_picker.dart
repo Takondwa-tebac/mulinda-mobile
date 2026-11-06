@@ -112,11 +112,23 @@ Future<CategoryChoice?> showCategoryPicker(
 }) {
   return showModalBottomSheet<CategoryChoice>(
     context: context,
+    // Above the shell, so the keyboard inset reaches the sheet and no tab
+    // button is drawn over it.
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     constraints: const BoxConstraints(maxWidth: 560),
     builder: (_) => _CategorySheet(kind: kind, createKind: createKind, selectedId: selectedId, where: where),
   );
+}
+
+/// Height for a tall bottom sheet: up to [fraction] of the space the sheet is
+/// given, minus the keyboard. Measured from the sheet's own constraints, never
+/// from the screen size, so it is right wherever the sheet is hosted.
+double sheetHeight(BoxConstraints box, double keyboard, {double fraction = 0.9}) {
+  final room = (box.maxHeight - keyboard).clamp(0.0, double.infinity);
+  final wanted = box.maxHeight * fraction;
+  return wanted < room ? wanted : room;
 }
 
 class _CategorySheet extends StatelessWidget {
@@ -129,46 +141,43 @@ class _CategorySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    // Tall, but never taller than what the keyboard and the status bar leave free.
-    final height = (media.size.height * 0.85).clamp(
-      0.0,
-      media.size.height - media.viewInsets.bottom - media.padding.top - 56,
-    );
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-      child: SizedBox(
-        height: height,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Text(
-                'categoryPicker.title'.tr(),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    return LayoutBuilder(
+      builder: (context, box) => Padding(
+        padding: EdgeInsets.only(bottom: keyboard),
+        child: SizedBox(
+          height: sheetHeight(box, keyboard),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Text(
+                  'categoryPicker.title'.tr(),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            Expanded(
-              child: CategoryPickerList(
-                kind: kind,
-                createKind: createKind,
-                selectedId: selectedId,
-                where: where,
-                autofocus: true,
-                onSelected: (choice) => Navigator.of(context).pop(choice),
+              Expanded(
+                child: CategoryPickerList(
+                  kind: kind,
+                  createKind: createKind,
+                  selectedId: selectedId,
+                  where: where,
+                  autofocus: true,
+                  onSelected: (choice) => Navigator.of(context).pop(choice),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// The searchable category list (search field + rows + "create" row), usable
-/// inside any sheet. Needs a bounded height (e.g. inside an [Expanded]).
+/// The searchable category list: a search field above one scroll view with the
+/// rows and the "create" row, usable inside any sheet. [leading] slivers scroll
+/// above the rows (e.g. a suggestion card). Needs a bounded height.
 class CategoryPickerList extends ConsumerStatefulWidget {
   const CategoryPickerList({
     super.key,
@@ -180,6 +189,8 @@ class CategoryPickerList extends ConsumerStatefulWidget {
     this.showNone = true,
     this.enabled = true,
     this.where,
+    this.leading = const [],
+    this.onSearchingChanged,
   });
 
   final ValueChanged<CategoryChoice> onSelected;
@@ -193,16 +204,51 @@ class CategoryPickerList extends ConsumerStatefulWidget {
   final bool showNone;
   final bool enabled;
 
+  /// Slivers shown before the search field, in the same scroll view.
+  final List<Widget> leading;
+
+  /// Called with true while the search field has focus or text.
+  final ValueChanged<bool>? onSearchingChanged;
+
   @override
   ConsumerState<CategoryPickerList> createState() => _CategoryPickerListState();
 }
 
 class _CategoryPickerListState extends ConsumerState<CategoryPickerList> {
   final _search = TextEditingController();
+  final _focus = FocusNode();
+  final _scroll = ScrollController();
   bool _creating = false;
+  bool _searching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_report);
+  }
+
+  void _report() {
+    final now = _focus.hasFocus || _search.text.trim().isNotEmpty;
+    if (now != _searching) {
+      _searching = now;
+      widget.onSearchingChanged?.call(now);
+      _toTop();
+    }
+  }
+
+  /// Results start at the top: after the content above collapses, or the
+  /// query changes, nothing is left hidden under the pinned search field.
+  void _toTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients && _scroll.offset != 0) _scroll.jumpTo(0);
+    });
+  }
 
   @override
   void dispose() {
+    _focus.removeListener(_report);
+    _focus.dispose();
+    _scroll.dispose();
     _search.dispose();
     super.dispose();
   }
@@ -230,94 +276,134 @@ class _CategoryPickerListState extends ConsumerState<CategoryPickerList> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final async = ref.watch(categoriesProvider);
-    final media = MediaQuery.of(context);
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final enabled = widget.enabled && !_creating;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: TextField(
-            controller: _search,
-            autofocus: widget.autofocus,
-            textInputAction: TextInputAction.search,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'categoryPicker.search'.tr(),
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _search.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'common.clear'.tr(),
-                      icon: const Icon(Icons.close),
-                      onPressed: () => setState(_search.clear),
-                    ),
-            ),
+    final search = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: TextField(
+        key: const ValueKey('category-search'),
+        controller: _search,
+        focusNode: _focus,
+        autofocus: widget.autofocus,
+        textInputAction: TextInputAction.search,
+        onChanged: (_) {
+          setState(() {});
+          _report();
+          _toTop();
+        },
+        decoration: InputDecoration(
+          hintText: 'categoryPicker.search'.tr(),
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _search.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'common.clear'.tr(),
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(_search.clear);
+                    _report();
+                  },
+                ),
+        ),
+      ),
+    );
+
+    final List<Widget> rows = async.when(
+      loading: () => const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
           ),
         ),
-        Expanded(
-          child: async.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => Center(child: Text('categoryPicker.loadError'.tr())),
-            data: (all) {
-              final matches = filterCategories(all, _search.text, kind: widget.kind, where: widget.where);
-              final query = _search.text.trim();
-              final offerCreate = canCreateCategory(all, query, kind: widget.kind ?? widget.createKind);
+      ],
+      error: (_, _) => [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(child: Text('categoryPicker.loadError'.tr())),
+          ),
+        ),
+      ],
+      data: (all) {
+        final matches = filterCategories(all, _search.text, kind: widget.kind, where: widget.where);
+        final query = _search.text.trim();
+        final offerCreate = canCreateCategory(all, query, kind: widget.kind ?? widget.createKind);
+        return [
+          SliverList.list(
+            children: [
+              if (query.isEmpty && widget.showNone)
+                ListTile(
+                  enabled: enabled,
+                  leading: CircleAvatar(
+                    backgroundColor: scheme.surfaceContainerHigh,
+                    child: Icon(Icons.block, size: 18, color: scheme.onSurfaceVariant),
+                  ),
+                  title: Text('categoryPicker.none'.tr()),
+                  trailing: widget.selectedId == null ? const Icon(Icons.check) : null,
+                  onTap: () => widget.onSelected(const CategoryChoice(null)),
+                ),
+              for (final c in matches)
+                ListTile(
+                  enabled: enabled,
+                  leading: CategoryAvatar(icon: c.icon, color: c.color),
+                  title: Text(c.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  trailing: c.id == widget.selectedId ? const Icon(Icons.check) : null,
+                  onTap: () => widget.onSelected(CategoryChoice(c.id)),
+                ),
+              if (matches.isEmpty && query.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  child: Column(
+                    children: [
+                      Icon(Icons.search_off, size: 40, color: scheme.onSurfaceVariant),
+                      const SizedBox(height: 8),
+                      Text('categoryPicker.notFound'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              if (offerCreate)
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: scheme.primaryContainer,
+                    child: _creating
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(Icons.add, color: scheme.onPrimaryContainer),
+                  ),
+                  title: Text(
+                    'categoryPicker.createNamed'.tr(args: [query]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text('categoryPicker.createHint'.tr()),
+                  enabled: enabled,
+                  onTap: () => _create(query),
+                ),
+            ],
+          ),
+        ];
+      },
+    );
 
-              return ListView(
-                padding: EdgeInsets.only(bottom: 24 + (media.viewInsets.bottom > 0 ? 0 : media.padding.bottom)),
-                children: [
-                  if (query.isEmpty && widget.showNone)
-                    ListTile(
-                      enabled: enabled,
-                      leading: CircleAvatar(
-                        backgroundColor: scheme.surfaceContainerHigh,
-                        child: Icon(Icons.block, size: 18, color: scheme.onSurfaceVariant),
-                      ),
-                      title: Text('categoryPicker.none'.tr()),
-                      trailing: widget.selectedId == null ? const Icon(Icons.check) : null,
-                      onTap: () => widget.onSelected(const CategoryChoice(null)),
-                    ),
-                  for (final c in matches)
-                    ListTile(
-                      enabled: enabled,
-                      leading: CategoryAvatar(icon: c.icon, color: c.color),
-                      title: Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      trailing: c.id == widget.selectedId ? const Icon(Icons.check) : null,
-                      onTap: () => widget.onSelected(CategoryChoice(c.id)),
-                    ),
-                  if (matches.isEmpty && query.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                      child: Column(
-                        children: [
-                          Icon(Icons.search_off, size: 40, color: scheme.onSurfaceVariant),
-                          const SizedBox(height: 8),
-                          Text('categoryPicker.notFound'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  if (offerCreate)
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: scheme.primaryContainer,
-                        child: _creating
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : Icon(Icons.add, color: scheme.onPrimaryContainer),
-                      ),
-                      title: Text(
-                        'categoryPicker.createNamed'.tr(args: [query]),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text('categoryPicker.createHint'.tr()),
-                      enabled: enabled,
-                      onTap: () => _create(query),
-                    ),
-                ],
-              );
-            },
+    // The search field stays put above the scrolling part, so it is always in
+    // reach and focusing it never scrolls the list away.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        search,
+        Expanded(
+          child: CustomScrollView(
+            key: const ValueKey('category-picker-scroll'),
+            controller: _scroll,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              ...widget.leading,
+              ...rows,
+              SliverPadding(
+                padding: EdgeInsets.only(bottom: 24 + (keyboard > 0 ? 0 : MediaQuery.paddingOf(context).bottom)),
+              ),
+            ],
           ),
         ),
       ],

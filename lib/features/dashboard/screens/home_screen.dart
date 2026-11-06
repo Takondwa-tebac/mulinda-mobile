@@ -257,9 +257,9 @@ class _Dashboard extends ConsumerWidget {
 
   TransactionTileData _recentTile(RecentTxn t) {
     final day = DateTime.tryParse(t.date);
-    final title = (t.merchant?.trim().isNotEmpty ?? false)
-        ? t.merchant!.trim()
-        : (t.category ?? 'activity2.type.${t.type}'.tr());
+    // Bank references are never shown as a name (see displayName).
+    final named = (t.merchant?.trim().isNotEmpty ?? false) && !looksLikeReference(t.merchant);
+    final title = named ? t.merchant!.trim() : (t.category ?? displayName(type: t.type, merchant: t.merchant));
     return TransactionTileData(
       id: t.id,
       title: title,

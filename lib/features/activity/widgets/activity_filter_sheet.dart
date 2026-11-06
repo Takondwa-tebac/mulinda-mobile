@@ -13,6 +13,7 @@ import 'txn_view.dart';
 Future<TxnQuery?> showActivityFilterSheet(BuildContext context, TxnQuery current) {
   return showModalBottomSheet<TxnQuery>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     constraints: const BoxConstraints(maxWidth: 560),

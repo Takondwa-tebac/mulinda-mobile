@@ -728,28 +728,28 @@
     }
   },
   "budgetSpend": {
-      "recordSpend": "Record spend",
-      "addExisting": "Add existing",
-      "spendingThisPeriod": "Spending this period",
-      "countsCategory": "Expenses in the {} category count toward this budget.",
-      "countsAll": "This budget counts all of your spending.",
-      "nothingSpent": "Nothing spent yet this period.",
-      "loadError": "Could not load the spending.",
-      "pickTitle": "Add an existing expense",
-      "pickBody": "Pick an expense from this period. It moves into the {} category so it counts toward this budget.",
-      "pickEmpty": "Every expense from this period already counts toward this budget.",
-      "added": "Added to this budget.",
-      "recordingFor": "Recording spend for {}",
-      "thisBudget": "this budget",
-      "thisBudgetsCategory": "this budget's",
-      "noCategory": "No category",
-      "expense": "Expense",
-      "onTrack": "On track",
-      "almostThere": "Almost there",
-      "overBudget": "Over budget",
-      "overBy": "Over by {}",
-      "percentUsed": "{}% used",
-      "budget": "Budget"
+    "recordSpend": "Record spend",
+    "addExisting": "Add existing",
+    "spendingThisPeriod": "Spending this period",
+    "countsCategory": "Expenses in the {} category count toward this budget.",
+    "countsAll": "This budget counts all of your spending.",
+    "nothingSpent": "Nothing spent yet this period.",
+    "loadError": "Could not load the spending.",
+    "pickTitle": "Add an existing expense",
+    "pickBody": "Pick an expense from this period. It moves into the {} category so it counts toward this budget.",
+    "pickEmpty": "Every expense from this period already counts toward this budget.",
+    "added": "Added to this budget.",
+    "recordingFor": "Recording spend for {}",
+    "thisBudget": "this budget",
+    "thisBudgetsCategory": "this budget's",
+    "noCategory": "No category",
+    "expense": "Expense",
+    "onTrack": "On track",
+    "almostThere": "Almost there",
+    "overBudget": "Over budget",
+    "overBy": "Over by {}",
+    "percentUsed": "{}% used",
+    "budget": "Budget"
   },
   "investForm": {
     "remindMe": "Remind me",
@@ -936,7 +936,8 @@
         "keyword": "Auto-categorised from the description",
         "smsKind": "Auto-categorised from the type of SMS",
         "auto": "Categorised automatically"
-      }
+      },
+      "bankReference": "Bank reference"
     },
     "badgeSemantics": {
       "one": "{} item needs your attention",
@@ -953,6 +954,12 @@
     "updatedSimilar": {
       "one": "Saved. Also updated {} similar transaction.",
       "other": "Saved. Also updated {} similar transactions."
+    },
+    "label": {
+      "moneyIn": "Money received",
+      "bankTransfer": "Bank transfer",
+      "bankPayment": "Bank payment",
+      "payment": "Payment"
     }
   },
   "home2": {
