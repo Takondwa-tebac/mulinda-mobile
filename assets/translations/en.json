@@ -1088,5 +1088,32 @@
     "dailySummarySub": "A recap of what you spent, each day",
     "sendAt": "Send at",
     "pastSummaries": "Past summaries"
+  },
+  "admin2": {
+    "funnel": {
+      "title": "Conversion funnel",
+      "newUsersOnly": "New users only",
+      "newUsersOnlySub": "Count first steps only for people who signed up in this range",
+      "loadError": "Couldn't load the funnel.",
+      "emptyTitle": "No activity in this range",
+      "emptyBody": "Try a wider date range.",
+      "secondary": "Other events",
+      "usersEvents": "{} users · {} events",
+      "trialToPaid": "Trial to paid: {} of {} ({})",
+      "step": {
+        "registration_completed": "Signed up",
+        "trial_started": "Trial started",
+        "first_transaction_captured": "First transaction",
+        "first_category_confirmed": "First category confirmed",
+        "first_budget_created": "First budget",
+        "subscription_checkout_initiated": "Started checkout",
+        "subscription_completed": "Paid",
+        "payment_failed": "Payment failed",
+        "checkout_abandoned": "Checkout abandoned",
+        "upgrade_prompt_viewed": "Saw an upgrade prompt",
+        "paywall_dismissed": "Closed the paywall",
+        "paywall_plan_selected": "Picked a pass"
+      }
+    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
+import 'funnel_models.dart';
 
 class AdminRepository {
   const AdminRepository(this._dio);
@@ -59,6 +60,19 @@ class AdminRepository {
     );
     final data = res.data?['data'];
     return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  /// The product funnel between [from] and [to] (inclusive dates).
+  /// [newUsersOnly] counts first-time steps only for people who signed up in
+  /// the range.
+  Future<FunnelReport> funnel({required DateTime from, required DateTime to, bool newUsersOnly = true}) async {
+    String day(DateTime d) => d.toIso8601String().split('T').first;
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/v1/admin/analytics/funnel',
+      queryParameters: {'from': day(from), 'to': day(to), 'new_users_only': newUsersOnly ? 1 : 0},
+    );
+    final data = res.data?['data'];
+    return FunnelReport.fromJson(data is Map ? data.cast<String, dynamic>() : const {});
   }
 
   /// Switches for features (offline mode…): master switch, rollout percentage, allow-list.

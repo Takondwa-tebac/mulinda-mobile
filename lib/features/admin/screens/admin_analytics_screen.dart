@@ -1,9 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
+import '../widgets/funnel_section.dart';
 import '../../../core/theme/app_icons.dart';
 
 /// Fetches the analytics payload. `refresh` bypasses the API's short cache.
@@ -131,6 +133,10 @@ class _AnalyticsBody extends StatelessWidget {
               'Gifted subscriptions are never counted as revenue.',
               style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
             ),
+
+            // ---- Funnel -----------------------------------------------------
+            _SectionTitle('admin2.funnel.title'.tr()),
+            const FunnelSection(),
 
             // ---- Subscribers ------------------------------------------------
             const _SectionTitle('Subscribers right now'),

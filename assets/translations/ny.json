@@ -1088,5 +1088,32 @@
     "dailySummarySub": "Chidule cha zomwe mwagula tsiku lililonse",
     "sendAt": "Tumizani nthawi",
     "pastSummaries": "Chidule chakale"
+  },
+  "admin2": {
+    "funnel": {
+      "title": "Njira ya ogwiritsa ntchito",
+      "newUsersOnly": "Ogwiritsa ntchito atsopano okha",
+      "newUsersOnlySub": "Werengani masitepe oyamba a amene alembetsa m'masiku awa okha",
+      "loadError": "Sitinathe kutsegula njira ya ogwiritsa ntchito.",
+      "emptyTitle": "Palibe zochitika m'masiku awa",
+      "emptyBody": "Yesani masiku ambiri.",
+      "secondary": "Zochitika zina",
+      "usersEvents": "Anthu {} · zochitika {}",
+      "trialToPaid": "Kuchoka pa kuyesa kufika polipira: {} mwa {} ({})",
+      "step": {
+        "registration_completed": "Alembetsa",
+        "trial_started": "Ayamba kuyesa",
+        "first_transaction_captured": "Zochitika zoyamba",
+        "first_category_confirmed": "Gulu loyamba latsimikizidwa",
+        "first_budget_created": "Bajeti yoyamba",
+        "subscription_checkout_initiated": "Ayamba kulipira",
+        "subscription_completed": "Alipira",
+        "payment_failed": "Kulipira kwalephera",
+        "checkout_abandoned": "Asiya kulipira",
+        "upgrade_prompt_viewed": "Awona pempho lokweza",
+        "paywall_dismissed": "Atseka tsamba la malipiro",
+        "paywall_plan_selected": "Asankha pasi"
+      }
+    }
   }
 }
