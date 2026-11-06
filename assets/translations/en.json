@@ -1028,7 +1028,23 @@
     "toGo": "{} to go",
     "useSuggestion": "Use it",
     "suggestedFromLastMonth": "Last month you spent {} on this. Used as the limit; change it if you like.",
-    "suggestedFromLastWeek": "Last week you spent {} on this. Used as the limit; change it if you like."
+    "suggestedFromLastWeek": "Last week you spent {} on this. Used as the limit; change it if you like.",
+    "createMenu": "Create",
+    "newLoan": "New loan",
+    "newInvestment": "New investment",
+    "newProject": "New project",
+    "addGoal": "Add goal",
+    "addBudget": "Add budget",
+    "addLoan": "Add loan",
+    "addInvestment": "Add investment",
+    "addProject": "Add project",
+    "empty": {
+      "goals": "No goals yet",
+      "budgets": "No budgets yet",
+      "loans": "No loans yet",
+      "investments": "No investments yet",
+      "projects": "No projects yet"
+    }
   },
   "profile2": {
     "moneyAccounts": "Money & accounts",

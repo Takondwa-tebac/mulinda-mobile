@@ -239,6 +239,11 @@ void main() {
     await tester.pump(_delay);
     await tester.pumpAndSettle();
     expect(fabOpacity(), 1);
+
+    // The Plan tab has no capture button (it uses its app-bar "+").
+    await tester.tap(find.text('nav.plan'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 }
 

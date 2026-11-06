@@ -10,7 +10,6 @@ import '../../../core/theme/semantic_colors.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/progress_bar.dart';
-import '../../../core/widgets/scroll_aware_fab.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../data/budget_pace.dart';
@@ -20,12 +19,16 @@ import '../widgets/mse_logo.dart';
 import '../data/plan_repository.dart';
 import 'plan_forms.dart';
 
-/// Shared body: pull-to-refresh + loading/error/empty.
+/// Shared body: pull-to-refresh + loading/error/empty, an empty-state call to
+/// action and a trailing "+ Add …" row after the items.
 Widget _body<T>({
   required AsyncValue<List<T>> async,
   required VoidCallback onRetry,
   required Future<void> Function() onRefresh,
   required Widget Function(T) tile,
+  required String addLabel,
+  required String emptyTitle,
+  required VoidCallback onAdd,
 }) {
   return RefreshIndicator(
     onRefresh: onRefresh,
@@ -36,21 +39,78 @@ Widget _body<T>({
       ),
       data: (list) => list.isEmpty
           ? ScrollFill(
-              child: EmptyState(icon: Icons.inbox_outlined, title: 'plan.empty'.tr()),
+              child: EmptyState(
+                icon: Icons.inbox_outlined,
+                title: emptyTitle,
+                body: 'plan.empty'.tr(),
+                actionLabel: addLabel,
+                onAction: onAdd,
+              ),
             )
-          : ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 96), children: list.map(tile).toList()),
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              children: [
+                ...list.map(tile),
+                _AddRow(label: addLabel, onTap: onAdd),
+              ],
+            ),
     ),
   );
 }
 
-/// The "add" button of a plan list; it steps aside while the list scrolls.
-Widget _fab(BuildContext context, String route) => ScrollAwareFab(
-  child: FloatingActionButton(
-    tooltip: 'plan2.add'.tr(),
-    onPressed: () => context.push(route),
-    child: const Icon(Icons.add),
-  ),
+/// A list screen's app bar with its "+" action.
+PreferredSizeWidget _listAppBar(BuildContext context, String title, String addLabel, String route) => AppBar(
+  title: Text(title),
+  actions: [
+    IconButton(
+      key: const ValueKey('plan-list-add'),
+      tooltip: addLabel,
+      icon: const Icon(Icons.add),
+      onPressed: () => context.push(route),
+    ),
+  ],
 );
+
+/// "+ Add budget" at the end of a list.
+class _AddRow extends StatelessWidget {
+  const _AddRow({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('plan-list-add-row'),
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.add, color: scheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 Future<bool> _confirmDelete(BuildContext context) async {
   final ok = await showDialog<bool>(
@@ -98,28 +158,27 @@ class GoalsListScreen extends ConsumerWidget {
   const GoalsListScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ScrollAwareFabScope(
-      child: Scaffold(
-        appBar: AppBar(title: Text('plan.goals'.tr())),
-        floatingActionButton: _fab(context, Routes.goalForm),
-        body: _body<GoalItem>(
-          async: ref.watch(goalsProvider),
-          onRetry: () => ref.invalidate(goalsProvider),
-          onRefresh: () async {
-            ref.invalidate(goalsProvider);
-            await ref.read(goalsProvider.future);
-          },
-          tile: (g) => _PlanTile(
-            title: g.name,
-            pending: g.pending,
-            value: '${g.current.formatted} / ${g.target.formatted}',
-            progress: g.progress,
-            onTap: () => context.push(Routes.goalDetail, extra: g),
-            onEdit: () => context.push(Routes.goalForm, extra: g),
-            onDelete: () =>
-                _delete(context, ref, () => ref.read(planRepositoryProvider).deleteGoal(g.id), goalsProvider),
-            extra: ('form.contribute'.tr(), () => showContributeSheet(context, ref, g.id)),
-          ),
+    return Scaffold(
+      appBar: _listAppBar(context, 'plan.goals'.tr(), 'plan2.addGoal'.tr(), Routes.goalForm),
+      body: _body<GoalItem>(
+        addLabel: 'plan2.addGoal'.tr(),
+        emptyTitle: 'plan2.empty.goals'.tr(),
+        onAdd: () => context.push(Routes.goalForm),
+        async: ref.watch(goalsProvider),
+        onRetry: () => ref.invalidate(goalsProvider),
+        onRefresh: () async {
+          ref.invalidate(goalsProvider);
+          await ref.read(goalsProvider.future);
+        },
+        tile: (g) => _PlanTile(
+          title: g.name,
+          pending: g.pending,
+          value: '${g.current.formatted} / ${g.target.formatted}',
+          progress: g.progress,
+          onTap: () => context.push(Routes.goalDetail, extra: g),
+          onEdit: () => context.push(Routes.goalForm, extra: g),
+          onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteGoal(g.id), goalsProvider),
+          extra: ('form.contribute'.tr(), () => showContributeSheet(context, ref, g.id)),
         ),
       ),
     );
@@ -130,24 +189,24 @@ class BudgetsListScreen extends ConsumerWidget {
   const BudgetsListScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ScrollAwareFabScope(
-      child: Scaffold(
-        appBar: AppBar(title: Text('plan.budgets'.tr())),
-        floatingActionButton: _fab(context, Routes.budgetForm),
-        body: _body<BudgetItem>(
-          async: ref.watch(budgetsProvider),
-          onRetry: () => ref.invalidate(budgetsProvider),
-          onRefresh: () async {
-            ref.invalidate(budgetsProvider);
-            await ref.read(budgetsProvider.future);
-          },
-          tile: (b) => _BudgetCard(
-            budget: b,
-            onTap: () => context.push(Routes.budgetDetail, extra: b),
-            onEdit: () => context.push(Routes.budgetForm, extra: b),
-            onDelete: () =>
-                _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
-          ),
+    return Scaffold(
+      appBar: _listAppBar(context, 'plan.budgets'.tr(), 'plan2.addBudget'.tr(), Routes.budgetForm),
+      body: _body<BudgetItem>(
+        addLabel: 'plan2.addBudget'.tr(),
+        emptyTitle: 'plan2.empty.budgets'.tr(),
+        onAdd: () => context.push(Routes.budgetForm),
+        async: ref.watch(budgetsProvider),
+        onRetry: () => ref.invalidate(budgetsProvider),
+        onRefresh: () async {
+          ref.invalidate(budgetsProvider);
+          await ref.read(budgetsProvider.future);
+        },
+        tile: (b) => _BudgetCard(
+          budget: b,
+          onTap: () => context.push(Routes.budgetDetail, extra: b),
+          onEdit: () => context.push(Routes.budgetForm, extra: b),
+          onDelete: () =>
+              _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
         ),
       ),
     );
@@ -158,28 +217,27 @@ class LoansListScreen extends ConsumerWidget {
   const LoansListScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ScrollAwareFabScope(
-      child: Scaffold(
-        appBar: AppBar(title: Text('plan.loans'.tr())),
-        floatingActionButton: _fab(context, Routes.loanForm),
-        body: _body<LoanItem>(
-          async: ref.watch(loansProvider),
-          onRetry: () => ref.invalidate(loansProvider),
-          onRefresh: () async {
-            ref.invalidate(loansProvider);
-            await ref.read(loansProvider.future);
-          },
-          tile: (l) => _PlanTile(
-            title: l.name,
-            pending: l.pending,
-            value: l.outstanding.formatted,
-            sub: 'form.loanStatus.${l.status}'.tr(),
-            onTap: () => context.push(Routes.loanDetail, extra: l),
-            onEdit: () => context.push(Routes.loanForm, extra: l),
-            onDelete: () =>
-                _delete(context, ref, () => ref.read(planRepositoryProvider).deleteLoan(l.id), loansProvider),
-            extra: ('form.repay'.tr(), () => showRepaySheet(context, ref, l.id)),
-          ),
+    return Scaffold(
+      appBar: _listAppBar(context, 'plan.loans'.tr(), 'plan2.addLoan'.tr(), Routes.loanForm),
+      body: _body<LoanItem>(
+        addLabel: 'plan2.addLoan'.tr(),
+        emptyTitle: 'plan2.empty.loans'.tr(),
+        onAdd: () => context.push(Routes.loanForm),
+        async: ref.watch(loansProvider),
+        onRetry: () => ref.invalidate(loansProvider),
+        onRefresh: () async {
+          ref.invalidate(loansProvider);
+          await ref.read(loansProvider.future);
+        },
+        tile: (l) => _PlanTile(
+          title: l.name,
+          pending: l.pending,
+          value: l.outstanding.formatted,
+          sub: 'form.loanStatus.${l.status}'.tr(),
+          onTap: () => context.push(Routes.loanDetail, extra: l),
+          onEdit: () => context.push(Routes.loanForm, extra: l),
+          onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteLoan(l.id), loansProvider),
+          extra: ('form.repay'.tr(), () => showRepaySheet(context, ref, l.id)),
         ),
       ),
     );
@@ -199,37 +257,37 @@ class InvestmentsListScreen extends ConsumerWidget {
   const InvestmentsListScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ScrollAwareFabScope(
-      child: Scaffold(
-        appBar: AppBar(title: Text('plan.investments'.tr())),
-        floatingActionButton: _fab(context, Routes.investmentForm),
-        body: _body<InvestmentItem>(
-          async: ref.watch(investmentsListProvider),
-          onRetry: () => ref.invalidate(investmentsListProvider),
-          onRefresh: () async {
-            ref.invalidate(investmentsListProvider);
-            await ref.read(investmentsListProvider.future);
-          },
-          tile: (i) => _PlanTile(
-            title: i.name,
-            leading: i.type == 'shares' ? MseLogo(ticker: i.ticker, name: i.name, size: 36) : null,
-            pending: i.pending,
-            value: i.value.formatted,
-            // Term investments show the interest earned so far (estimated by the
-            // API from the rate and elapsed days); others show the plain gain.
-            sub:
-                '${'invest.type.${i.type}'.tr()} · '
-                '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
-                '${_todayMove(i)}',
-            subColor: i.gain.isNegative ? context.semantic.danger : null,
-            onTap: () => context.push(Routes.investmentDetail, extra: i),
-            onEdit: () => context.push(Routes.investmentForm, extra: i),
-            onDelete: () => _delete(
-              context,
-              ref,
-              () => ref.read(planRepositoryProvider).deleteInvestment(i.id),
-              investmentsListProvider,
-            ),
+    return Scaffold(
+      appBar: _listAppBar(context, 'plan.investments'.tr(), 'plan2.addInvestment'.tr(), Routes.investmentForm),
+      body: _body<InvestmentItem>(
+        addLabel: 'plan2.addInvestment'.tr(),
+        emptyTitle: 'plan2.empty.investments'.tr(),
+        onAdd: () => context.push(Routes.investmentForm),
+        async: ref.watch(investmentsListProvider),
+        onRetry: () => ref.invalidate(investmentsListProvider),
+        onRefresh: () async {
+          ref.invalidate(investmentsListProvider);
+          await ref.read(investmentsListProvider.future);
+        },
+        tile: (i) => _PlanTile(
+          title: i.name,
+          leading: i.type == 'shares' ? MseLogo(ticker: i.ticker, name: i.name, size: 36) : null,
+          pending: i.pending,
+          value: i.value.formatted,
+          // Term investments show the interest earned so far (estimated by the
+          // API from the rate and elapsed days); others show the plain gain.
+          sub:
+              '${'invest.type.${i.type}'.tr()} · '
+              '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
+              '${_todayMove(i)}',
+          subColor: i.gain.isNegative ? context.semantic.danger : null,
+          onTap: () => context.push(Routes.investmentDetail, extra: i),
+          onEdit: () => context.push(Routes.investmentForm, extra: i),
+          onDelete: () => _delete(
+            context,
+            ref,
+            () => ref.read(planRepositoryProvider).deleteInvestment(i.id),
+            investmentsListProvider,
           ),
         ),
       ),
@@ -241,30 +299,30 @@ class ProjectsListScreen extends ConsumerWidget {
   const ProjectsListScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ScrollAwareFabScope(
-      child: Scaffold(
-        appBar: AppBar(title: Text('plan.projects'.tr())),
-        floatingActionButton: _fab(context, Routes.projectForm),
-        body: _body<ProjectItem>(
-          async: ref.watch(projectsProvider),
-          onRetry: () => ref.invalidate(projectsProvider),
-          onRefresh: () async {
-            ref.invalidate(projectsProvider);
-            await ref.read(projectsProvider.future);
-          },
-          tile: (p) => _PlanTile(
-            title: p.name,
-            pending: p.pending,
-            value: p.spent.formatted,
-            valueLabel: 'project.spent'.tr(),
-            sub: p.budget?.formatted,
-            subLabel: 'project.budget'.tr(),
-            progress: p.completionPercentage,
-            onTap: () => context.push(Routes.projectDetail, extra: p),
-            onEdit: () => context.push(Routes.projectForm, extra: p),
-            onDelete: () =>
-                _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
-          ),
+    return Scaffold(
+      appBar: _listAppBar(context, 'plan.projects'.tr(), 'plan2.addProject'.tr(), Routes.projectForm),
+      body: _body<ProjectItem>(
+        addLabel: 'plan2.addProject'.tr(),
+        emptyTitle: 'plan2.empty.projects'.tr(),
+        onAdd: () => context.push(Routes.projectForm),
+        async: ref.watch(projectsProvider),
+        onRetry: () => ref.invalidate(projectsProvider),
+        onRefresh: () async {
+          ref.invalidate(projectsProvider);
+          await ref.read(projectsProvider.future);
+        },
+        tile: (p) => _PlanTile(
+          title: p.name,
+          pending: p.pending,
+          value: p.spent.formatted,
+          valueLabel: 'project.spent'.tr(),
+          sub: p.budget?.formatted,
+          subLabel: 'project.budget'.tr(),
+          progress: p.completionPercentage,
+          onTap: () => context.push(Routes.projectDetail, extra: p),
+          onEdit: () => context.push(Routes.projectForm, extra: p),
+          onDelete: () =>
+              _delete(context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
         ),
       ),
     );

@@ -95,9 +95,9 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
           ],
         ),
-        // Hide the capture FAB on the Profile tab (index 3) — it only clutters
-        // and overlaps content there.
-        floatingActionButton: navigationShell.currentIndex == 3
+        // The capture button lives on Home and Activity only; Plan has its own
+        // "+" menu in the app bar and Profile has nothing to capture.
+        floatingActionButton: !showsCaptureButton(navigationShell.currentIndex)
             ? null
             : ScrollAwareFab(
                 child: FloatingActionButton(
@@ -238,3 +238,7 @@ final activityBadgeCountProvider = Provider.autoDispose<int>((ref) {
   final review = ref.watch(reviewCountProvider).valueOrNull ?? 0;
   return inbox + review;
 });
+
+/// Whether the shell shows its capture "+" on the tab at [index]
+/// (0 Home, 1 Activity, 2 Plan, 3 Profile).
+bool showsCaptureButton(int index) => index == 0 || index == 1;

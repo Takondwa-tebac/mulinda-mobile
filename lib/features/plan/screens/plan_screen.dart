@@ -54,10 +54,24 @@ class PlanScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text('nav.plan'.tr()),
         actions: [
-          IconButton(
-            tooltip: 'plan2.newBudget'.tr(),
-            icon: const Icon(Icons.add_chart),
-            onPressed: () => openBudgetForm(context),
+          PopupMenuButton<String>(
+            key: const ValueKey('plan-add-menu'),
+            tooltip: 'plan2.createMenu'.tr(),
+            icon: const Icon(Icons.add),
+            onSelected: (route) => route == Routes.budgetForm ? openBudgetForm(context) : context.push(route),
+            itemBuilder: (_) => [
+              for (final (route, icon, label) in [
+                (Routes.budgetForm, Icons.pie_chart_outline, 'plan2.newBudget'),
+                (Routes.goalForm, Icons.flag_outlined, 'plan2.newGoal'),
+                (Routes.loanForm, Icons.account_balance_outlined, 'plan2.newLoan'),
+                (Routes.investmentForm, Icons.trending_up, 'plan2.newInvestment'),
+                (Routes.projectForm, Icons.home_work_outlined, 'plan2.newProject'),
+              ])
+                PopupMenuItem<String>(
+                  value: route,
+                  child: Row(children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(label.tr())]),
+                ),
+            ],
           ),
         ],
       ),
@@ -144,8 +158,10 @@ class PlanScreen extends ConsumerWidget {
 }
 
 /// Opens the budget form, optionally prefilled with a category.
+/// Always on the root navigator, so the form covers the whole screen (no
+/// bottom bar or capture button over it).
 Future<void> openBudgetForm(BuildContext context, {String? categoryId, String? name}) {
-  return Navigator.of(context).push<void>(
+  return Navigator.of(context, rootNavigator: true).push<void>(
     MaterialPageRoute(
       builder: (_) => BudgetForm(initialCategoryId: categoryId, initialName: name),
     ),

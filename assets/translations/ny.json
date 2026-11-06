@@ -1028,7 +1028,23 @@
     "toGo": "{} zatsala",
     "useSuggestion": "Gwiritsani",
     "suggestedFromLastMonth": "Mwezi watha munagula {} pa izi. Tagwiritsa ntchito ngati malire; mungasinthe.",
-    "suggestedFromLastWeek": "Sabata yatha munagula {} pa izi. Tagwiritsa ntchito ngati malire; mungasinthe."
+    "suggestedFromLastWeek": "Sabata yatha munagula {} pa izi. Tagwiritsa ntchito ngati malire; mungasinthe.",
+    "createMenu": "Pangani",
+    "newLoan": "Ngongole yatsopano",
+    "newInvestment": "Ndalama zoyika zatsopano",
+    "newProject": "Pulojekiti yatsopano",
+    "addGoal": "Onjezani cholinga",
+    "addBudget": "Onjezani bajeti",
+    "addLoan": "Onjezani ngongole",
+    "addInvestment": "Onjezani ndalama zoyika",
+    "addProject": "Onjezani pulojekiti",
+    "empty": {
+      "goals": "Palibe zolinga pano",
+      "budgets": "Palibe bajeti pano",
+      "loans": "Palibe ngongole pano",
+      "investments": "Palibe ndalama zoyika pano",
+      "projects": "Palibe mapulojekiti pano"
+    }
   },
   "profile2": {
     "moneyAccounts": "Ndalama ndi maakaunti",
