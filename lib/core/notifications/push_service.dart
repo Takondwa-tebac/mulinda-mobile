@@ -108,6 +108,9 @@ class PushService {
         router.go(Routes.dailySummaries);
       } else if (type == 'export') {
         router.go(Routes.exports);
+      } else if (type == 'audit_export_ready') {
+        // The admin's audit export is ready: open the audit trail on it.
+        router.go(auditExportLocation(data['export_id']?.toString()));
       } else if (type == 'ai_unavailable') {
         // The AI service was busy: add the item by hand instead.
         router.go(Routes.addTransaction);
@@ -137,3 +140,7 @@ bool isSubscriptionPushType(String? type) => const {
   'subscription_prompt',
   'subscription_expiration',
 }.contains(type);
+
+/// Where the `audit_export_ready` push opens: the audit trail showing that export.
+String auditExportLocation(String? exportId) =>
+    exportId == null || exportId.isEmpty ? Routes.adminAudit : '${Routes.adminAudit}?export=${Uri.encodeQueryComponent(exportId)}';

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
+import 'audit_models.dart';
 import 'funnel_models.dart';
 
 class AdminRepository {
@@ -91,13 +92,44 @@ class AdminRepository {
     return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
   }
 
-  Future<Map<String, dynamic>> listAudits({int page = 1}) async {
+  /// One page of the audit trail for [query].
+  Future<AuditPage> audits(AuditQuery query, {int page = 1, int perPage = 25}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/v1/admin/audits',
-      queryParameters: {'page': page, 'per_page': 25},
+      queryParameters: {...query.toParams(), 'page': page, 'per_page': perPage},
     );
-    return res.data ?? {};
+    return AuditPage.fromJson(res.data ?? const {}, page: page);
+  }
 
+  /// One audit with its sections (actor, action, changes, device...).
+  Future<AuditDetail> audit(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/audits/$id');
+    final data = res.data?['data'];
+    return AuditDetail.fromJson(data is Map ? data.cast<String, dynamic>() : {'id': id});
+  }
+
+  /// Events and record types to filter by.
+  Future<AuditFilterOptions> auditFilters() async {
+    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/audits/filters');
+    final data = res.data?['data'];
+    return AuditFilterOptions.fromJson(data is Map ? data.cast<String, dynamic>() : const {});
+  }
+
+  /// Start a CSV or PDF export of the audits matching [query].
+  Future<AuditExport> startAuditExport(String format, AuditQuery query) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/v1/admin/audits/exports',
+      data: {'format': format, ...query.toParams()},
+    );
+    final data = res.data?['data'];
+    return AuditExport.fromJson(data is Map ? data.cast<String, dynamic>() : const {'id': ''});
+  }
+
+  /// Where an export stands; `download_url` is set once it is ready.
+  Future<AuditExport> auditExport(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/v1/admin/audits/exports/$id');
+    final data = res.data?['data'];
+    return AuditExport.fromJson(data is Map ? data.cast<String, dynamic>() : {'id': id});
   }
 
   /// Comp a user a subscription period (admin gift). [period] is a

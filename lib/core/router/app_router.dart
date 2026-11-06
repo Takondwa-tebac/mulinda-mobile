@@ -217,7 +217,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.adminUserDetail,
         builder: (_, s) => UserDetailScreen(userId: s.pathParameters['userId'] ?? ''),
       ),
-      GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
+      GoRoute(
+        path: Routes.adminAudit,
+        // `?export=<id>` (from the "export ready" notification) shows that export.
+        builder: (_, s) => AuditTrailScreen(exportId: s.uri.queryParameters['export']),
+      ),
       GoRoute(path: Routes.adminAnalytics, builder: (_, _) => const AdminAnalyticsScreen()),
       GoRoute(path: Routes.adminFeatures, builder: (_, _) => const AdminFeatureFlagsScreen()),
 
