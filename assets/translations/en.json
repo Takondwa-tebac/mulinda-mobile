@@ -94,7 +94,10 @@
       "5": "Fri",
       "6": "Sat",
       "7": "Sun"
-    }
+    },
+    "chooseDate": "Choose a date",
+    "from": "From",
+    "to": "To"
   },
   "onboarding": {
     "anim": {

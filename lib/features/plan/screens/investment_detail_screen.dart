@@ -13,6 +13,7 @@ import '../data/investment_types.dart';
 import '../widgets/mse_logo.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
+import '../../../core/widgets/app_date_field.dart';
 
 /// Investment detail. For interest-bearing holdings (fixed deposit, treasury
 /// bill/bond) it projects the maturity value and shows the estimated value
@@ -526,21 +527,12 @@ class _ContributionSheetState extends ConsumerState<_ContributionSheet> {
               },
             ),
             const SizedBox(height: 16),
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: _day,
-                  firstDate: DateTime(2015),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null) setState(() => _day = picked);
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: 'investForm.priceDate'.tr()),
-                child: Text(_day.toIso8601String().split('T').first),
-              ),
+            AppDateField(
+              label: 'investForm.priceDate'.tr(),
+              value: _day,
+              firstDate: DateTime(2015),
+              lastDate: DateTime.now(),
+              onChanged: (d) => setState(() => _day = d ?? _day),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -751,21 +743,12 @@ class _PriceSheetState extends ConsumerState<_PriceSheet> {
               },
             ),
             const SizedBox(height: 16),
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: _day,
-                  firstDate: DateTime(2015),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null) setState(() => _day = picked);
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: 'investForm.priceDate'.tr()),
-                child: Text(_day.toIso8601String().split('T').first),
-              ),
+            AppDateField(
+              label: 'investForm.priceDate'.tr(),
+              value: _day,
+              firstDate: DateTime(2015),
+              lastDate: DateTime.now(),
+              onChanged: (d) => setState(() => _day = d ?? _day),
             ),
             const SizedBox(height: 20),
             FilledButton(
