@@ -17,6 +17,8 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     required this.danger,
     required this.dangerContainer,
     required this.brandInk,
+    this.info = const Color(0xFF2F6FB3),
+    this.special = const Color(0xFF7B4FB0),
   });
 
   /// Money coming in.
@@ -34,6 +36,12 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
 
   /// Brand teal dark enough to read as text on light surfaces.
   final Color brandInk;
+
+  /// Reminders and things that are coming up (blue).
+  final Color info;
+
+  /// Announcements and other one-off messages (purple).
+  final Color special;
 
   static const light = SemanticColors(
     income: AppColors.tealInk,
@@ -57,6 +65,8 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     danger: Color(0xFFFFB4AB),
     dangerContainer: Color(0xFF5C1A14),
     brandInk: AppColors.teal,
+    info: Color(0xFF9CC3F0),
+    special: Color(0xFFCDB4EC),
   );
 
   @override
@@ -70,6 +80,8 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     Color? danger,
     Color? dangerContainer,
     Color? brandInk,
+    Color? info,
+    Color? special,
   }) => SemanticColors(
     income: income ?? this.income,
     expense: expense ?? this.expense,
@@ -80,6 +92,8 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     danger: danger ?? this.danger,
     dangerContainer: dangerContainer ?? this.dangerContainer,
     brandInk: brandInk ?? this.brandInk,
+    info: info ?? this.info,
+    special: special ?? this.special,
   );
 
   @override
@@ -95,6 +109,8 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
       danger: Color.lerp(danger, other.danger, t)!,
       dangerContainer: Color.lerp(dangerContainer, other.dangerContainer, t)!,
       brandInk: Color.lerp(brandInk, other.brandInk, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      special: Color.lerp(special, other.special, t)!,
     );
   }
 }

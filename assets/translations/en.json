@@ -97,7 +97,21 @@
     },
     "chooseDate": "Choose a date",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "monthLong": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    }
   },
   "onboarding": {
     "anim": {
@@ -1190,6 +1204,34 @@
         "permission_changed": "Permission changed",
         "credit_granted": "Pass gifted"
       }
+    }
+  },
+  "notifications2": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "markFailed": "Couldn't mark them as read. Please try again.",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "alerts": "Alerts",
+      "dueSoon": "Due soon",
+      "updates": "Updates"
+    },
+    "earlierThisWeek": "Earlier this week",
+    "caughtUpTitle": "You're all caught up",
+    "caughtUpBody": "New alerts and reminders will show up here.",
+    "filterEmptyTitle": "Nothing here",
+    "filterEmptyBody": "No notifications of this kind yet.",
+    "showAll": "Show all",
+    "action": {
+      "budgets": "View budgets",
+      "plan": "Open Plan",
+      "loans": "View loans",
+      "investments": "View investments",
+      "summary": "Daily summary",
+      "spending": "See spending",
+      "goals": "View goals",
+      "open": "Read more"
     }
   }
 }
