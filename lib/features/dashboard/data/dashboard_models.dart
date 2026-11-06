@@ -182,34 +182,52 @@ class RecentTxn {
     this.category,
     this.categoryIcon,
     this.categoryColor,
+    this.categoryIsSpending = true,
     this.needsAttention = false,
+    this.categorisationStatus,
   });
 
   final String id;
   final String date;
-  final String type; // income | expense
+  final String type; // income | expense | transfer
   final Money amount;
   final String? merchant;
   final String? category;
   final String? categoryIcon;
   final String? categoryColor;
+  final bool categoryIsSpending;
+
+  /// From the optional `categorisation` block; false when absent (older API).
   final bool needsAttention;
+  final String? categorisationStatus;
 
   bool get isIncome => type == 'income';
 
+  /// An expense in a category that is not spending ("Moving my money").
+  bool get notSpending => type == 'expense' && category != null && !categoryIsSpending;
+
   factory RecentTxn.fromJson(Map<String, dynamic> json) {
+    // Newer servers send `category_detail` next to the plain `category` name;
+    // some send `category` itself as an object. Older ones send only the name.
+    final detail = json['category_detail'] is Map
+        ? (json['category_detail'] as Map).cast<String, dynamic>()
+        : (json['category'] is Map ? (json['category'] as Map).cast<String, dynamic>() : null);
+    final categorisation = json['categorisation'] is Map
+        ? (json['categorisation'] as Map).cast<String, dynamic>()
+        : const <String, dynamic>{};
+    final type = json['type']?.toString() ?? 'expense';
     return RecentTxn(
       id: json['id'].toString(),
       date: json['date']?.toString() ?? '',
-      type: json['type']?.toString() ?? 'expense',
+      type: type,
       amount: Money.parse(json['amount']),
       merchant: json['merchant']?.toString(),
-      // `category` is a plain name on older servers and may become an object.
-      category: json['category'] is Map ? (json['category'] as Map)['name']?.toString() : json['category']?.toString(),
-      categoryIcon: (json['category'] is Map ? (json['category'] as Map)['icon'] : json['category_icon'])?.toString(),
-      categoryColor: (json['category'] is Map ? (json['category'] as Map)['color'] : json['category_color'])
-          ?.toString(),
-      needsAttention: (json['categorisation'] as Map?)?['needs_attention'] == true,
+      category: detail?['name']?.toString() ?? (json['category'] is String ? json['category'] as String : null),
+      categoryIcon: (detail?['icon'] ?? json['category_icon'])?.toString(),
+      categoryColor: (detail?['color'] ?? json['category_color'])?.toString(),
+      categoryIsSpending: detail?['is_spending'] != false,
+      needsAttention: type != 'transfer' && categorisation['needs_attention'] == true,
+      categorisationStatus: categorisation['status']?.toString(),
     );
   }
 }

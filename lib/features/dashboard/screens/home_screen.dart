@@ -270,6 +270,7 @@ class _Dashboard extends ConsumerWidget {
       categoryColor: t.categoryColor,
       meta: day == null ? t.date : dayHeaderLabel(day),
       needsAttention: t.needsAttention,
+      notSpending: t.notSpending,
     );
   }
 }
