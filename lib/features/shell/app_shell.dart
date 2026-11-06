@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
+import '../../core/theme/app_icons.dart';
 import '../../core/offline/offline_status.dart';
 import '../../core/widgets/app_update_banner.dart';
 import '../../core/widgets/scroll_aware_fab.dart';
@@ -121,8 +122,8 @@ class _AppShellState extends ConsumerState<AppShell> {
               label: 'nav.activity'.tr(),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.insights_outlined),
-              selectedIcon: const Icon(Icons.insights),
+              icon: const Icon(AppIcons.plan),
+              selectedIcon: const Icon(AppIcons.planSelected),
               label: 'nav.plan'.tr(),
             ),
             NavigationDestination(

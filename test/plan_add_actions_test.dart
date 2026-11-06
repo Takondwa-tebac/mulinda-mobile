@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mulinda_mobile/core/router/routes.dart';
+import 'package:mulinda_mobile/core/theme/app_icons.dart';
 import 'package:mulinda_mobile/features/plan/data/plan_models.dart';
 import 'package:mulinda_mobile/features/plan/data/plan_repository.dart';
 import 'package:mulinda_mobile/features/plan/screens/plan_lists.dart';
@@ -50,6 +51,11 @@ Future<List<String>> _pumpBudgets(WidgetTester tester, List<BudgetItem> items) a
 }
 
 void main() {
+  test('the Plan tab uses the piggy-bank icons', () {
+    expect(AppIcons.plan, Icons.savings_outlined);
+    expect(AppIcons.planSelected, Icons.savings);
+  });
+
   test('the capture button shows on Home and Activity only', () {
     expect(showsCaptureButton(0), isTrue);
     expect(showsCaptureButton(1), isTrue);

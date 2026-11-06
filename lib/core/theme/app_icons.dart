@@ -13,4 +13,11 @@ abstract final class AppIcons {
 
   /// Filled variant of [coach] for avatars and solid surfaces.
   static const IconData coachFilled = Icons.question_answer_rounded;
+
+  /// The Plan tab: a piggy bank (budgets, goals, saving). Not a chart with
+  /// sparkles, which read as "AI".
+  static const IconData plan = Icons.savings_outlined;
+
+  /// Selected state of [plan].
+  static const IconData planSelected = Icons.savings;
 }
