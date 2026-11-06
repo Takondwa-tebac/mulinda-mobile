@@ -30,6 +30,7 @@ class AppDateField extends StatefulWidget {
     this.required = false,
     this.clearable = false,
     this.enabled = true,
+    this.compact = false,
   });
 
   final String label;
@@ -42,6 +43,10 @@ class AppDateField extends StatefulWidget {
   final bool required;
   final bool clearable;
   final bool enabled;
+
+  /// For two fields side by side: no leading calendar icon, tighter padding,
+  /// so the whole date stays readable on narrow phones.
+  final bool compact;
 
   @override
   State<AppDateField> createState() => _AppDateFieldState();
@@ -97,7 +102,8 @@ class _AppDateFieldState extends State<AppDateField> {
         labelText: widget.label,
         hintText: 'common.chooseDate'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        prefixIcon: const Icon(Icons.calendar_today_outlined),
+        prefixIcon: widget.compact ? null : const Icon(Icons.calendar_today_outlined),
+        contentPadding: widget.compact ? const EdgeInsets.symmetric(horizontal: 12, vertical: 16) : null,
         suffixIcon: canClear
             ? IconButton(
                 tooltip: 'common.clear'.tr(),

@@ -51,6 +51,7 @@ class _FunnelSectionState extends ConsumerState<FunnelSection> {
               children: [
                 Expanded(
                   child: AppDateField(
+                    compact: true,
                     label: 'common.from'.tr(),
                     value: _from,
                     lastDate: _to,
@@ -60,6 +61,7 @@ class _FunnelSectionState extends ConsumerState<FunnelSection> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: AppDateField(
+                    compact: true,
                     label: 'common.to'.tr(),
                     value: _to,
                     firstDate: _from,

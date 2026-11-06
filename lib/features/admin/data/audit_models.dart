@@ -226,6 +226,8 @@ class AuditExport {
     this.rowCount,
     this.truncated = false,
     this.downloadUrl,
+    this.createdAt,
+    this.completedAt,
   });
 
   final String id;
@@ -235,7 +237,12 @@ class AuditExport {
   final String format;
   final int? rowCount;
   final bool truncated;
+
+  /// A temporary signed link (about 30 minutes). It needs no bearer token, so
+  /// it is opened in the browser, never through the API client.
   final String? downloadUrl;
+  final DateTime? createdAt;
+  final DateTime? completedAt;
 
   bool get isDone => status == 'ready' || status == 'failed';
   bool get isReady => status == 'ready' && downloadUrl != null;
@@ -247,5 +254,7 @@ class AuditExport {
     rowCount: (j['row_count'] as num?)?.toInt(),
     truncated: j['truncated'] == true,
     downloadUrl: _str(j['download_url']),
+    createdAt: DateTime.tryParse(j['created_at']?.toString() ?? '')?.toLocal(),
+    completedAt: DateTime.tryParse(j['completed_at']?.toString() ?? '')?.toLocal(),
   );
 }

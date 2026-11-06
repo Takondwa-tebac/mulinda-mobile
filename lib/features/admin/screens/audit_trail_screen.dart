@@ -468,6 +468,7 @@ class _AuditFilterSheetState extends ConsumerState<AuditFilterSheet> {
                 children: [
                   Expanded(
                     child: AppDateField(
+                      compact: true,
                       label: 'common.from'.tr(),
                       value: _from,
                       lastDate: _to ?? DateTime.now(),
@@ -478,6 +479,7 @@ class _AuditFilterSheetState extends ConsumerState<AuditFilterSheet> {
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: AppDateField(
+                      compact: true,
                       label: 'common.to'.tr(),
                       value: _to,
                       firstDate: _from ?? DateTime(2015),
