@@ -7,11 +7,29 @@ import 'package:mulinda_mobile/core/notifications/in_app_banner.dart';
 import 'package:mulinda_mobile/core/notifications/notification_router.dart';
 import 'package:mulinda_mobile/core/router/app_router.dart';
 import 'package:mulinda_mobile/core/router/routes.dart';
+import 'package:mulinda_mobile/core/theme/app_theme.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_feed.dart';
+import 'package:mulinda_mobile/features/activity/data/activity_models.dart';
+import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
+import 'package:mulinda_mobile/features/activity/screens/activity_screen.dart';
+import 'package:mulinda_mobile/features/capture/data/inbox_repository.dart';
+import 'package:mulinda_mobile/features/dashboard/data/dashboard_repository.dart';
 import 'package:mulinda_mobile/features/insights/data/insights_repository.dart';
 import 'package:mulinda_mobile/features/insights/widgets/notification_card.dart';
 
 String _to(Map<String, dynamic> data) => destinationFor(data).location;
+
+class _FakeActivity extends ActivityRepository {
+  _FakeActivity() : super(Dio());
+
+  final queries = <TxnQuery>[];
+
+  @override
+  Future<TxnPage> transactionsPage(TxnQuery query, {int page = 1, int perPage = ActivityRepository.pageSize}) async {
+    queries.add(query);
+    return const TxnPage(items: [], page: 1, hasMore: false);
+  }
+}
 
 class _FakeInsights extends InsightsRepository {
   _FakeInsights() : super(Dio());
@@ -306,5 +324,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('push-banner')), findsNothing);
     });
+  });
+
+  testWidgets('Activity opened from a spike asks for and shows its category and week', (tester) async {
+    final activity = _FakeActivity();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          activityRepositoryProvider.overrideWithValue(activity),
+          accountsProvider.overrideWith((ref) async => const []),
+          reviewCountProvider.overrideWith((ref) async => 0),
+          pendingCountProvider.overrideWith((ref) => 0),
+          dashboardProvider.overrideWith((ref) async => throw Exception('offline')),
+          categoriesProvider.overrideWith(
+            (ref) async => [
+              Category.fromJson({'id': 'c1', 'name': 'Transport', 'kind': 'expense'}),
+            ],
+          ),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            // What NotificationRouter.go does for a spike.
+            final d = destinationFor({
+              'type': 'spending_spike',
+              'category_id': 'c1',
+              'period_start': '2026-11-02',
+              'period_end': '2026-11-08',
+            });
+            Future.microtask(() => ref.read(activityFilterProvider.notifier).set(d.activityFilter!));
+            return MaterialApp(theme: AppTheme.light, home: const ActivityScreen());
+          },
+        ),
+      ),
+    );
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final q = activity.queries.last;
+    expect(q.categoryId, 'c1');
+    expect(q.type, 'expense');
+    expect(q.from, DateTime(2026, 11, 2));
+    expect(q.to, DateTime(2026, 11, 8));
+    expect(find.byKey(const ValueKey('active-filter-category')), findsOneWidget);
+    expect(find.text('Transport'), findsOneWidget);
+    expect(find.byKey(const ValueKey('active-filter-dates')), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('active-filter-category')),
+        matching: find.byTooltip('common.clear'),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const ValueKey('active-filter-category')), findsNothing);
+    expect(activity.queries.last.categoryId, isNull);
   });
 }

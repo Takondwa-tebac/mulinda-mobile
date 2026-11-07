@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/app_date_field.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/skeleton.dart';
@@ -180,6 +181,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     onChanged: _setQuery,
                     onMore: _openFilters,
                   ),
+                  _ActiveFilters(query: query, onChanged: _setQuery),
                 ],
               ),
             ),
@@ -365,6 +367,52 @@ class _FilterChips extends StatelessWidget {
             label: Text(extra > 0 ? '${'activity2.filters'.tr()} ($extra)' : 'activity2.filters'.tr()),
             onPressed: onMore,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The category and dates the list is narrowed to (for example when opened
+/// from a spending-spike notification), each removable with one tap.
+class _ActiveFilters extends ConsumerWidget {
+  const _ActiveFilters({required this.query, required this.onChanged});
+
+  final TxnQuery query;
+  final ValueChanged<TxnQuery> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoryId = query.categoryId;
+    final from = query.from;
+    final to = query.to;
+    if (categoryId == null && from == null && to == null) return const SizedBox.shrink();
+    final categories = categoryId == null ? null : ref.watch(categoriesProvider).valueOrNull;
+    final category = categories?.where((c) => c.id == categoryId).firstOrNull;
+    final dates = [if (from != null) formatDay(from), if (to != null) formatDay(to)].join(' – ');
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        children: [
+          if (categoryId != null)
+            InputChip(
+              key: const ValueKey('active-filter-category'),
+              avatar: const Icon(Icons.category_outlined, size: 18),
+              label: Text(category?.name ?? 'activity2.detail.category'.tr()),
+              onDeleted: () => onChanged(query.copyWith(categoryId: () => null)),
+              deleteButtonTooltipMessage: 'common.clear'.tr(),
+            ),
+          if (dates.isNotEmpty)
+            InputChip(
+              key: const ValueKey('active-filter-dates'),
+              avatar: const Icon(Icons.date_range_outlined, size: 18),
+              label: Text(dates),
+              onDeleted: () => onChanged(query.copyWith(from: () => null, to: () => null)),
+              deleteButtonTooltipMessage: 'common.clear'.tr(),
+            ),
         ],
       ),
     );
