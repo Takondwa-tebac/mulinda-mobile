@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/widgets/app_date_field.dart';
 import '../../subscription/screens/checkout_webview_screen.dart';
 import '../data/export_models.dart';
 import '../data/export_repository.dart';
@@ -22,19 +24,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   DateTime? _to;
   bool _busy = false;
   String? _statusLine;
-
-  Future<void> _pickDate({required bool from}) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: (from ? _from : _to) ?? now,
-      firstDate: DateTime(2015),
-      lastDate: now,
-    );
-    if (picked != null) {
-      setState(() => from ? _from = picked : _to = picked);
-    }
-  }
 
   Future<void> _export() async {
     if (_busy) return;
@@ -136,8 +125,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final df = MaterialLocalizations.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Export records')),
       body: ListView(
@@ -159,16 +146,25 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _pickDate(from: true),
-                  child: Text(_from == null ? 'From' : df.formatShortDate(_from!)),
+                child: AppDateField(
+                    compact: true,
+                  label: 'common.from'.tr(),
+                  value: _from,
+                  lastDate: _to ?? DateTime.now(),
+                  clearable: true,
+                  onChanged: (d) => setState(() => _from = d),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _pickDate(from: false),
-                  child: Text(_to == null ? 'To' : df.formatShortDate(_to!)),
+                child: AppDateField(
+                    compact: true,
+                  label: 'common.to'.tr(),
+                  value: _to,
+                  firstDate: _from ?? DateTime(2015),
+                  lastDate: DateTime.now(),
+                  clearable: true,
+                  onChanged: (d) => setState(() => _to = d),
                 ),
               ),
             ],

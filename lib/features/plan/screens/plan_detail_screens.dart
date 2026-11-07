@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
+import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/info_row.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../activity/screens/add_transaction_screen.dart';
@@ -59,10 +62,13 @@ class _DetailActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      IconButton(icon: const Icon(Icons.edit_outlined), tooltip: 'form.edit'.tr(), onPressed: onEdit),
-      IconButton(icon: const Icon(Icons.delete_outline), tooltip: 'form.delete'.tr(), onPressed: onDelete),
-    ]);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(icon: const Icon(Icons.edit_outlined), tooltip: 'form.edit'.tr(), onPressed: onEdit),
+        IconButton(icon: const Icon(Icons.delete_outline), tooltip: 'form.delete'.tr(), onPressed: onDelete),
+      ],
+    );
   }
 }
 
@@ -115,8 +121,10 @@ class _ProgressCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text('${(progress * 100).toStringAsFixed(0)}%',
-                    style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: color)),
+                Text(
+                  '${(progress * 100).toStringAsFixed(0)}%',
+                  style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: color),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -135,10 +143,11 @@ class _ProgressCard extends StatelessWidget {
               children: [
                 _AmountCol(label: leftLabel, value: leftValue, color: color),
                 _AmountCol(
-                    label: rightLabel,
-                    value: rightValue,
-                    color: scheme.onSurfaceVariant,
-                    align: CrossAxisAlignment.end),
+                  label: rightLabel,
+                  value: rightValue,
+                  color: scheme.onSurfaceVariant,
+                  align: CrossAxisAlignment.end,
+                ),
               ],
             ),
           ],
@@ -167,29 +176,14 @@ class _AmountCol extends StatelessWidget {
       children: [
         Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 15)),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 15),
+        ),
       ],
     );
   }
 }
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value});
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-      title: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
-      trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Budget
 // ---------------------------------------------------------------------------
@@ -201,14 +195,14 @@ class BudgetDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Stay live after edits.
-    final b = ref.watch(budgetsProvider).maybeWhen(
+    final b = ref
+        .watch(budgetsProvider)
+        .maybeWhen(
           data: (list) => list.firstWhere((e) => e.id == budget.id, orElse: () => budget),
           orElse: () => budget,
         );
 
     final remaining = b.limit.minorUnits - b.spent.minorUnits;
-    final remainingMajor = (remaining / 100).toStringAsFixed(2);
-    final currency = b.limit.formatted.replaceAll(RegExp(r'[\d,. ]'), '').trim();
 
     return Scaffold(
       appBar: AppBar(
@@ -216,8 +210,8 @@ class BudgetDetailScreen extends ConsumerWidget {
         actions: [
           _DetailActions(
             onEdit: () => context.push(Routes.budgetForm, extra: b),
-            onDelete: () => _deleteAndPop(
-                context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
+            onDelete: () =>
+                _deleteAndPop(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
           ),
         ],
       ),
@@ -239,12 +233,12 @@ class BudgetDetailScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                _InfoRow(
+                InfoRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'detail.remaining'.tr(),
-                  value: b.isExceeded ? 'detail.overBudget'.tr() : '$currency $remainingMajor',
+                  value: b.isExceeded ? 'detail.overBudget'.tr() : formatMoney(remaining / 100, b.limit.currency),
                 ),
-                _InfoRow(
+                InfoRow(
                   icon: Icons.notifications_outlined,
                   label: 'detail.alertAt'.tr(),
                   value: '${(b.alertThreshold * 100).toStringAsFixed(0)}%',
@@ -270,7 +264,9 @@ class LoanDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l = ref.watch(loansProvider).maybeWhen(
+    final l = ref
+        .watch(loansProvider)
+        .maybeWhen(
           data: (list) => list.firstWhere((e) => e.id == loan.id, orElse: () => loan),
           orElse: () => loan,
         );
@@ -286,14 +282,14 @@ class LoanDetailScreen extends ConsumerWidget {
         actions: [
           _DetailActions(
             onEdit: () => context.push(Routes.loanForm, extra: l),
-            onDelete: () => _deleteAndPop(
-                context, ref, () => ref.read(planRepositoryProvider).deleteLoan(l.id), loansProvider),
+            onDelete: () =>
+                _deleteAndPop(context, ref, () => ref.read(planRepositoryProvider).deleteLoan(l.id), loansProvider),
           ),
         ],
       ),
-      floatingActionButton: isClosed
+      bottomNavigationBar: isClosed
           ? null
-          : FloatingActionButton.extended(
+          : BottomActionBar(
               onPressed: () => showRepaySheet(context, ref, l.id),
               icon: const Icon(Icons.payments_outlined),
               label: Text('form.repay'.tr()),
@@ -317,24 +313,20 @@ class LoanDetailScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   if (l.lender != null && l.lender!.isNotEmpty)
-                    _InfoRow(icon: Icons.store_outlined, label: 'form.lender'.tr(), value: l.lender!),
-                  _InfoRow(
+                    InfoRow(icon: Icons.store_outlined, label: 'form.lender'.tr(), value: l.lender!),
+                  InfoRow(
                     icon: Icons.percent,
                     label: 'form.interestRate'.tr(),
                     value: '${(l.annualInterestRate * 100).toStringAsFixed(1)}%',
                   ),
-                  _InfoRow(
+                  InfoRow(
                     icon: Icons.tune,
                     label: 'form.interestType'.tr(),
                     value: 'form.interestTypes.${l.interestType}'.tr(),
                   ),
-                  _InfoRow(
-                    icon: Icons.calendar_month_outlined,
-                    label: 'form.termMonths'.tr(),
-                    value: '${l.termMonths}',
-                  ),
+                  InfoRow(icon: Icons.calendar_month_outlined, label: 'form.termMonths'.tr(), value: '${l.termMonths}'),
                   if (l.disbursedAt != null)
-                    _InfoRow(icon: Icons.event_outlined, label: 'form.disbursedAt'.tr(), value: l.disbursedAt!),
+                    InfoRow(icon: Icons.event_outlined, label: 'form.disbursedAt'.tr(), value: l.disbursedAt!),
                 ],
               ),
             ),
@@ -346,10 +338,13 @@ class LoanDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('loan.repayments'.tr(),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.primary)),
+                    Text(
+                      'loan.repayments'.tr(),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     _RepaymentsList(loanId: l.id),
                   ],
@@ -373,7 +368,9 @@ class ProjectDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = ref.watch(projectsProvider).maybeWhen(
+    final p = ref
+        .watch(projectsProvider)
+        .maybeWhen(
           data: (list) => list.firstWhere((e) => e.id == project.id, orElse: () => project),
           orElse: () => project,
         );
@@ -389,11 +386,15 @@ class ProjectDetailScreen extends ConsumerWidget {
           _DetailActions(
             onEdit: () => context.push(Routes.projectForm, extra: p),
             onDelete: () => _deleteAndPop(
-                context, ref, () => ref.read(planRepositoryProvider).deleteProject(p.id), projectsProvider),
+              context,
+              ref,
+              () => ref.read(planRepositoryProvider).deleteProject(p.id),
+              projectsProvider,
+            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      bottomNavigationBar: BottomActionBar(
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
@@ -428,23 +429,23 @@ class ProjectDetailScreen extends ConsumerWidget {
                   leading: const Icon(Icons.home_work_outlined),
                   title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: Text('form.projectStatus.${p.status}'.tr()),
-                  trailing: Text(p.spent.formatted,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+                  trailing: Text(
+                    p.spent.formatted,
+                    style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+                  ),
                 ),
               ),
             if (p.description != null && p.description!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(p.description!),
-                ),
+                child: Padding(padding: const EdgeInsets.all(16), child: Text(p.description!)),
               ),
             ],
             const SizedBox(height: 20),
-            Text('detail.transactions'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              'detail.transactions'.tr(),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             txns.when(
               loading: () => const Padding(
@@ -457,9 +458,11 @@ class ProjectDetailScreen extends ConsumerWidget {
                 if (projectTxns.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Text('detail.noProjectTxns'.tr(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    child: Text(
+                      'detail.noProjectTxns'.tr(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
                   );
                 }
                 return Column(children: projectTxns.map((t) => _ProjectTxnTile(txn: t)).toList());
@@ -483,7 +486,7 @@ class _ProjectTxnTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
+        onTap: () => context.push(Routes.transactionById(txn.id)),
         borderRadius: BorderRadius.circular(8),
         child: ListTile(
           leading: CircleAvatar(
@@ -529,8 +532,7 @@ class _RepaymentsList extends ConsumerWidget {
       error: (_, _) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
-          child: Text('loan.repaymentsError'.tr(),
-              style: TextStyle(color: scheme.error)),
+          child: Text('loan.repaymentsError'.tr(), style: TextStyle(color: scheme.error)),
         ),
       ),
       data: (repayments) {
@@ -540,12 +542,9 @@ class _RepaymentsList extends ConsumerWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.payments_outlined,
-                      size: 48,
-                      color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                  Icon(Icons.payments_outlined, size: 48, color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
-                  Text('loan.noRepayments'.tr(),
-                      style: TextStyle(color: scheme.onSurfaceVariant)),
+                  Text('loan.noRepayments'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -581,14 +580,8 @@ class _RepaymentsList extends ConsumerWidget {
         title: Text('form.confirmDeleteTitle'.tr()),
         content: Text('form.confirmDeleteBody'.tr()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text('form.cancel'.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text('form.delete'.tr()),
-          ),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('form.delete'.tr())),
         ],
       ),
     );

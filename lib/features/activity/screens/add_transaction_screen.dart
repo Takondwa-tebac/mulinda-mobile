@@ -9,6 +9,7 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 import '../widgets/category_picker.dart';
+import '../../../core/widgets/app_date_field.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
@@ -60,7 +61,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (_accountId == null) return;
     setState(() => _loading = true);
     try {
-      await ref.read(activityRepositoryProvider).createTransaction(
+      await ref
+          .read(activityRepositoryProvider)
+          .createTransaction(
             accountId: _accountId!,
             type: _type,
             amount: double.parse(_amount.text.trim()),
@@ -88,16 +91,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         setState(() => _loading = false);
       }
     }
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) setState(() => _date = picked);
   }
 
   @override
@@ -143,8 +136,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             const Icon(Icons.home_work_outlined, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text('addTxn.towardProject'.tr(args: [widget.projectName!]),
-                                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                              child: Text(
+                                'addTxn.towardProject'.tr(args: [widget.projectName!]),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ],
                         ),
@@ -163,8 +158,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             const Icon(Icons.pie_chart_outline, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text('budgetSpend.recordingFor'.tr(args: [widget.budgetName!]),
-                                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                              child: Text(
+                                'budgetSpend.recordingFor'.tr(args: [widget.budgetName!]),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ],
                         ),
@@ -195,9 +192,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
                       decoration: InputDecoration(labelText: 'addTxn.account'.tr()),
-                      items: accountList
-                          .map((a) => DropdownMenuItem(value: a.id, child: Text(a.name)))
-                          .toList(),
+                      items: accountList.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
                       onChanged: (v) => setState(() => _accountId = v),
                     ),
                     const SizedBox(height: 16),
@@ -208,13 +203,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
                     const SizedBox(height: 16),
-                    InkWell(
-                      onTap: _pickDate,
-                      borderRadius: BorderRadius.circular(16),
-                      child: InputDecorator(
-                        decoration: InputDecoration(labelText: 'addTxn.date'.tr()),
-                        child: Text(_date.toIso8601String().split('T').first),
-                      ),
+                    AppDateField(
+                      label: 'addTxn.date'.tr(),
+                      value: _date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      onChanged: (d) => setState(() => _date = d ?? _date),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -235,8 +229,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               height: 22,
                               width: 22,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Theme.of(context).colorScheme.onPrimary),
+                                strokeWidth: 2.5,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                             )
                           : Text('addTxn.save'.tr()),
                     ),

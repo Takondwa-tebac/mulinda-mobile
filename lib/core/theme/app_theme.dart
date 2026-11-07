@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'semantic_colors.dart';
 
 /// Builds Mulinda's light and dark Material 3 themes from the brand palette.
 abstract class AppTheme {
@@ -65,6 +66,7 @@ abstract class AppTheme {
 
     return base.copyWith(
       colorScheme: scheme,
+      extensions: [brightness == Brightness.dark ? SemanticColors.dark : SemanticColors.light],
       scaffoldBackgroundColor: scheme.surface,
       textTheme: base.textTheme.apply(fontFamily: _font),
       primaryTextTheme: base.primaryTextTheme.apply(fontFamily: _font),
@@ -115,6 +117,12 @@ abstract class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
           borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+      ),
+      // Text buttons ("See all", "Retry") in the darker teal so they stay readable on light surfaces.
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: brightness == Brightness.dark ? scheme.primary : AppColors.tealInk,
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(

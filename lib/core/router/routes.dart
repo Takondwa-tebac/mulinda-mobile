@@ -48,6 +48,23 @@ abstract class Routes {
   // Transaction detail
   static const transactionDetail = '/transaction-detail';
 
+  // Detail screens by id (notification and deep links). Each loads its item
+  // when no object is passed as `extra`.
+  static const budgetByIdPath = '/budgets/:id';
+  static const loanByIdPath = '/loans/:id';
+  static const goalByIdPath = '/goals/:id';
+  static const investmentByIdPath = '/investments/:id';
+  static const billByIdPath = '/bills/:id';
+  static const dailySummaryByIdPath = '/daily-summaries/:id';
+  static const transactionByIdPath = '/transactions/:id';
+  static String budgetById(String id) => '/budgets/$id';
+  static String loanById(String id) => '/loans/$id';
+  static String goalById(String id) => '/goals/$id';
+  static String investmentById(String id) => '/investments/$id';
+  static String billById(String id) => '/bills/$id';
+  static String dailySummaryById(String id) => '/daily-summaries/$id';
+  static String transactionById(String id) => '/transactions/$id';
+
   // Detail screens (item passed via GoRouter `extra`)
   static const goalDetail = '/goal-detail';
   static const budgetDetail = '/budget-detail';

@@ -3,11 +3,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/insights/data/insights_repository.dart';
+import '../../features/auth/providers/auth_controller.dart';
 import '../../features/capture/data/inbox_repository.dart';
+import '../../features/subscription/data/subscription_repository.dart';
 import '../network/dio_client.dart';
-import '../router/app_router.dart';
 import '../router/routes.dart';
-import 'notification_service.dart';
+import 'in_app_banner.dart';
+import 'notification_router.dart';
 
 /// Firebase Cloud Messaging: foreground display, tap-to-open, and device-token
 /// registration (which happens once the user is authenticated, since the
@@ -26,14 +28,17 @@ class PushService {
       final fm = FirebaseMessaging.instance;
       await fm.requestPermission();
 
-      // Foreground: show local notification and refresh the relevant provider.
+      // Foreground: Android shows no system notification for an FCM message
+      // while the app is open, so show an in-app banner (not a second, local
+      // notification) with "View", and refresh the relevant data.
       FirebaseMessaging.onMessage.listen((m) {
         final n = m.notification;
-        if (n != null) {
-          NotificationService.show(
-            n.title ?? 'Mulinda',
-            n.body ?? '',
-            imageUrl: n.android?.imageUrl ?? n.apple?.imageUrl,
+        final title = n?.title ?? m.data['title']?.toString();
+        if (title != null && title.isNotEmpty) {
+          showPushBanner(
+            title: title,
+            body: n?.body ?? m.data['body']?.toString(),
+            onView: () => NotificationRouter.instance.open(ref, m.data),
           );
         }
         _refreshFromData(ref, m.data);
@@ -65,6 +70,8 @@ class PushService {
   /// Invalidate this device's FCM token on sign-out so pushes meant for the
   /// previous account can never reach it; a fresh token is issued on next login.
   Future<void> unregister() async {
+    // Nothing opened from a notification may carry over to the next account.
+    NotificationRouter.instance.clear();
     try {
       await FirebaseMessaging.instance.deleteToken();
     } catch (_) {}
@@ -85,41 +92,28 @@ class PushService {
     if (type == 'inbox') {
       ref.invalidate(pendingSmsProvider);
       ref.invalidate(pendingReceiptsProvider);
+    } else if (isSubscriptionPushType(type)) {
+      // A plan switched on, a payment failed, or access is ending: reload the
+      // plan and entitlements, and the invoice list.
+      ref.read(authControllerProvider.notifier).refresh();
+      ref.invalidate(invoicesProvider);
     } else {
       ref.invalidate(unreadInsightsCountProvider);
       ref.invalidate(insightsProvider);
     }
   }
 
-  /// Navigate to the correct screen based on the notification data payload.
+  /// Open the notification's screen (see NotificationRouter): now when the
+  /// user is in the app, after sign-in otherwise.
   void _navigate(WidgetRef ref, Map<String, dynamic> data) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final type = data['type'] as String?;
-      final itemType = data['item_type'] as String?;
-      final router = ref.read(routerProvider);
-      if (type == 'daily_summary') {
-        router.go(Routes.dailySummaries);
-      } else if (type == 'export') {
-        router.go(Routes.exports);
-      } else if (type == 'ai_unavailable') {
-        // The AI service was busy: add the item by hand instead.
-        router.go(Routes.addTransaction);
-      } else if (type == 'inbox' && itemType == 'transaction') {
-        // Auto-recorded SMS transactions land in the review queue.
-        router.go(Routes.review);
-      } else if (type == 'inbox') {
-        router.go(Routes.inbox);
-      } else if (type == 'subscription_prompt' ||
-          type == 'subscription_expiration') {
-        // Show subscription screen for SMS capture limit or expiration reminders
-        router.go(Routes.subscription);
-      } else if (type == 'announcement' && data['insight_id'] != null) {
-        // Admin broadcast: open the list, then the notification itself.
-        router.go(Routes.insights);
-        router.push(Routes.notificationDetailFor(data['insight_id'].toString()));
-      } else {
-        router.go(Routes.insights);
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => NotificationRouter.instance.open(ref, data));
   }
 }
+
+/// Push types that open the Subscription screen.
+bool isSubscriptionPushType(String? type) => subscriptionPushTypes.contains(type);
+
+/// Where the `audit_export_ready` push opens: the audit trail showing that export.
+String auditExportLocation(String? exportId) => exportId == null || exportId.isEmpty
+    ? Routes.adminAudit
+    : '${Routes.adminAudit}?export=${Uri.encodeQueryComponent(exportId)}';

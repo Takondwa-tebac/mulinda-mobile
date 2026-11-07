@@ -54,7 +54,7 @@ import '../../features/admin/screens/user_detail_screen.dart';
 import '../../features/subscription/data/subscription_models.dart';
 import '../../features/subscription/screens/receipt_screen.dart';
 import '../../features/subscription/screens/subscription_screen.dart';
-import '../../features/transactions/screens/transaction_detail_screen.dart';
+import 'id_routes.dart';
 import 'routes.dart';
 
 /// App router with an auth guard driven by [authControllerProvider].
@@ -87,10 +87,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       };
       // Public pages reachable in BOTH states (e.g. permissions, legal opened
       // from Profile while signed in, or from the signup screen while out).
-      const publicAnywhere = {
-        Routes.permissions,
-        Routes.legal,
-      };
+      const publicAnywhere = {Routes.permissions, Routes.legal};
 
       if (status == AuthStatus.unauthenticated) {
         if (authEntryPages.contains(loc) || publicAnywhere.contains(loc)) return null;
@@ -129,30 +126,37 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.incomeSetup, builder: (_, _) => const IncomeSetupScreen()),
       GoRoute(
         path: Routes.permissions,
-        builder: (_, s) => PermissionsScreen(
-          fromOnboarding: s.uri.queryParameters['onboarding'] == 'true',
-        ),
+        builder: (_, s) => PermissionsScreen(fromOnboarding: s.uri.queryParameters['onboarding'] == 'true'),
       ),
       GoRoute(
         path: Routes.legal,
         builder: (_, s) => LegalPageScreen(slug: s.uri.queryParameters['slug'] ?? 'privacy'),
       ),
-      GoRoute(
-        path: Routes.coach,
-        builder: (_, _) => const CoachScreen(),
-      ),
+      GoRoute(path: Routes.coach, builder: (_, _) => const CoachScreen()),
       GoRoute(path: Routes.addTransaction, builder: (_, _) => const AddTransactionScreen()),
       GoRoute(path: Routes.addAccount, builder: (_, _) => const AddAccountScreen()),
       GoRoute(
         path: Routes.accountDetail,
-        builder: (_, s) => AccountDetailScreen(account: s.extra as Account),
+        redirect: (_, s) => s.extra is Account ? null : Routes.activity,
+        builder: (_, s) => AccountDetailScreen(account: s.extra! as Account),
       ),
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
-      GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
+      GoRoute(
+        path: Routes.inbox,
+        // `?item=<id>&kind=sms|receipt` (from a notification) opens that item.
+        builder: (_, s) => InboxScreen(
+          openItemId: s.uri.queryParameters['item'],
+          openReceipt: s.uri.queryParameters['kind'] == 'receipt',
+        ),
+      ),
       GoRoute(path: Routes.bulkSmsImport, builder: (_, _) => const BulkSmsImportScreen()),
       GoRoute(path: Routes.manualSmsScan, builder: (_, _) => const ManualSmsScanScreen()),
-      GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
+      GoRoute(
+        path: Routes.review,
+        // `?highlight=<id>` (from a notification) outlines that transaction.
+        builder: (_, s) => ReviewScreen(highlightId: s.uri.queryParameters['highlight']),
+      ),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),
       GoRoute(path: Routes.goals, builder: (_, _) => const GoalsListScreen()),
@@ -172,41 +176,65 @@ final routerProvider = Provider<GoRouter>((ref) {
           initial: s.extra is Insight ? s.extra as Insight : null,
         ),
       ),
+      // Old detail routes (object passed as `extra`). Without it they forward
+      // to the id routes or the list, instead of crashing on a bad cast.
       GoRoute(
         path: Routes.transactionDetail,
-        builder: (_, s) => TransactionDetailScreen(txnId: s.extra as String),
+        redirect: (_, s) => s.extra is String ? Routes.transactionById(s.extra! as String) : Routes.activity,
       ),
       GoRoute(
         path: Routes.goalDetail,
-        builder: (_, s) => GoalDetailScreen(goal: s.extra as GoalItem),
+        redirect: (_, s) => s.extra is GoalItem ? null : Routes.goals,
+        builder: (_, s) => GoalDetailScreen(goal: s.extra! as GoalItem),
       ),
       GoRoute(
         path: Routes.budgetDetail,
-        builder: (_, s) => BudgetDetailScreen(budget: s.extra as BudgetItem),
+        redirect: (_, s) => s.extra is BudgetItem ? null : Routes.budgets,
+        builder: (_, s) => BudgetDetailScreen(budget: s.extra! as BudgetItem),
       ),
       GoRoute(
         path: Routes.loanDetail,
-        builder: (_, s) => LoanDetailScreen(loan: s.extra as LoanItem),
+        redirect: (_, s) => s.extra is LoanItem ? null : Routes.loans,
+        builder: (_, s) => LoanDetailScreen(loan: s.extra! as LoanItem),
       ),
       GoRoute(
         path: Routes.projectDetail,
-        builder: (_, s) => ProjectDetailScreen(project: s.extra as ProjectItem),
+        redirect: (_, s) => s.extra is ProjectItem ? null : Routes.projects,
+        builder: (_, s) => ProjectDetailScreen(project: s.extra! as ProjectItem),
       ),
       GoRoute(
         path: Routes.investmentDetail,
-        builder: (_, s) => InvestmentDetailScreen(investment: s.extra as InvestmentItem),
+        redirect: (_, s) => s.extra is InvestmentItem ? null : Routes.investments,
+        builder: (_, s) => InvestmentDetailScreen(investment: s.extra! as InvestmentItem),
       ),
-      GoRoute(path: Routes.goalForm, builder: (_, s) => GoalForm(item: s.extra as GoalItem?)),
-      GoRoute(path: Routes.budgetForm, builder: (_, s) => BudgetForm(item: s.extra as BudgetItem?)),
-      GoRoute(path: Routes.loanForm, builder: (_, s) => LoanForm(item: s.extra as LoanItem?)),
-      GoRoute(path: Routes.investmentForm, builder: (_, s) => InvestmentForm(item: s.extra as InvestmentItem?)),
-      GoRoute(path: Routes.projectForm, builder: (_, s) => ProjectForm(item: s.extra as ProjectItem?)),
+      ...idDetailRoutes(),
+      GoRoute(
+        path: Routes.goalForm,
+        builder: (_, s) => GoalForm(item: s.extra is GoalItem ? s.extra! as GoalItem : null),
+      ),
+      GoRoute(
+        path: Routes.budgetForm,
+        builder: (_, s) => BudgetForm(item: s.extra is BudgetItem ? s.extra! as BudgetItem : null),
+      ),
+      GoRoute(
+        path: Routes.loanForm,
+        builder: (_, s) => LoanForm(item: s.extra is LoanItem ? s.extra! as LoanItem : null),
+      ),
+      GoRoute(
+        path: Routes.investmentForm,
+        builder: (_, s) => InvestmentForm(item: s.extra is InvestmentItem ? s.extra! as InvestmentItem : null),
+      ),
+      GoRoute(
+        path: Routes.projectForm,
+        builder: (_, s) => ProjectForm(item: s.extra is ProjectItem ? s.extra! as ProjectItem : null),
+      ),
 
       // Subscriptions & receipts
       GoRoute(path: Routes.subscription, builder: (_, _) => const SubscriptionScreen()),
       GoRoute(
         path: Routes.receipt,
-        builder: (_, s) => ReceiptScreen(invoice: s.extra as InvoiceModel),
+        redirect: (_, s) => s.extra is InvoiceModel ? null : Routes.subscription,
+        builder: (_, s) => ReceiptScreen(invoice: s.extra! as InvoiceModel),
       ),
 
       // Admin screens — full-screen pushes, not part of the shell tabs.
@@ -217,25 +245,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.adminUserDetail,
         builder: (_, s) => UserDetailScreen(userId: s.pathParameters['userId'] ?? ''),
       ),
-      GoRoute(path: Routes.adminAudit, builder: (_, _) => const AuditTrailScreen()),
+      GoRoute(
+        path: Routes.adminAudit,
+        // `?export=<id>` (from the "export ready" notification) shows that export.
+        builder: (_, s) => AuditTrailScreen(exportId: s.uri.queryParameters['export']),
+      ),
       GoRoute(path: Routes.adminAnalytics, builder: (_, _) => const AdminAnalyticsScreen()),
       GoRoute(path: Routes.adminFeatures, builder: (_, _) => const AdminFeatureFlagsScreen()),
 
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: Routes.activity, builder: (_, _) => const ActivityScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: Routes.plan, builder: (_, _) => const PlanScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: Routes.profile, builder: (_, _) => const ProfileScreen()),
-          ]),
+          StatefulShellBranch(
+            routes: [GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: Routes.activity, builder: (_, _) => const ActivityScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: Routes.plan, builder: (_, _) => const PlanScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: Routes.profile, builder: (_, _) => const ProfileScreen())],
+          ),
         ],
       ),
     ],

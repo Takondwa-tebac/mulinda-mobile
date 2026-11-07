@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
+import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/info_row.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart' show dashboardProvider;
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 import '../widgets/amount_record_card.dart';
 import 'plan_forms.dart' show showContributeSheet, showEditContributionSheet;
-
 
 class GoalDetailScreen extends ConsumerStatefulWidget {
   const GoalDetailScreen({super.key, required this.goal});
@@ -68,28 +70,17 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                widget.goal.name,
-                                style: text.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              Text(widget.goal.name, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                               Text(
                                 'goal.type.${widget.goal.type}'.tr(),
-                                style: TextStyle(
-                                  color: scheme.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
+                                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
                               ),
                             ],
                           ),
                         ),
                         Text(
                           '$pct%',
-                          style: text.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: scheme.primary,
-                          ),
+                          style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
                         ),
                       ],
                     ),
@@ -133,23 +124,21 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
                 child: Column(
                   children: [
                     if (widget.goal.targetDate != null)
-                      _InfoRow(
+                      InfoRow(
                         icon: Icons.calendar_today_outlined,
                         label: 'goal.targetDate'.tr(),
                         value: widget.goal.targetDate!,
                       ),
                     if (widget.goal.monthlyContribution != null)
-                      _InfoRow(
+                      InfoRow(
                         icon: Icons.repeat_outlined,
                         label: 'goal.monthly'.tr(),
                         value: widget.goal.monthlyContribution!.formatted,
                       ),
-                    _InfoRow(
+                    InfoRow(
                       icon: Icons.savings_outlined,
                       label: 'goal.remaining'.tr(),
-                      value: (widget.goal.target.minorUnits -
-                                  widget.goal.current.minorUnits) >
-                              0
+                      value: (widget.goal.target.minorUnits - widget.goal.current.minorUnits) > 0
                           ? _remaining(widget.goal)
                           : 'goal.complete'.tr(),
                     ),
@@ -171,22 +160,13 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
                       children: [
                         Text(
                           'goal.contributions'.tr(),
-                          style: text.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: scheme.primary,
-                          ),
+                          style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
                         ),
                         TextButton.icon(
-                          onPressed: () => showContributeSheet(
-                            context,
-                            ref,
-                            widget.goal.id,
-                          ),
+                          onPressed: () => showContributeSheet(context, ref, widget.goal.id),
                           icon: const Icon(Icons.add, size: 18),
                           label: Text('form.add'.tr()),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                          ),
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                         ),
                       ],
                     ),
@@ -199,7 +179,7 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      bottomNavigationBar: BottomActionBar(
         onPressed: () => showContributeSheet(context, ref, widget.goal.id),
         icon: const Icon(Icons.add),
         label: Text('form.contribute'.tr()),
@@ -209,11 +189,7 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
 
   String _remaining(GoalItem g) {
     final diff = g.target.minorUnits - g.current.minorUnits;
-    final currency = g.target.formatted
-        .replaceAll(RegExp(r'[\d,. ]'), '')
-        .trim();
-    final major = diff / 100;
-    return '$currency ${major.toStringAsFixed(2)}';
+    return formatMoney(diff / 100, g.target.currency);
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
@@ -223,14 +199,8 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
         title: Text('form.confirmDeleteTitle'.tr()),
         content: Text('form.confirmDeleteBody'.tr()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text('form.cancel'.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text('form.delete'.tr()),
-          ),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('form.delete'.tr())),
         ],
       ),
     );
@@ -270,8 +240,7 @@ class _ContributionsList extends ConsumerWidget {
       error: (_, _) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
-          child: Text('goal.contributionsError'.tr(),
-              style: TextStyle(color: scheme.error)),
+          child: Text('goal.contributionsError'.tr(), style: TextStyle(color: scheme.error)),
         ),
       ),
       data: (contributions) {
@@ -281,16 +250,9 @@ class _ContributionsList extends ConsumerWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(
-                    Icons.savings_outlined,
-                    size: 48,
-                    color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
+                  Icon(Icons.savings_outlined, size: 48, color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
-                  Text(
-                    'goal.noContributions'.tr(),
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
+                  Text('goal.noContributions'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -326,14 +288,8 @@ class _ContributionsList extends ConsumerWidget {
         title: Text('form.confirmDeleteTitle'.tr()),
         content: Text('form.confirmDeleteBody'.tr()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text('form.cancel'.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text('form.delete'.tr()),
-          ),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('form.cancel'.tr())),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('form.delete'.tr())),
         ],
       ),
     );
@@ -377,51 +333,13 @@ class _AmountCol extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 2),
         Text(
           value,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: color,
-            fontSize: 15,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 15),
         ),
       ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-      title: Text(
-        label,
-        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
-      ),
-      trailing: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
     );
   }
 }

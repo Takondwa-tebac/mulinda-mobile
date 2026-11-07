@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
+import 'bill_models.dart';
 import 'plan_models.dart';
 
 class PlanRepository {
@@ -29,6 +30,16 @@ class PlanRepository {
   Future<List<ProjectItem>> projects() => _list('/v1/projects', ProjectItem.fromJson);
 
   Future<Map<String, dynamic>> goalDetail(String id) => _get('/v1/goals/$id');
+
+  // ---- One item by id (notification links, deep links) --------------------
+
+  Future<BudgetItem> budget(String id) async => BudgetItem.fromJson(await _get('/v1/budgets/$id'));
+  Future<GoalItem> goal(String id) async => GoalItem.fromJson(await _get('/v1/goals/$id'));
+  Future<LoanItem> loan(String id) async => LoanItem.fromJson(await _get('/v1/loans/$id'));
+  Future<InvestmentItem> investment(String id) async => InvestmentItem.fromJson(await _get('/v1/investments/$id'));
+
+  /// A recurring bill with its recent payments.
+  Future<Bill> bill(String id) async => Bill.fromJson(await _get('/v1/recurring-patterns/$id'));
   Future<Map<String, dynamic>> loanDetail(String id) => _get('/v1/loans/$id');
 
   // ---- Mutations -----------------------------------------------------------
