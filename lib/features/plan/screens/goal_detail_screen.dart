@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
@@ -188,9 +189,7 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
 
   String _remaining(GoalItem g) {
     final diff = g.target.minorUnits - g.current.minorUnits;
-    final currency = g.target.formatted.replaceAll(RegExp(r'[\d,. ]'), '').trim();
-    final major = diff / 100;
-    return '$currency ${major.toStringAsFixed(2)}';
+    return formatMoney(diff / 100, g.target.currency);
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {

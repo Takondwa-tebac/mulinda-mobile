@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
@@ -202,8 +203,6 @@ class BudgetDetailScreen extends ConsumerWidget {
         );
 
     final remaining = b.limit.minorUnits - b.spent.minorUnits;
-    final remainingMajor = (remaining / 100).toStringAsFixed(2);
-    final currency = b.limit.formatted.replaceAll(RegExp(r'[\d,. ]'), '').trim();
 
     return Scaffold(
       appBar: AppBar(
@@ -237,7 +236,7 @@ class BudgetDetailScreen extends ConsumerWidget {
                 InfoRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'detail.remaining'.tr(),
-                  value: b.isExceeded ? 'detail.overBudget'.tr() : '$currency $remainingMajor',
+                  value: b.isExceeded ? 'detail.overBudget'.tr() : formatMoney(remaining / 100, b.limit.currency),
                 ),
                 InfoRow(
                   icon: Icons.notifications_outlined,
