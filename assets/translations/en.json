@@ -1102,7 +1102,11 @@
     "dailySummary": "Daily spending summary",
     "dailySummarySub": "A recap of what you spent, each day",
     "sendAt": "Send at",
-    "pastSummaries": "Past summaries"
+    "pastSummaries": "Past summaries",
+    "budgetAlerts": "Budget alerts",
+    "budgetAlertsSub": "When a budget is close to or over its limit",
+    "spendingSpikes": "Spending spikes",
+    "spendingSpikesSub": "When you spend much more than usual in a category"
   },
   "admin2": {
     "funnel": {

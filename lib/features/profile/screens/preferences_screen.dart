@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/money/currencies.dart';
 import '../../../core/money/currency_picker.dart';
@@ -27,6 +28,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   bool _bioAvailable = false;
   bool _bioBusy = false;
   bool _summaryBusy = false;
+  bool _alertsBusy = false;
+  bool _spikesBusy = false;
 
   TimeOfDay _parseHm(String hm) {
     final parts = hm.split(':');
@@ -49,6 +52,42 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       _snack(e.displayMessage);
     } finally {
       if (mounted) setState(() => _summaryBusy = false);
+    }
+  }
+
+  Future<void> _toggleBudgetAlerts(bool value) => _saveAlertSetting(
+    value,
+    busy: (b) => _alertsBusy = b,
+    save: () => ref.read(authControllerProvider.notifier).updateProfile(notifyBudgetAlerts: value),
+  );
+
+  Future<void> _toggleSpendingSpikes(bool value) => _saveAlertSetting(
+    value,
+    busy: (b) => _spikesBusy = b,
+    save: () => ref.read(authControllerProvider.notifier).updateProfile(notifySpendingSpikes: value),
+  );
+
+  /// Same save pattern as the daily summary: ask for notification permission
+  /// when turning on, save, and say so (or show the server's message).
+  Future<void> _saveAlertSetting(
+    bool value, {
+    required void Function(bool) busy,
+    required Future<void> Function() save,
+  }) async {
+    setState(() => busy(true));
+    try {
+      if (value) {
+        // A push needs notification permission to show (no exact alarm here).
+        try {
+          await Permission.notification.request();
+        } catch (_) {}
+      }
+      await save();
+      _snack('profile.saved'.tr());
+    } on ApiException catch (e) {
+      _snack(e.displayMessage);
+    } finally {
+      if (mounted) setState(() => busy(false));
     }
   }
 
@@ -209,6 +248,24 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                   subtitle: Text(summaryTime.format(context)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: summaryEnabled ? _pickSummaryTime : null,
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const ValueKey('pref-budget-alerts'),
+                  secondary: const Icon(Icons.warning_amber_rounded),
+                  title: Text('profile2.budgetAlerts'.tr()),
+                  subtitle: Text('profile2.budgetAlertsSub'.tr()),
+                  value: user?.notifyBudgetAlerts ?? true,
+                  onChanged: _alertsBusy ? null : _toggleBudgetAlerts,
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const ValueKey('pref-spending-spikes'),
+                  secondary: const Icon(Icons.trending_up),
+                  title: Text('profile2.spendingSpikes'.tr()),
+                  subtitle: Text('profile2.spendingSpikesSub'.tr()),
+                  value: user?.notifySpendingSpikes ?? true,
+                  onChanged: _spikesBusy ? null : _toggleSpendingSpikes,
                 ),
                 const Divider(height: 1),
                 ListTile(

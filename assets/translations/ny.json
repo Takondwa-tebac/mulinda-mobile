@@ -1102,7 +1102,11 @@
     "dailySummary": "Chidule cha zogula cha tsiku",
     "dailySummarySub": "Chidule cha zomwe mwagula tsiku lililonse",
     "sendAt": "Tumizani nthawi",
-    "pastSummaries": "Chidule chakale"
+    "pastSummaries": "Chidule chakale",
+    "budgetAlerts": "Zidziwitso za bajeti",
+    "budgetAlertsSub": "Bajeti ikayandikira kapena kupitirira malire ake",
+    "spendingSpikes": "Kukwera kwa zogula",
+    "spendingSpikesSub": "Mukagula kwambiri kuposa masiku onse m'gulu limodzi"
   },
   "admin2": {
     "funnel": {
