@@ -94,7 +94,7 @@ class BillDetailScreen extends StatelessWidget {
           else
             for (final t in bill.recent)
               TransactionTile(
-                data: txnTileData(t, meta: t.occurredLocal == null ? null : dayHeaderLabel(t.occurredLocal)),
+                data: txnTileData(t, meta: _shortDay(t.occurredLocal)),
                 onTap: () => context.push(Routes.transactionById(t.id)),
               ),
         ],
@@ -102,3 +102,6 @@ class BillDetailScreen extends StatelessWidget {
     );
   }
 }
+
+/// "13 Oct": short enough to sit next to the category on a payment row.
+String? _shortDay(DateTime? d) => d == null ? null : '${d.day} ${'common.monthShort.${d.month}'.tr()}';
