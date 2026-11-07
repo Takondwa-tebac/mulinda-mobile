@@ -111,7 +111,8 @@
       "10": "Okutobala",
       "11": "Novembala",
       "12": "Disembala"
-    }
+    },
+    "itemGone": "Chinthu chimenecho sichikupezekanso."
   },
   "onboarding": {
     "anim": {
@@ -1232,6 +1233,23 @@
       "spending": "Onani zogula",
       "goals": "Onani zolinga",
       "open": "Werengani zambiri"
+    }
+  },
+  "bills": {
+    "title": "Bilu",
+    "usually": "Nthawi zambiri",
+    "nextDue": "Ikubweranso {}",
+    "cadenceLabel": "Kangati",
+    "nextDueLabel": "Ikubweranso",
+    "lastPaid": "Yalipiridwa komaliza",
+    "recent": "Malipiro aposachedwa",
+    "noPayments": "Palibe malipiro ofanana pano",
+    "cadence": {
+      "weekly": "Sabata iliyonse",
+      "biweekly": "Masabata awiri aliwonse",
+      "monthly": "Mwezi uliwonse",
+      "quarterly": "Miyezi itatu iliyonse",
+      "yearly": "Chaka chilichonse"
     }
   }
 }

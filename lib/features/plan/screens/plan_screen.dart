@@ -363,7 +363,7 @@ class _BudgetRow extends StatelessWidget {
     final projected = pace.projectedMinor;
 
     return InkWell(
-      onTap: () => context.push(Routes.budgetDetail, extra: b),
+      onTap: () => context.push(Routes.budgetById(b.id), extra: b),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
         child: Column(
@@ -513,7 +513,7 @@ class _GoalRow extends StatelessWidget {
         : null;
 
     return InkWell(
-      onTap: () => context.push(Routes.goalDetail, extra: g),
+      onTap: () => context.push(Routes.goalById(g.id), extra: g),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
         child: Column(

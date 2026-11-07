@@ -12,6 +12,8 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
 import '../../../core/widgets/category_icons.dart';
+import '../../../core/router/routes.dart';
+import '../../../core/widgets/by_id_loader.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/receipt_view.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -124,12 +126,16 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => Center(
-          child: ErrorRetry(
-            message: 'activity2.detail.loadError'.tr(),
-            onRetry: () => ref.invalidate(transactionDetailProvider(widget.txnId)),
-          ),
-        ),
+        error: (e, _) {
+          // Deleted or not this user's (e.g. opened from an old notification).
+          if (isGoneError(e)) leaveForList(context, Routes.activity);
+          return Center(
+            child: ErrorRetry(
+              message: 'activity2.detail.loadError'.tr(),
+              onRetry: () => ref.invalidate(transactionDetailProvider(widget.txnId)),
+            ),
+          );
+        },
         data: (txn) => ListView(
           padding: EdgeInsets.fromLTRB(16, 20, 16, 40 + MediaQuery.of(context).padding.bottom),
           children: [

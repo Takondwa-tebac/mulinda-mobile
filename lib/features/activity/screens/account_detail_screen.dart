@@ -114,7 +114,7 @@ class _Body extends StatelessWidget {
           ...txns.map(
             (t) => TransactionTile(
               data: txnTileData(t, meta: t.occurredLocal == null ? null : dayHeaderLabel(t.occurredLocal)),
-              onTap: () => context.push(Routes.transactionDetail, extra: t.id),
+              onTap: () => context.push(Routes.transactionById(t.id)),
             ),
           ),
       ],

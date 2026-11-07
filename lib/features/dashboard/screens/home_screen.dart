@@ -149,8 +149,8 @@ class _Dashboard extends ConsumerWidget {
             ...data.recent.map(
               (t) => TransactionTile(
                 data: _recentTile(t),
-                onTap: () => context.push(Routes.transactionDetail, extra: t.id),
-                onConfirmCategory: () => context.push(Routes.transactionDetail, extra: t.id),
+                onTap: () => context.push(Routes.transactionById(t.id)),
+                onConfirmCategory: () => context.push(Routes.transactionById(t.id)),
               ),
             ),
           const SizedBox(height: AppSpacing.xl),
@@ -532,7 +532,7 @@ class _GlanceRow extends StatelessWidget {
       _ => pace.overPace ? context.semantic.warning : context.semantic.success,
     };
     return InkWell(
-      onTap: () => context.push(Routes.budgetDetail, extra: b),
+      onTap: () => context.push(Routes.budgetById(b.id), extra: b),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
         child: Column(

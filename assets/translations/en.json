@@ -111,7 +111,8 @@
       "10": "October",
       "11": "November",
       "12": "December"
-    }
+    },
+    "itemGone": "That item is no longer available."
   },
   "onboarding": {
     "anim": {
@@ -1232,6 +1233,23 @@
       "spending": "See spending",
       "goals": "View goals",
       "open": "Read more"
+    }
+  },
+  "bills": {
+    "title": "Bill",
+    "usually": "Usually",
+    "nextDue": "Next due {}",
+    "cadenceLabel": "How often",
+    "nextDueLabel": "Next due",
+    "lastPaid": "Last paid",
+    "recent": "Recent payments",
+    "noPayments": "No payments matched yet",
+    "cadence": {
+      "weekly": "Every week",
+      "biweekly": "Every two weeks",
+      "monthly": "Every month",
+      "quarterly": "Every three months",
+      "yearly": "Every year"
     }
   }
 }

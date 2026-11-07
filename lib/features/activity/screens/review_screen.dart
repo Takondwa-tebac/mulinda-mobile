@@ -206,7 +206,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                   txn: t,
                   selected: _selected.contains(t.id),
                   onToggle: () => _toggle(t.id),
-                  onOpen: () => context.push(Routes.transactionDetail, extra: t.id),
+                  onOpen: () => context.push(Routes.transactionById(t.id)),
                   onFixCategory: t.type == 'transfer' ? null : () => _fixCategory(t),
                 );
               },

@@ -487,7 +487,7 @@ class _ProjectTxnTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
+        onTap: () => context.push(Routes.transactionById(txn.id)),
         borderRadius: BorderRadius.circular(8),
         child: ListTile(
           leading: CircleAvatar(

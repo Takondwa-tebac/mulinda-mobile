@@ -175,7 +175,7 @@ class GoalsListScreen extends ConsumerWidget {
           pending: g.pending,
           value: '${g.current.formatted} / ${g.target.formatted}',
           progress: g.progress,
-          onTap: () => context.push(Routes.goalDetail, extra: g),
+          onTap: () => context.push(Routes.goalById(g.id), extra: g),
           onEdit: () => context.push(Routes.goalForm, extra: g),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteGoal(g.id), goalsProvider),
           extra: ('form.contribute'.tr(), () => showContributeSheet(context, ref, g.id)),
@@ -203,7 +203,7 @@ class BudgetsListScreen extends ConsumerWidget {
         },
         tile: (b) => _BudgetCard(
           budget: b,
-          onTap: () => context.push(Routes.budgetDetail, extra: b),
+          onTap: () => context.push(Routes.budgetById(b.id), extra: b),
           onEdit: () => context.push(Routes.budgetForm, extra: b),
           onDelete: () =>
               _delete(context, ref, () => ref.read(planRepositoryProvider).deleteBudget(b.id), budgetsProvider),
@@ -234,7 +234,7 @@ class LoansListScreen extends ConsumerWidget {
           pending: l.pending,
           value: l.outstanding.formatted,
           sub: 'form.loanStatus.${l.status}'.tr(),
-          onTap: () => context.push(Routes.loanDetail, extra: l),
+          onTap: () => context.push(Routes.loanById(l.id), extra: l),
           onEdit: () => context.push(Routes.loanForm, extra: l),
           onDelete: () => _delete(context, ref, () => ref.read(planRepositoryProvider).deleteLoan(l.id), loansProvider),
           extra: ('form.repay'.tr(), () => showRepaySheet(context, ref, l.id)),
@@ -281,7 +281,7 @@ class InvestmentsListScreen extends ConsumerWidget {
               '${(i.isEstimated ? 'invest.interestSoFar' : 'invest.gain').tr()}: ${i.gain.formatted}'
               '${_todayMove(i)}',
           subColor: i.gain.isNegative ? context.semantic.danger : null,
-          onTap: () => context.push(Routes.investmentDetail, extra: i),
+          onTap: () => context.push(Routes.investmentById(i.id), extra: i),
           onEdit: () => context.push(Routes.investmentForm, extra: i),
           onDelete: () => _delete(
             context,

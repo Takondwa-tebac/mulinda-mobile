@@ -265,7 +265,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   Widget _row(Txn t) {
     final tile = TransactionTile(
       data: txnTileData(t),
-      onTap: () => context.push(Routes.transactionDetail, extra: t.id),
+      onTap: () => context.push(Routes.transactionById(t.id)),
       onLongPress: t.type == 'transfer' ? null : () => _quickFix(t),
       onConfirmCategory: () => _quickFix(t),
     );
