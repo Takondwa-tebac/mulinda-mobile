@@ -25,7 +25,10 @@ import '../../../core/theme/app_icons.dart';
 /// ones that are right and bulk-deletes (soft) the ones that aren't, and can fix
 /// each one's category in place. Each principal shows its fee/levy split.
 class ReviewScreen extends ConsumerStatefulWidget {
-  const ReviewScreen({super.key});
+  const ReviewScreen({super.key, this.highlightId});
+
+  /// Opened from a notification about this transaction: shown first and outlined.
+  final String? highlightId;
 
   @override
   ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
@@ -37,6 +40,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   /// Rows changed on this screen before the list reloads (optimistic).
   final Map<String, Txn> _local = {};
   bool _busy = false;
+
+  /// The highlighted transaction first, then the rest in their order.
+  List<Txn> _highlightFirst(List<Txn> items) {
+    final id = widget.highlightId;
+    if (id == null) return items;
+    final hit = items.where((t) => t.id == id).toList();
+    return [...hit, ...items.where((t) => t.id != id)];
+  }
 
   Future<void> _refresh() async {
     _local.clear();
@@ -201,8 +212,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 120),
               itemCount: items.length,
               itemBuilder: (_, i) {
-                final t = _local[items[i].id] ?? items[i];
+                final ordered = _highlightFirst(items);
+                final t = _local[ordered[i].id] ?? ordered[i];
                 return _ReviewCard(
+                  highlighted: t.id == widget.highlightId,
                   txn: t,
                   selected: _selected.contains(t.id),
                   onToggle: () => _toggle(t.id),
@@ -256,6 +269,7 @@ class _ReviewCard extends StatelessWidget {
   const _ReviewCard({
     required this.txn,
     required this.selected,
+    this.highlighted = false,
     required this.onToggle,
     required this.onOpen,
     required this.onFixCategory,
@@ -263,6 +277,9 @@ class _ReviewCard extends StatelessWidget {
 
   final Txn txn;
   final bool selected;
+
+  /// The transaction a notification pointed at.
+  final bool highlighted;
   final VoidCallback onToggle;
   final VoidCallback onOpen;
   final VoidCallback? onFixCategory;
@@ -282,7 +299,9 @@ class _ReviewCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 5),
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.card,
-        side: selected ? BorderSide(color: scheme.primary, width: 1.5) : BorderSide.none,
+        side: selected
+            ? BorderSide(color: scheme.primary, width: 1.5)
+            : (highlighted ? BorderSide(color: scheme.secondary, width: 2) : BorderSide.none),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

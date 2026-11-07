@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/notifications/notification_router.dart';
 import '../../core/router/routes.dart';
 import '../../core/theme/app_icons.dart';
 import '../../core/offline/offline_status.dart';
@@ -41,7 +42,11 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptTerms());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybePromptTerms();
+      // A notification tapped before sign-in (or on a cold start) opens now.
+      NotificationRouter.instance.flushPending(ref);
+    });
   }
 
   /// Prompt once per app session if the user is behind on the Terms. Re-checks

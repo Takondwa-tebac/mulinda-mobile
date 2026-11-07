@@ -142,10 +142,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
-      GoRoute(path: Routes.inbox, builder: (_, _) => const InboxScreen()),
+      GoRoute(
+        path: Routes.inbox,
+        // `?item=<id>&kind=sms|receipt` (from a notification) opens that item.
+        builder: (_, s) => InboxScreen(
+          openItemId: s.uri.queryParameters['item'],
+          openReceipt: s.uri.queryParameters['kind'] == 'receipt',
+        ),
+      ),
       GoRoute(path: Routes.bulkSmsImport, builder: (_, _) => const BulkSmsImportScreen()),
       GoRoute(path: Routes.manualSmsScan, builder: (_, _) => const ManualSmsScanScreen()),
-      GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
+      GoRoute(
+        path: Routes.review,
+        // `?highlight=<id>` (from a notification) outlines that transaction.
+        builder: (_, s) => ReviewScreen(highlightId: s.uri.queryParameters['highlight']),
+      ),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),
       GoRoute(path: Routes.goals, builder: (_, _) => const GoalsListScreen()),

@@ -14,6 +14,9 @@ class Insight {
     this.createdAt,
     this.imageUrl,
     this.details = const {},
+    this.target,
+    this.targetId,
+    this.params = const {},
   });
 
   final String id;
@@ -29,6 +32,24 @@ class Insight {
   /// Extra structured fields sent with the notification.
   final Map<String, dynamic> details;
 
+  /// Where the notification leads (round-3 API): budget, loan, activity…;
+  /// null on older servers, where the type decides instead.
+  final String? target;
+  final String? targetId;
+
+  /// Extra values for the target (e.g. Activity's category_id/from/to/tx_type).
+  final Map<String, dynamic> params;
+
+  /// This notification as push-style data for NotificationRouter.
+  Map<String, dynamic> get routeData => {
+    ...details.map((k, v) => MapEntry(k, v?.toString())),
+    'type': type,
+    'insight_id': id,
+    'target': ?target,
+    'target_id': ?targetId,
+    if (params.isNotEmpty) 'params': params,
+  };
+
   String get date => (createdAt ?? '').split('T').first;
 
   factory Insight.fromJson(Map<String, dynamic> j) => Insight(
@@ -40,6 +61,9 @@ class Insight {
     createdAt: j['created_at']?.toString(),
     imageUrl: (j['details'] is Map) ? (j['details'] as Map)['image_url']?.toString() : null,
     details: (j['details'] is Map) ? (j['details'] as Map).cast<String, dynamic>() : const {},
+    target: (j['target'] == null || j['target'].toString().isEmpty) ? null : j['target'].toString(),
+    targetId: (j['target_id'] == null || j['target_id'].toString().isEmpty) ? null : j['target_id'].toString(),
+    params: (j['params'] is Map) ? (j['params'] as Map).cast<String, dynamic>() : const {},
   );
 }
 

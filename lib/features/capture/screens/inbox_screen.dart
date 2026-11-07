@@ -16,13 +16,46 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_retry.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
-  const InboxScreen({super.key});
+  const InboxScreen({super.key, this.openItemId, this.openReceipt = false});
+
+  /// Opened from a notification about one item: open its review sheet.
+  final String? openItemId;
+  final bool openReceipt;
 
   @override
   ConsumerState<InboxScreen> createState() => _InboxScreenState();
 }
 
 class _InboxScreenState extends ConsumerState<InboxScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.openItemId;
+    if (id != null) WidgetsBinding.instance.addPostFrameCallback((_) => _openById(id));
+  }
+
+  /// Opens the review sheet for the item a notification pointed at, once the
+  /// lists have loaded.
+  Future<void> _openById(String id) async {
+    try {
+      if (widget.openReceipt) {
+        final receipts = await ref.read(pendingReceiptsProvider.future);
+        final r = receipts.where((e) => e.id == id).firstOrNull;
+        if (r != null && mounted) {
+          await _openReview(id: r.id, isReceipt: true, parsed: r.parsed, imageUrl: r.imageUrl);
+        }
+      } else {
+        final messages = await ref.read(pendingSmsProvider.future);
+        final m = messages.where((e) => e.id == id).firstOrNull;
+        if (m != null && mounted) {
+          await _openReview(id: m.id, isReceipt: false, parsed: m.parsed, sender: m.sender);
+        }
+      }
+    } catch (_) {
+      // The list itself shows the error.
+    }
+  }
+
   Future<void> _openReview({
     required String id,
     required bool isReceipt,
