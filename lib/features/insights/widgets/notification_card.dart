@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/router/routes.dart';
+import '../../../core/notifications/notification_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
 import '../../activity/data/day_grouping.dart';
@@ -44,38 +44,63 @@ bool matchesFilter(Insight i, InsightFilter filter, {required bool isRead}) => s
   };
 }
 
-/// Where a notification's action pill goes. Only existing screens; when the
-/// notification carries no id for a single item, the list screen.
+/// A notification's action pill: its label and where it leads. The
+/// destination comes from the shared [destinationFor] mapping (the same one
+/// push taps use), so a pill and a push about the same thing open the same
+/// screen.
 class InsightAction {
-  const InsightAction({required this.labelKey, required this.route, this.push = true, this.expenseFilter = false});
+  const InsightAction({required this.labelKey, required this.destination, required this.data});
 
   final String labelKey;
-  final String route;
+  final NotificationDestination destination;
+
+  /// The notification data handed to [NotificationRouter.open].
+  final Map<String, dynamic> data;
+
+  String get route => destination.location;
 
   /// Push on top (true) or switch tab (false).
-  final bool push;
-
-  /// Open Activity filtered to expenses.
-  final bool expenseFilter;
+  bool get push => !destination.tab;
 }
 
-InsightAction actionFor(Insight i) => switch (i.type) {
-  'budget_alert' => const InsightAction(labelKey: 'notifications2.action.budgets', route: Routes.budgets),
-  'bill_due' => const InsightAction(labelKey: 'notifications2.action.plan', route: Routes.plan, push: false),
-  'loan_repayment_due' => const InsightAction(labelKey: 'notifications2.action.loans', route: Routes.loans),
-  'investment_contribution_due' ||
-  'investment_meeting' ||
-  'investment_payout' => const InsightAction(labelKey: 'notifications2.action.investments', route: Routes.investments),
-  'summary' => const InsightAction(labelKey: 'notifications2.action.summary', route: Routes.dailySummaries),
-  'spending_spike' => const InsightAction(
-    labelKey: 'notifications2.action.spending',
-    route: Routes.activity,
-    push: false,
-    expenseFilter: true,
-  ),
-  'savings_opportunity' => const InsightAction(labelKey: 'notifications2.action.goals', route: Routes.goals),
-  _ => InsightAction(labelKey: 'notifications2.action.open', route: Routes.notificationDetailFor(i.id)),
-};
+InsightAction actionFor(Insight i) {
+  final data = i.routeData;
+  return InsightAction(labelKey: actionLabelFor(i), destination: destinationFor(data), data: data);
+}
+
+/// The pill label: from the target when the server sends one, else the type.
+String actionLabelFor(Insight i) {
+  final single = i.targetId != null;
+  final byTarget = switch (i.target) {
+    'budget' => single ? 'budget' : 'budgets',
+    'loan' => single ? 'loan' : 'loans',
+    'goal' => single ? 'goal' : 'goals',
+    'investment' => single ? 'investment' : 'investments',
+    'bill' => single ? 'bill' : 'plan',
+    'daily_summary' => 'summary',
+    'transaction' => single ? 'transaction' : 'spending',
+    'activity' => 'spending',
+    'review' => 'review',
+    'inbox_sms' || 'inbox_receipt' => 'inbox',
+    'export' || 'audit_export' => 'export',
+    'subscription' => 'subscription',
+    'add_transaction' => 'add',
+    _ => null,
+  };
+  final key =
+      byTarget ??
+      switch (i.type) {
+        'budget_alert' => i.details['budget_id'] == null ? 'budgets' : 'budget',
+        'bill_due' => 'plan',
+        'loan_repayment_due' => 'loans',
+        'investment_contribution_due' || 'investment_meeting' || 'investment_payout' => 'investments',
+        'summary' || 'daily_summary' => 'summary',
+        'spending_spike' => 'spending',
+        'savings_opportunity' => 'goals',
+        _ => 'open',
+      };
+  return 'notifications2.action.$key';
+}
 
 /// The day a notification belongs to, in local time.
 DateTime? insightDay(Insight i) => DateTime.tryParse(i.createdAt ?? '')?.toLocal();

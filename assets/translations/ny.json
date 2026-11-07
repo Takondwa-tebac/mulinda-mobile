@@ -1232,8 +1232,21 @@
       "summary": "Chidule cha tsiku",
       "spending": "Onani zogula",
       "goals": "Onani zolinga",
-      "open": "Werengani zambiri"
-    }
+      "open": "Werengani zambiri",
+      "budget": "Onani bajeti",
+      "loan": "Onani ngongole",
+      "goal": "Onani cholinga",
+      "investment": "Onani ndalama yoyika",
+      "bill": "Onani bilu",
+      "transaction": "Onani zochitika",
+      "review": "Unikani tsopano",
+      "inbox": "Tsegulani bokosi",
+      "export": "Onani fayilo",
+      "subscription": "Onani kulembetsa",
+      "add": "Onjezani zochitika"
+    },
+    "view": "Onani",
+    "dismiss": "Tsekani"
   },
   "bills": {
     "title": "Bilu",

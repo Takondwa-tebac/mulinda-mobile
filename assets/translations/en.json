@@ -1232,8 +1232,21 @@
       "summary": "Daily summary",
       "spending": "See spending",
       "goals": "View goals",
-      "open": "Read more"
-    }
+      "open": "Read more",
+      "budget": "View budget",
+      "loan": "View loan",
+      "goal": "View goal",
+      "investment": "View investment",
+      "bill": "View bill",
+      "transaction": "View transaction",
+      "review": "Review now",
+      "inbox": "Open inbox",
+      "export": "View export",
+      "subscription": "View subscription",
+      "add": "Add transaction"
+    },
+    "view": "View",
+    "dismiss": "Dismiss"
   },
   "bills": {
     "title": "Bill",

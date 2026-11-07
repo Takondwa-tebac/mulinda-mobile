@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/notifications/notification_router.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/skeleton.dart';
-import '../../activity/data/activity_feed.dart';
-import '../../activity/data/activity_models.dart';
 import '../data/insights_repository.dart';
 import '../widgets/notification_card.dart';
 
@@ -73,10 +72,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   }
 
   void _act(InsightAction action) {
-    if (action.expenseFilter) {
-      ref.read(activityFilterProvider.notifier).set(const TxnQuery(type: 'expense'));
-    }
-    action.push ? context.push(action.route) : context.go(action.route);
+    final id = action.data['insight_id']?.toString();
+    if (id != null) setState(() => _readHere.add(id));
+    NotificationRouter.instance.open(ref, action.data, router: GoRouter.of(context));
   }
 
   @override

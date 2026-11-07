@@ -83,7 +83,8 @@ void main() {
       expect(actionFor(_i('1', 'summary')).route, Routes.dailySummaries);
       final spike = actionFor(_i('1', 'spending_spike'));
       expect(spike.route, Routes.activity);
-      expect(spike.expenseFilter, isTrue);
+      expect(spike.destination.activityFilter?.type, 'expense');
+      expect(spike.push, isFalse);
       expect(actionFor(_i('1', 'savings_opportunity')).route, Routes.goals);
       expect(actionFor(_i('9', 'announcement')).route, Routes.notificationDetailFor('9'));
     });
