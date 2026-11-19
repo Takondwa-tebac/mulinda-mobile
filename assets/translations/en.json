@@ -673,5 +673,20 @@
     "createNamed": "Create \"{}\"",
     "createHint": "Add it as a new category (needs internet)",
     "loadError": "Could not load the categories."
+  },
+  "homeWidget": {
+    "title": "Today",
+    "noAllowance": "Add a budget to get a daily limit",
+    "left": "{amount} left",
+    "over": "{amount} over",
+    "overBy": "Over by {amount}",
+    "onTrack": "On track",
+    "challengeLabel": "Today's challenge",
+    "challengeStayUnder": "Stay under {amount}",
+    "challengeLog": "Log everything you spend today",
+    "loggedCount": "{count} logged",
+    "noTransactions": "No transactions yet",
+    "transaction": "Transaction",
+    "signedOut": "Open Mulinda to see today"
   }
 }

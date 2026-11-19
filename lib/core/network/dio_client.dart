@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/providers/auth_controller.dart';
+import '../../features/home_widget/today_widget_sync.dart';
 import '../env/app_env.dart';
 import '../offline/cache_store.dart';
 import '../offline/offline_cache_interceptor.dart';
@@ -44,7 +45,10 @@ final dioProvider = Provider<Dio>((ref) {
       overlay: overlay,
       isActive: offlineActive,
       currentUserId: userId,
-      onQueued: () => onChangeQueued(ref.container),
+      onQueued: () {
+        onChangeQueued(ref.container);
+        ref.read(todayWidgetSyncProvider).schedule();
+      },
     ),
   );
 
@@ -64,10 +68,15 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // The server's clock is the truth for offline-mode plan checks.
+  // The server's clock is the truth for offline-mode plan checks. Successful
+  // money writes also refresh the home-screen widget.
   dio.interceptors.add(
     InterceptorsWrapper(
       onResponse: (response, handler) {
+        final request = response.requestOptions;
+        if (isWidgetRelevantWrite(request.method, request.path)) {
+          ref.read(todayWidgetSyncProvider).schedule();
+        }
         final date = response.headers.value('date');
         if (date != null) {
           try {

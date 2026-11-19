@@ -673,5 +673,20 @@
     "createNamed": "Pangani \"{}\"",
     "createHint": "Liwonjezeni ngati gulu latsopano (pamafunika intaneti)",
     "loadError": "Sitinathe kutsegula magulu."
+  },
+  "homeWidget": {
+    "title": "Lero",
+    "noAllowance": "Ikani bajeti kuti mupeze malire a tsiku",
+    "left": "{amount} zatsala",
+    "over": "{amount} mwadutsa",
+    "overBy": "Mwadutsa ndi {amount}",
+    "onTrack": "Mukuyenda bwino",
+    "challengeLabel": "Mpikisano wa lero",
+    "challengeStayUnder": "Musapitirire {amount}",
+    "challengeLog": "Lembani zonse zomwe mwagula lero",
+    "loggedCount": "Zalembedwa {count}",
+    "noTransactions": "Palibe zochitika",
+    "transaction": "Zochitika",
+    "signedOut": "Tsegulani Mulinda kuti muwone za lero"
   }
 }

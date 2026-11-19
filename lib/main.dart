@@ -27,6 +27,7 @@ import 'features/capture/data/sms_outbox.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
+import 'features/home_widget/today_widget_sync.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -99,6 +100,9 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       if (next.status == AuthStatus.authenticated) {
         PushService.instance.registerToken(ref);
         _refreshOfflineData();
+        ref.read(todayWidgetSyncProvider).schedule(Duration.zero);
+      } else if (next.status == AuthStatus.unauthenticated) {
+        unawaited(ref.read(todayWidgetSyncProvider).clear());
       }
     });
     _initDeepLinks();
@@ -167,6 +171,7 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       ref.invalidate(offlineModeProvider);
       _flushOutbox();
       _refreshOfflineData();
+      ref.read(todayWidgetSyncProvider).schedule();
     }
   }
 
