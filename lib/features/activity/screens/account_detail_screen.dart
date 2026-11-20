@@ -68,8 +68,11 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final incomeMinor =
         txns.where((t) => t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
-    final expenseMinor =
-        txns.where((t) => !t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
+    // Money out of this account: expenses only. Older balance-neutral
+    // "transfer" rows did not move the balance, so they are not counted.
+    final expenseMinor = txns
+        .where((t) => t.type == 'expense')
+        .fold<int>(0, (s, t) => s + t.amount.minorUnits);
     final balanceMinor = account.currentBalance.minorUnits;
 
     return ListView(

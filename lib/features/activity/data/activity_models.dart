@@ -40,7 +40,14 @@ class Account {
 }
 
 class Category {
-  const Category({required this.id, required this.name, required this.kind, this.icon, this.color});
+  const Category({
+    required this.id,
+    required this.name,
+    required this.kind,
+    this.icon,
+    this.color,
+    this.isSystem = true,
+  });
 
   final String id;
   final String name;
@@ -50,6 +57,9 @@ class Category {
   final String? icon;
   final String? color;
 
+  /// A default category everyone shares; only the user's own can be restyled.
+  final bool isSystem;
+
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
       id: json['id'].toString(),
@@ -57,6 +67,7 @@ class Category {
       kind: json['kind']?.toString() ?? 'expense',
       icon: json['icon']?.toString(),
       color: json['color']?.toString(),
+      isSystem: json['is_system'] != false,
     );
   }
 }

@@ -673,5 +673,15 @@
     "createNamed": "Pangani \"{}\"",
     "createHint": "Liwonjezeni ngati gulu latsopano (pamafunika intaneti)",
     "loadError": "Sitinathe kutsegula magulu."
+  },
+  "categoryStyle": {
+    "title": "Chizindikiro ndi mtundu",
+    "auto": "Mulinda asankhe",
+    "autoHint": "Chizindikiro chogwirizana ndi dzina ndi mtundu",
+    "icon": "Chizindikiro",
+    "color": "Mtundu",
+    "save": "Sungani",
+    "pickLook": "Sankhani chizindikiro ndi mtundu",
+    "restyleHint": "Dinani motalika kuti musinthe chizindikiro ndi mtundu"
   }
 }

@@ -5,6 +5,7 @@ import 'package:mulinda_mobile/features/activity/data/activity_models.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/activity/widgets/category_icons.dart';
 import 'package:mulinda_mobile/features/activity/widgets/category_picker.dart';
+import 'package:mulinda_mobile/features/activity/widgets/category_style_sheet.dart';
 
 const _food = Category(id: 'c1', name: 'Food', kind: 'expense', icon: 'restaurant', color: '#E67E22');
 const _transport = Category(id: 'c2', name: 'Transport', kind: 'expense', icon: 'directions_bus', color: '#3498DB');
@@ -50,6 +51,64 @@ void main() {
       expect(c.icon, 'restaurant');
       expect(c.color, '#E67E22');
       expect(Category.fromJson({'id': '2', 'name': 'X'}).icon, isNull);
+    });
+
+    test('every icon offered for a category, and the seeded ones, can be drawn', () {
+      for (final name in [...categoryIconChoices, 'swap_horiz', 'volunteer_activism']) {
+        expect(categoryIcon(name), isNot(Icons.label_outline), reason: name);
+      }
+      for (final hex in categoryColorChoices) {
+        expect(parseHexColor(hex), isNotNull, reason: hex);
+      }
+    });
+
+    test("only the user's own categories can be restyled", () {
+      expect(Category.fromJson({'id': '1', 'name': 'Food', 'is_system': true}).isSystem, isTrue);
+      expect(Category.fromJson({'id': '2', 'name': 'Pets', 'is_system': false}).isSystem, isFalse);
+    });
+  });
+
+  group('choosing a look', () {
+    Future<CategoryStyleChoice?> pick(WidgetTester tester, Future<void> Function() act, {bool allowAuto = true}) async {
+      CategoryStyleChoice? result;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showCategoryStyleSheet(context, name: 'Pets', allowAuto: allowAuto),
+            child: const Text('open'),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await act();
+      await tester.tap(find.byKey(const ValueKey('category-style-save')));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    testWidgets('is optional: saving straight away leaves it to Mulinda', (tester) async {
+      final result = await pick(tester, () async {});
+      expect(result!.isAuto, isTrue);
+    });
+
+    testWidgets('an icon and colour picked are returned', (tester) async {
+      final result = await pick(tester, () async {
+        for (final key in ['category-icon-pets', 'category-color-#8E44AD']) {
+          await tester.ensureVisible(find.byKey(ValueKey(key)));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(ValueKey(key)));
+          await tester.pump();
+        }
+      });
+      expect(result!.icon, 'pets');
+      expect(result.color, '#8E44AD');
+    });
+
+    testWidgets('restyling always returns a full look', (tester) async {
+      final result = await pick(tester, () async {}, allowAuto: false);
+      expect(result!.icon, isNotNull);
+      expect(result.color, isNotNull);
     });
   });
 

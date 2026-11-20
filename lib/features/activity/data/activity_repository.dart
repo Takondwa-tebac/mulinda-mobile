@@ -14,10 +14,26 @@ class ActivityRepository {
 
   Future<List<Category>> categories() => _list('/v1/categories', Category.fromJson);
 
-  /// Add a category of the user's own (it gets the generic icon).
-  Future<Category> createCategory({required String name, required String kind}) async {
+  /// Add a category of the user's own. Icon and colour are optional: left
+  /// out, the server picks ones that fit the name.
+  Future<Category> createCategory({required String name, required String kind, String? icon, String? color}) async {
     try {
-      final res = await _dio.post('/v1/categories', data: {'name': name, 'kind': kind});
+      final res = await _dio.post('/v1/categories', data: {
+        'name': name,
+        'kind': kind,
+        if (icon != null) 'icon': icon,
+        if (color != null) 'color': color,
+      });
+      return Category.fromJson((res.data['data'] as Map).cast<String, dynamic>());
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
+  /// Change the icon and colour of one of the user's own categories.
+  Future<Category> updateCategoryStyle(String id, {required String icon, required String color}) async {
+    try {
+      final res = await _dio.patch('/v1/categories/$id', data: {'icon': icon, 'color': color});
       return Category.fromJson((res.data['data'] as Map).cast<String, dynamic>());
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
