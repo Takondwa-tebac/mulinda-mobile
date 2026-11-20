@@ -21,6 +21,8 @@ const _en = {
   'challengeLog': 'Log everything you spend today',
   'loggedCount': '{count} logged',
   'noTransactions': 'No transactions yet',
+  'budgetUsedUp': 'Budget used up this month',
+  'challengeNoSpend': 'No more spending today',
   'transaction': 'Transaction',
 };
 
@@ -39,12 +41,18 @@ DailySummary day(String date, {int expense = 0, int count = 1}) => DailySummary(
       transactionCount: count,
     );
 
-BudgetItem budget({required int limit, required int spent, String from = '2026-11-01', String to = '2026-11-30'}) =>
+BudgetItem budget({
+  required int limit,
+  required int spent,
+  String from = '2026-11-01',
+  String to = '2026-11-30',
+  String period = 'monthly',
+}) =>
     BudgetItem(
       id: 'b',
       name: 'Food',
       categoryId: null,
-      period: 'monthly',
+      period: period,
       limit: mk(limit),
       spent: mk(spent),
       percentage: spent / limit * 100,
@@ -110,6 +118,31 @@ void main() {
         dailyAllowanceMinor(now: now, currency: 'MWK', spentTodayMinor: 0, budgets: const [], dashboard: dashboard()),
         isNull,
       );
+    });
+
+    test('is 0, not null, when the budgets are used up', () {
+      final allowance = dailyAllowanceMinor(
+        now: now,
+        currency: 'MWK',
+        spentTodayMinor: 0,
+        budgets: [budget(limit: 50000, spent: 62000), budget(limit: 20000, spent: 20000)],
+      );
+      expect(allowance, 0);
+    });
+
+    test('a weekly budget is spread over the days left in its own week', () {
+      // Week of Mon 16 to Sun 22 Nov: 4 days left including today (Thu 19).
+      final allowance = dailyAllowanceMinor(
+        now: now,
+        currency: 'MWK',
+        spentTodayMinor: 0,
+        budgets: [
+          budget(limit: 20000, spent: 8000, from: '2026-11-16', to: '2026-11-22', period: 'weekly'),
+          budget(limit: 120000, spent: 0),
+        ],
+      );
+      // 12,000 over 4 days + 120,000 over 12 days.
+      expect(allowance, 300000 + 1000000);
     });
 
     test('ignores budgets whose period does not cover today', () {
@@ -206,6 +239,20 @@ void main() {
       expect(data.challengeStatus, '2 logged');
       expect(data.lastTxn, 'No transactions yet');
       expect(data.streak, '');
+    });
+
+    test('used-up budgets say so instead of asking for a budget', () {
+      final data = buildTodayWidgetData(
+        now: now,
+        t: t,
+        today: day('2026-11-19', expense: 400),
+        budgets: [budget(limit: 50000, spent: 62000)],
+      );
+      expect(data.left, 'Budget used up this month');
+      expect(data.bars, everyElement(isTrue));
+      expect(data.warn, isTrue);
+      expect(data.challengeText, 'No more spending today');
+      expect(data.challengeStatus, 'Over by MK 400');
     });
 
     test('no em dashes in any widget copy', () {

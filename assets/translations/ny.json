@@ -677,6 +677,8 @@
   "homeWidget": {
     "title": "Lero",
     "noAllowance": "Ikani bajeti kuti mupeze malire a tsiku",
+    "budgetUsedUp": "Bajeti yatha mwezi uno",
+    "challengeNoSpend": "Musagulenso kanthu lero",
     "left": "{amount} zatsala",
     "over": "{amount} mwadutsa",
     "overBy": "Mwadutsa ndi {amount}",

@@ -49,9 +49,10 @@ const warnRatio = 0.8;
 /// Builds the widget snapshot from data the API already serves.
 ///
 /// * Spent today: `GET /v1/daily-summaries/today` → `expense`.
-/// * Daily allowance (derived): what is left of this month's active budgets
-///   before today, spread over the days left in the period. Without budgets it
-///   falls back to this month's income minus what was spent before today.
+/// * Daily allowance (derived, see [dailyAllowanceMinor]): what is left of
+///   the active budgets before today, each spread over the days left in its
+///   own period. Without budgets it falls back to this month's income minus
+///   what was spent before today. Used-up budgets give an allowance of 0.
 /// * Streak (derived): consecutive days with at least one logged transaction,
 ///   from the daily-summary history, counted up to today (or yesterday when
 ///   nothing is logged yet today).
@@ -85,10 +86,17 @@ TodayWidgetData buildTodayWidgetData({
   String challengeText;
   String challengeStatus;
 
-  if (allowanceMinor == null || allowanceMinor <= 0) {
+  if (allowanceMinor == null) {
     leftText = t('noAllowance');
     challengeText = t('challengeLog');
     challengeStatus = t('loggedCount', args: {'count': '${today?.transactionCount ?? 0}'});
+  } else if (allowanceMinor <= 0) {
+    // Budgets exist but nothing is left in them: say so, don't ask for one.
+    bars = List<bool>.filled(5, true);
+    warn = true;
+    leftText = t('budgetUsedUp');
+    challengeText = t('challengeNoSpend');
+    challengeStatus = spentMinor > 0 ? t('overBy', args: {'amount': money(spentMinor)}) : t('onTrack');
   } else {
     final ratio = spentMinor / allowanceMinor;
     final filled = (ratio * 5).ceil().clamp(0, 5);
@@ -121,8 +129,17 @@ TodayWidgetData buildTodayWidgetData({
   );
 }
 
-/// Today's spending allowance in minor units, or null when there is nothing to
-/// derive it from (no active budgets and no income recorded this month).
+/// Today's spending allowance in minor units.
+///
+/// * null: nothing to derive it from (no active budget covering today and no
+///   income recorded this month).
+/// * 0: budgets exist but are used up for their period.
+///
+/// Each active budget (any period: weekly, monthly, ...) contributes what is
+/// left of it before today, spread over the days left in its own period.
+/// Budget spending already includes today's, so today's spending is taken back
+/// out, shared across budgets by how much each has spent, so the allowance
+/// stays put while the user spends during the day.
 int? dailyAllowanceMinor({
   required DateTime now,
   required String currency,
@@ -132,9 +149,10 @@ int? dailyAllowanceMinor({
 }) {
   final day = DateTime(now.year, now.month, now.day);
   final monthEnd = DateTime(now.year, now.month + 1, 0);
+  int daysUntil(DateTime end) => end.difference(day).inDays + 1;
 
   final active = budgets.where((b) {
-    if (!b.isActive || b.period != 'monthly' || b.limit.currency != currency) return false;
+    if (!b.isActive || b.limit.currency != currency || b.limit.minorUnits <= 0) return false;
     final from = DateTime.tryParse(b.periodFrom ?? '');
     final to = DateTime.tryParse(b.periodTo ?? '');
     if (from != null && day.isBefore(from)) return false;
@@ -142,31 +160,26 @@ int? dailyAllowanceMinor({
     return true;
   }).toList();
 
-  int limit;
-  int spentBeforeToday;
-  DateTime periodEnd = monthEnd;
-
   if (active.isNotEmpty) {
-    limit = active.fold(0, (sum, b) => sum + b.limit.minorUnits);
-    final spent = active.fold(0, (sum, b) => sum + b.spent.minorUnits);
-    // Budget spending already includes today's; take it out so the allowance
-    // does not shrink as the user spends during the day.
-    spentBeforeToday = (spent - spentTodayMinor).clamp(0, spent);
-    final ends = active.map((b) => DateTime.tryParse(b.periodTo ?? '')).whereType<DateTime>();
-    if (ends.isNotEmpty) periodEnd = ends.reduce((a, b) => a.isBefore(b) ? a : b);
-  } else {
-    final month = dashboard?.thisMonth;
-    if (month == null || month.income.minorUnits <= 0 || month.income.currency != currency) return null;
-    limit = month.income.minorUnits;
-    final spent = month.expense.minorUnits.abs();
-    spentBeforeToday = (spent - spentTodayMinor).clamp(0, spent);
+    final totalSpent = active.fold(0, (sum, b) => sum + b.spent.minorUnits.clamp(0, 1 << 62));
+    final todayShare = spentTodayMinor.clamp(0, totalSpent);
+    var allowance = 0.0;
+    for (final b in active) {
+      final spent = b.spent.minorUnits.clamp(0, 1 << 62);
+      final spentToday = totalSpent == 0 ? 0.0 : todayShare * spent / totalSpent;
+      final remaining = b.limit.minorUnits - (spent - spentToday);
+      final days = daysUntil(DateTime.tryParse(b.periodTo ?? '') ?? monthEnd);
+      if (remaining > 0 && days > 0) allowance += remaining / days;
+    }
+    return allowance.round();
   }
 
-  final daysLeft = periodEnd.difference(day).inDays + 1;
-  if (daysLeft <= 0) return null;
-  final remaining = limit - spentBeforeToday;
+  final month = dashboard?.thisMonth;
+  if (month == null || month.income.minorUnits <= 0 || month.income.currency != currency) return null;
+  final spent = month.expense.minorUnits.abs();
+  final remaining = month.income.minorUnits - (spent - spentTodayMinor).clamp(0, spent);
   if (remaining <= 0) return 0;
-  return remaining ~/ daysLeft;
+  return remaining ~/ daysUntil(monthEnd);
 }
 
 /// Consecutive days, ending today (or yesterday if nothing is logged yet

@@ -677,6 +677,8 @@
   "homeWidget": {
     "title": "Today",
     "noAllowance": "Add a budget to get a daily limit",
+    "budgetUsedUp": "Budget used up this month",
+    "challengeNoSpend": "No more spending today",
     "left": "{amount} left",
     "over": "{amount} over",
     "overBy": "Over by {amount}",
