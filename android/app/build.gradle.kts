@@ -15,7 +15,9 @@ plugins {
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
     id("kotlin-android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
+    // Jetpack Compose compiler for the Glance home-screen widget. Its version is
+    // set in settings.gradle.kts and must match the Kotlin plugin.
+    id("org.jetbrains.kotlin.plugin.compose")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
