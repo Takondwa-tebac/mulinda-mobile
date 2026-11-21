@@ -1346,7 +1346,7 @@
     "title": "Let Mulinda read your money messages?",
     "body": "This is how your budget builds itself. Android will ask you next.",
     "readTitle": "We read",
-    "readBody": "Airtel Money, TNM Mpamba, NBM, FDH and Centenary messages that show an amount of money.",
+    "readBody": "Airtel Money, TNM Mpamba, National Bank, Standard Bank, NBS, FDH, First Capital and Centenary messages that show an amount of money.",
     "neverTitle": "We never read",
     "neverBody": "Chats with people, one-time codes, or messages from anyone else. They never leave your phone.",
     "allow": "Allow and continue",
@@ -1471,6 +1471,15 @@
     "qrBody": "Your friend scans this with their phone camera. It opens your invite page with the Play Store link.",
     "qrButton": "QR code",
     "shareButton": "Invite friends",
-    "done": "Done"
+    "done": "Done",
+    "qrSave": "Save image",
+    "qrShare": "Share image",
+    "qrSaved": "QR code saved to your photos",
+    "qrSaveDenied": "Mulinda needs permission to save photos. Allow it and try again.",
+    "qrSaveFailed": "Could not save the QR code. Please try again.",
+    "qrShared": "QR code shared",
+    "qrShareFailed": "Could not share the QR code. Please try again.",
+    "shareFallback": "I use Mulinda to see all my Airtel Money, Mpamba and bank payments (National Bank, Standard Bank, NBS, FDH, First Capital and Centenary) in one place. Join with my link and we both get {days} days of Premium: {link}",
+    "shareFallbackNoDays": "I use Mulinda to see all my Airtel Money, Mpamba and bank payments (National Bank, Standard Bank, NBS, FDH, First Capital and Centenary) in one place. Join with my link and we both get free Premium days: {link}"
   }
 }

@@ -15,11 +15,17 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- gal: save the invite QR to the gallery. Only Android 10 and older ask for
+         storage; Android 11 and later add pictures without any permission. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
 
     <application
         android:label="Mulinda"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true">
         <!-- image_cropper: crop a receipt picked from the gallery. -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
