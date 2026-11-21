@@ -22,7 +22,12 @@ class Analytics {
 
   /// Event names the server accepts from the app.
   static const allowedEvents = {
+    'app_opened',
     'onboarding_completed',
+    'sms_permission_granted',
+    'sms_permission_denied',
+    'history_import_completed',
+    'premium_feature_tapped',
     'upgrade_prompt_viewed',
     'paywall_plan_selected',
     'paywall_dismissed',
@@ -38,6 +43,7 @@ class Analytics {
     'days',
     'step',
     'reason',
+    'count',
     'trial_active',
     'plans_shown',
     'locale',

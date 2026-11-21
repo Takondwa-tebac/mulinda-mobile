@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/insights/data/insights_repository.dart';
+import '../../features/onboarding/first_run.dart';
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/capture/data/inbox_repository.dart';
 import '../../features/subscription/data/subscription_repository.dart';
@@ -25,8 +26,9 @@ class PushService {
     if (_wired) return;
     _wired = true;
     try {
+      // The permission itself is asked later (see [requestPermission]), not
+      // on the very first launch before the app has shown any value.
       final fm = FirebaseMessaging.instance;
-      await fm.requestPermission();
 
       // Foreground: Android shows no system notification for an FCM message
       // while the app is open, so show an in-app banner (not a second, local
@@ -59,8 +61,19 @@ class PushService {
     }
   }
 
+  /// Ask to show notifications. Best-effort; a no-op once answered.
+  Future<void> requestPermission() async {
+    try {
+      await FirebaseMessaging.instance.requestPermission();
+    } catch (_) {}
+  }
+
   /// Register this device's FCM token with the backend. Call when authenticated.
+  /// On a restored session the notification permission is asked here; right
+  /// after a sign in it waits until the first-run journey has shown the user
+  /// their money (see FirstImportScreen).
   Future<void> registerToken(WidgetRef ref) async {
+    if (!ref.read(firstRunProvider).started) await requestPermission();
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _registerToken(ref, token);
