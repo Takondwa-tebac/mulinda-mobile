@@ -106,6 +106,7 @@ class SmsCaptureInfo {
     required this.remaining,
     required this.usagePercentage,
     required this.isLimited,
+    this.resetsAt,
   });
 
   final int used;
@@ -113,6 +114,9 @@ class SmsCaptureInfo {
   final int remaining;
   final double usagePercentage;
   final bool isLimited;
+
+  /// When the free monthly allowance comes back (start of next month), if known.
+  final DateTime? resetsAt;
 
   //   factory SmsCaptureInfo.fromJson(Map<String, dynamic> json) {
   //     return SmsCaptureInfo(
@@ -128,11 +132,13 @@ class SmsCaptureInfo {
   factory SmsCaptureInfo.fromJson(Map<String, dynamic> json) {
     return SmsCaptureInfo(
       used: int.tryParse(json['used']?.toString() ?? '') ?? 0,
-      limit: int.tryParse(json['limit']?.toString() ?? '') ?? 10,
-      remaining: int.tryParse(json['remaining']?.toString() ?? '') ?? 10,
+      // The allowance is set by the API; never assume a number here.
+      limit: int.tryParse(json['limit']?.toString() ?? '') ?? 0,
+      remaining: int.tryParse(json['remaining']?.toString() ?? '') ?? 0,
       usagePercentage:
           double.tryParse(json['usage_percentage']?.toString() ?? '') ?? 0.0,
       isLimited: json['is_limited'] == true,
+      resetsAt: DateTime.tryParse(json['resets_at']?.toString() ?? '')?.toLocal(),
     );
   }
 }

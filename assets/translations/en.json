@@ -23,7 +23,8 @@
       "balances": "Account balances",
       "budgetsGoals": "Budgets & goals",
       "smsCapture": "SMS capture",
-      "smsFree": "{limit} free",
+      "smsFree": "{limit} free a month",
+      "smsFreeMonthly": "Free every month",
       "unlimited": "Unlimited",
       "coach": "AI coach",
       "insights": "Advanced insights",
@@ -572,7 +573,7 @@
   "subscription": {
     "tile": {
       "free": "Free plan · core tracking is free",
-      "freeSms": "Free plan · {remaining} of {limit} free SMS captures left",
+      "freeSms": "Free plan · {remaining} of {limit} free SMS captures left this month",
       "trialEnds": "Free trial · about {hours} h left",
       "activeUntil": "{plan} · active until {date}"
     },
@@ -581,9 +582,13 @@
       "body": "Premium features are on. Your records stay free after it ends."
     },
     "sms": {
-      "remaining": "{remaining} of {limit} free SMS captures left",
-      "freeIntro": "Your free plan includes {limit} SMS captures",
-      "usedUp": "You've used your free SMS captures. You can still add transactions by hand for free, or choose a pass for unlimited capture.",
+      "remaining": "{remaining} of {limit} free SMS captures left this month",
+      "freeIntro": "Your free plan includes {limit} SMS captures a month",
+      "freeIntroUnknown": "Your free plan includes SMS captures every month",
+      "cardTitle": "SMS auto-capture",
+      "usedOf": "{used} of {limit} used this month",
+      "usedUp": "You've used this month's free SMS captures. You can still add transactions by hand for free, or choose a pass for unlimited capture.",
+      "usedUpUntil": "You've used this month's free SMS captures. They come back on {date}. Until then you can add transactions by hand for free, or choose a pass for unlimited capture.",
       "howItWorks": "Messages from known banks and mobile money are read for free. Others wait in your inbox for you to fill in."
     },
     "title": "Subscription",

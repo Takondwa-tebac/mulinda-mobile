@@ -23,7 +23,8 @@
       "balances": "Ndalama zotsala mu akaunti",
       "budgetsGoals": "Bajeti ndi zolinga",
       "smsCapture": "Kujambula ma SMS",
-      "smsFree": "{limit} zaulere",
+      "smsFree": "{limit} zaulere pamwezi",
+      "smsFreeMonthly": "Zaulere mwezi uliwonse",
       "unlimited": "Popanda malire",
       "coach": "Mlangizi wa AI",
       "insights": "Malangizo apamwamba",
@@ -572,7 +573,7 @@
   "subscription": {
     "tile": {
       "free": "Pulani yaulere · kusunga ndalama ndi kwaulere",
-      "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala",
+      "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
       "trialEnds": "Nthawi yoyesa · yatsala pafupifupi maola {hours}",
       "activeUntil": "{plan} · ikugwira ntchito mpaka {date}"
     },
@@ -581,9 +582,13 @@
       "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha."
     },
     "sms": {
-      "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala",
-      "freeIntro": "Pulani yanu yaulere ili ndi ma SMS {limit}",
-      "usedUp": "Mwagwiritsa ntchito ma SMS anu aulere onse. Mutha kulembabe zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
+      "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
+      "freeIntro": "Pulani yanu yaulere ili ndi ma SMS {limit} pamwezi",
+      "freeIntroUnknown": "Pulani yanu yaulere ili ndi ma SMS mwezi uliwonse",
+      "cardTitle": "Kujambula SMS kokha",
+      "usedOf": "{used} mwa {limit} agwiritsidwa ntchito mwezi uno",
+      "usedUp": "Mwagwiritsa ntchito ma SMS aulere a mwezi uno. Mutha kulembabe zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
+      "usedUpUntil": "Mwagwiritsa ntchito ma SMS aulere a mwezi uno. Abweranso pa {date}. Mpaka nthawiyo mutha kulemba zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
       "howItWorks": "Mauthenga ochokera ku mabanki ndi mobile money odziwika amawerengedwa kwaulere. Ena amadikira mu inbox kuti mudzaze nokha."
     },
     "title": "Kulembetsa",

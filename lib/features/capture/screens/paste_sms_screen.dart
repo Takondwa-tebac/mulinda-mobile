@@ -184,8 +184,9 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
                   const SizedBox(height: 16),
                   FreeSmsAllowanceCard(
                     remaining: _limitReached ? 0 : remaining,
-                    limit: sms?.limit ?? 10,
-                    known: sms != null || _limitReached,
+                    limit: sms?.limit ?? 0,
+                    resetsAt: sms?.resetsAt,
+                    known: (sms != null && sms.limit > 0) || _limitReached,
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -302,11 +303,15 @@ class FreeSmsAllowanceCard extends StatelessWidget {
     super.key,
     required this.remaining,
     required this.limit,
+    this.resetsAt,
     this.known = true,
   });
 
   final int remaining;
   final int limit;
+
+  /// When this month's free captures come back.
+  final DateTime? resetsAt;
 
   /// False while the counts have not loaded yet.
   final bool known;
@@ -334,7 +339,9 @@ class FreeSmsAllowanceCard extends StatelessWidget {
                 child: Text(
                   known
                       ? 'subscription.sms.remaining'.tr(namedArgs: {'remaining': '$left', 'limit': '$limit'})
-                      : 'subscription.sms.freeIntro'.tr(namedArgs: {'limit': '$limit'}),
+                      : limit > 0
+                          ? 'subscription.sms.freeIntro'.tr(namedArgs: {'limit': '$limit'})
+                          : 'subscription.sms.freeIntroUnknown'.tr(),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: low ? scheme.onTertiaryContainer : scheme.onSurface,
@@ -345,7 +352,11 @@ class FreeSmsAllowanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            left == 0 && known ? 'subscription.sms.usedUp'.tr() : 'subscription.sms.howItWorks'.tr(),
+            left == 0 && known
+                ? (resetsAt == null
+                    ? 'subscription.sms.usedUp'.tr()
+                    : 'subscription.sms.usedUpUntil'.tr(namedArgs: {'date': DateFormat('d MMMM', context.locale.languageCode).format(resetsAt!)}))
+                : 'subscription.sms.howItWorks'.tr(),
             style: TextStyle(fontSize: 12, color: low ? scheme.onTertiaryContainer : scheme.onSurfaceVariant),
           ),
           if (low) ...[

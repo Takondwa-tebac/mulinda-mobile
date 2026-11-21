@@ -171,7 +171,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
           _TrialNote(hours: hours),
         ],
         const SizedBox(height: 16),
-        PaywallComparison(freeSmsLimit: sub.smsCapture?.limit ?? 10),
+        PaywallComparison(freeSmsLimit: sub.smsCapture?.limit),
         const SizedBox(height: 20),
         Text(
           'paywall.choosePass'.tr(),
@@ -297,9 +297,10 @@ const paywallComparisonRows = <ComparisonRow>[
 
 /// Free vs Premium table.
 class PaywallComparison extends StatelessWidget {
-  const PaywallComparison({super.key, this.freeSmsLimit = 10});
+  const PaywallComparison({super.key, this.freeSmsLimit});
 
-  final int freeSmsLimit;
+  /// The free monthly allowance from the API; null until it has loaded.
+  final int? freeSmsLimit;
 
   @override
   Widget build(BuildContext context) {
@@ -388,7 +389,7 @@ class _Cell extends StatelessWidget {
 
   final Availability availability;
   final String? noteKey;
-  final int limit;
+  final int? limit;
   final bool premium;
 
   @override
@@ -408,7 +409,9 @@ class _Cell extends StatelessWidget {
         semanticLabel: 'paywall.compare.notIncluded'.tr(),
       ),
       Availability.note => Text(
-        (noteKey ?? '').tr(namedArgs: {'limit': '$limit'}),
+        limit == null && noteKey == 'paywall.compare.smsFree'
+            ? 'paywall.compare.smsFreeMonthly'.tr()
+            : (noteKey ?? '').tr(namedArgs: {'limit': '${limit ?? ''}'}),
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 12,
