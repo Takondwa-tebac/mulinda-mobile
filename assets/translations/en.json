@@ -23,7 +23,8 @@
       "balances": "Account balances",
       "budgetsGoals": "Budgets & goals",
       "smsCapture": "SMS capture",
-      "smsFree": "{limit} free",
+      "smsFree": "{limit} free a month",
+      "smsFreeMonthly": "Free every month",
       "unlimited": "Unlimited",
       "coach": "AI coach",
       "insights": "Advanced insights",
@@ -112,7 +113,8 @@
       "11": "November",
       "12": "December"
     },
-    "itemGone": "That item is no longer available."
+    "itemGone": "That item is no longer available.",
+    "somethingWrong": "Something went wrong. Please try again."
   },
   "onboarding": {
     "anim": {
@@ -128,28 +130,34 @@
       "benefitChat": "Chat with Mulinda",
       "benefitInsights": "Advanced insights",
       "benefitAi": "AI reads receipts and SMS",
-      "benefitSms": "Unlimited SMS capture",
       "noCard": "No card. Nothing renews by itself."
     },
     "trial": {
       "title": "Try premium free for 24 hours",
-      "body": "Your account starts with a 24-hour free trial of premium: the AI coach, advanced insights, AI reading of receipts and SMS, and unlimited SMS capture. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
+      "body": "Your account starts with a 24-hour free trial of premium: the AI coach, advanced insights and AI reading of receipts and SMS. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
     },
     "chooseLanguage": "Choose your language",
     "skip": "Skip",
     "next": "Next",
     "getStarted": "Get started",
     "slide1": {
-      "title": "Take control of your money",
-      "body": "See everything in one place - accounts, spending, and savings - with a health score that's fair to your income."
+      "title": "See where your money goes",
+      "body": "Your Airtel Money, Mpamba and bank accounts in one place, so you always know your balance and what you spent it on."
     },
     "slide2": {
       "title": "Your transactions, captured for you",
       "body": "When a money message arrives, Mulinda records it and suggests a category. Tap to confirm and it learns. Scan a receipt for cash spending."
     },
     "slide3": {
-      "title": "Save, borrow and invest wisely",
-      "body": "Set goals, get reminders, check if you can afford a loan, and learn when you're ready to invest - with a coach who knows your money."
+      "title": "Reach your goals",
+      "body": "Save for school fees or anything else, get a warning before a budget runs out, and check a loan before you take it."
+    },
+    "summary": {
+      "title": "See where your money goes, automatically.",
+      "body": "Mulinda reads your Airtel Money, TNM Mpamba and bank messages and builds your budget for you. No writing things down.",
+      "check1": "Free captures every month",
+      "check2": "Your last 30 days, ready in a minute",
+      "check3": "Personal messages are never read"
     }
   },
   "auth": {
@@ -170,6 +178,8 @@
     "confirmPassword": "Confirm password",
     "haveAccount": "Already have an account?",
     "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "appleUnavailable": "Sign in with Apple is not available right now.",
     "or": "or",
     "resetTitle": "Reset password",
     "resetSubtitle": "Enter your email and we'll send you a reset link.",
@@ -191,7 +201,18 @@
     "optional": "optional",
     "stepName": "Name",
     "stepAccount": "Account",
-    "stepSecurity": "Security"
+    "stepSecurity": "Security",
+    "loginIdentifier": "Phone, username or email",
+    "signUpTitle": "Create your account",
+    "orWithPhone": "or with your phone",
+    "createPassword": "Create a password",
+    "signInLaterHelper": "Sign in later with your phone, username or email. Email is how you reset a forgotten password.",
+    "chooseCountry": "Choose your country",
+    "searchCountry": "Search by name or code",
+    "noCountryMatch": "No country matches that search",
+    "countryCode": "Country code {}",
+    "foreignNotice": "Mulinda knows Malawian wallets and banks best. Messages from other countries are read by AI with Premium, or you add them by hand.",
+    "invalidPhone": "Enter a valid phone number"
   },
   "nav": {
     "home": "Home",
@@ -228,7 +249,13 @@
     "rejected": "Dismissed",
     "processing": "Still reading…",
     "loadError": "Couldn't load pending items.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "merchant": "Merchant",
+    "amount": "Amount",
+    "payee": "Paid to",
+    "fee": "Fee",
+    "amountRequired": "Enter the amount on the receipt.",
+    "possibleDuplicate": "You may already have this transaction: a saved one has the same reference."
   },
   "addTxn": {
     "title": "Add transaction",
@@ -278,6 +305,9 @@
     "body": "Message text",
     "sender": "Sender (optional)",
     "submit": "Read message",
+    "copyHint": "Copy the mobile-money message from Messages, then paste it here.",
+    "pasteClipboard": "Paste from clipboard",
+    "clipboardEmpty": "Nothing to paste. Copy the message first.",
     "queued": "Got it - we're reading your message. It'll appear once you approve it."
   },
   "receipt": {
@@ -290,7 +320,17 @@
     "chooseImage": "Choose from gallery",
     "submit": "Scan receipt",
     "queued": "Got it - we're reading your receipt. It'll appear once you approve it.",
-    "cameraDenied": "Camera access is needed to take a photo."
+    "cameraDenied": "Camera access is needed to take a photo.",
+    "ready": "Receipt read. Check the details and approve it.",
+    "readyDuplicate": "Receipt read, but it looks like one you already recorded. Check before approving.",
+    "notReceipt": "This doesn't look like a payment receipt, so nothing was added.",
+    "tip": "Lay the receipt flat in good light and let it fill the frame. The scanner finds the edges for you.",
+    "crop": "Crop",
+    "retake": "Retake",
+    "cropTitle": "Crop the receipt",
+    "captureFailed": "Couldn't get the photo. Please try again.",
+    "savedOffline": "Saved. The receipt will upload as soon as you're back online.",
+    "queueFull": "Too many receipts are waiting to upload. Connect to the internet, then try again."
   },
   "income": {
     "title": "What's your monthly income?",
@@ -337,7 +377,9 @@
     "recentActivity": "Recent activity",
     "noTransactions": "No transactions yet. Tap ＋ to add one.",
     "loadError": "Couldn't load your dashboard.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "hi": "Hi",
+    "hiName": "Hi {}"
   },
   "insights": {
     "title": "Notifications",
@@ -574,7 +616,7 @@
   "subscription": {
     "tile": {
       "free": "Free plan · core tracking is free",
-      "freeSms": "Free plan · {remaining} of {limit} free SMS captures left",
+      "freeSms": "Free plan · {remaining} of {limit} free SMS captures left this month",
       "trialEnds": "Free trial · about {hours} h left",
       "activeUntil": "{plan} · active until {date}"
     },
@@ -583,9 +625,13 @@
       "body": "Premium features are on. Your records stay free after it ends."
     },
     "sms": {
-      "remaining": "{remaining} of {limit} free SMS captures left",
-      "freeIntro": "Your free plan includes {limit} SMS captures",
-      "usedUp": "You've used your free SMS captures. You can still add transactions by hand for free, or choose a pass for unlimited capture.",
+      "remaining": "{remaining} of {limit} free SMS captures left this month",
+      "freeIntro": "Your free plan includes {limit} SMS captures a month",
+      "freeIntroUnknown": "Your free plan includes SMS captures every month",
+      "cardTitle": "SMS auto-capture",
+      "usedOf": "{used} of {limit} used this month",
+      "usedUp": "You've used this month's free SMS captures. You can still add transactions by hand for free, or choose a pass for unlimited capture.",
+      "usedUpUntil": "You've used this month's free SMS captures. They come back on {date}. Until then you can add transactions by hand for free, or choose a pass for unlimited capture.",
       "howItWorks": "Messages from known banks and mobile money are read for free. Others wait in your inbox for you to fill in."
     },
     "title": "Subscription",
@@ -1270,5 +1316,64 @@
       "quarterly": "Every three months",
       "yearly": "Every year"
     }
+  },
+  "countries": {
+    "MW": "Malawi",
+    "ZM": "Zambia",
+    "MZ": "Mozambique",
+    "TZ": "Tanzania",
+    "ZW": "Zimbabwe",
+    "ZA": "South Africa",
+    "KE": "Kenya",
+    "UG": "Uganda",
+    "BW": "Botswana",
+    "GB": "United Kingdom",
+    "US": "United States"
+  },
+  "smsIntro": {
+    "title": "Let Mulinda read your money messages?",
+    "body": "This is how your budget builds itself. Android will ask you next.",
+    "readTitle": "We read",
+    "readBody": "Airtel Money, TNM Mpamba, NBM, FDH and Centenary messages that show an amount of money.",
+    "neverTitle": "We never read",
+    "neverBody": "Chats with people, one-time codes, or messages from anyone else. They never leave your phone.",
+    "allow": "Allow and continue",
+    "notNow": "Not now, I'll add things myself"
+  },
+  "firstImport": {
+    "scanning": "Looking for money messages from the last 30 days",
+    "found": {
+      "one": "We found {} money message from the last 30 days",
+      "other": "We found {} money messages from the last 30 days"
+    },
+    "messages": {
+      "one": "{} message",
+      "other": "{} messages"
+    },
+    "note": "Free. Messages from before you joined never count against your monthly allowance.",
+    "build": "Build my budget",
+    "building": "Building your budget",
+    "progress": "{} of {} sent",
+    "offline": "You're offline. Your messages are saved and will be added when you're back online.",
+    "error": "Something went wrong. You can bring in your messages later from Capture.",
+    "skip": "Skip for now"
+  },
+  "home3": {
+    "last30": "Your last 30 days",
+    "moneyIn": "Money in",
+    "moneyOut": "Money out",
+    "whereItWent": "Where it went",
+    "toCheck": "{} to check",
+    "toCheckBody": "Confirm what Mulinda recorded so it learns",
+    "stepsTitle": "Get started in 3 steps",
+    "stepCapture": "Turn on automatic capture",
+    "stepCaptureSub": "Your money messages become transactions",
+    "stepPaste": "Paste a money message",
+    "stepPasteSub": "Copy an Airtel Money, Mpamba or bank message",
+    "stepToday": "Add today's spending",
+    "stepTodaySub": "Cash counts too",
+    "stepBudget": "Set one budget",
+    "stepBudgetSub": "See when spending runs ahead",
+    "noCategory": "No category yet"
   }
 }

@@ -13,9 +13,10 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # Firebase (Google sign-in config + push messaging)
+  # Firebase (Google sign-in config, push messaging, crash reports)
   firebase_core: ^3.8.0
   firebase_messaging: ^15.1.5
+  firebase_crashlytics: ^4.3.10
 
   # State management
   flutter_riverpod: ^2.6.1
@@ -83,6 +84,13 @@ dependencies:
   connectivity_plus: ^7.3.1
   path: ^1.9.1
   sqlite3: ^3.5.2
+  sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.7
+  google_mlkit_text_recognition: ^0.17.1
+  cunning_document_scanner: ^3.0.4
+  image_cropper: ^13.0.0
+  flutter_image_compress: ^2.5.1
+  device_info_plus: ^12.4.0
 
 dev_dependencies:
   flutter_test:

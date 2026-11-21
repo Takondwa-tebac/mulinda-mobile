@@ -293,7 +293,7 @@ class _SmsCounterCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'SMS Auto-Capture',
+                  'subscription.sms.cardTitle'.tr(),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -317,7 +317,7 @@ class _SmsCounterCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${smsCapture.used}/${smsCapture.limit} used',
+                  'subscription.sms.usedOf'.tr(namedArgs: {'used': '${smsCapture.used}', 'limit': '${smsCapture.limit}'}),
                   style: TextStyle(
                     fontSize: 12,
                     color: scheme.onSurfaceVariant,
@@ -340,8 +340,15 @@ class _SmsCounterCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 smsCapture.remaining == 0
-                    ? 'SMS capture limit reached. Subscribe to continue.'
-                    : '${smsCapture.remaining} SMS capture${smsCapture.remaining == 1 ? '' : 's'} remaining.',
+                    ? (smsCapture.resetsAt == null
+                        ? 'subscription.sms.usedUp'.tr()
+                        : 'subscription.sms.usedUpUntil'.tr(namedArgs: {
+                            'date': DateFormat('d MMMM', context.locale.languageCode).format(smsCapture.resetsAt!),
+                          }))
+                    : 'subscription.sms.remaining'.tr(namedArgs: {
+                        'remaining': '${smsCapture.remaining}',
+                        'limit': '${smsCapture.limit}',
+                      }),
                 style: TextStyle(
                   fontSize: 11,
                   color: scheme.error,

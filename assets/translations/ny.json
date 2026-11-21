@@ -23,7 +23,8 @@
       "balances": "Ndalama zotsala mu akaunti",
       "budgetsGoals": "Bajeti ndi zolinga",
       "smsCapture": "Kujambula ma SMS",
-      "smsFree": "{limit} zaulere",
+      "smsFree": "{limit} zaulere pamwezi",
+      "smsFreeMonthly": "Zaulere mwezi uliwonse",
       "unlimited": "Popanda malire",
       "coach": "Mlangizi wa AI",
       "insights": "Malangizo apamwamba",
@@ -112,7 +113,8 @@
       "11": "Novembala",
       "12": "Disembala"
     },
-    "itemGone": "Chinthu chimenecho sichikupezekanso."
+    "itemGone": "Chinthu chimenecho sichikupezekanso.",
+    "somethingWrong": "China chake chalakwika. Yesaninso."
   },
   "onboarding": {
     "anim": {
@@ -128,28 +130,34 @@
       "benefitChat": "Chezani ndi Mulinda",
       "benefitInsights": "Malangizo apamwamba",
       "benefitAi": "AI imawerenga marisiti ndi ma SMS",
-      "benefitSms": "Kujambula ma SMS opanda malire",
       "noCard": "Palibe khadi. Palibe chimene chimapitirira chokha."
     },
     "trial": {
       "title": "Yesani premium kwaulere kwa maola 24",
-      "body": "Akaunti yanu imayamba ndi maola 24 oyesa premium kwaulere: mlangizi wa AI, malangizo apamwamba, AI yowerenga marisiti ndi ma SMS, komanso kujambula ma SMS opanda malire. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."
+      "body": "Akaunti yanu imayamba ndi maola 24 oyesa premium kwaulere: mlangizi wa AI, malangizo apamwamba, ndi AI yowerenga marisiti ndi ma SMS. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."
     },
     "chooseLanguage": "Sankhani Chiyankhulo chanu",
     "skip": "Dumphani",
     "next": "Tsatira",
     "getStarted": "Yambani",
     "slide1": {
-      "title": "Lamulirani ndalama zanu",
-      "body": "Onani Zonse zomwe zikulowa muma akaunti anu , zomwe mwagwiritsa ntchito , zomwe mwasunga kapena mwapulumutsa zonsezitu malo amodzi Mulinda"
+      "title": "Onani komwe ndalama zanu zikupita",
+      "body": "Airtel Money, Mpamba ndi maakaunti anu a banki pamalo amodzi, kuti nthawi zonse mudziwe ndalama zomwe muli nazo ndi zomwe mwagulira."
     },
     "slide2": {
       "title": "Zochitika zanu, zojambulidwa mwakhama",
-      "body": "Uthenga wa ndalama ukafika, Mulinda imaulemba ndi kukuuzani gulu lake. Dinani kuti mutsimikize ndipo imaphunzira. Jambulani risiti pa ndalama zomwe mwagwiritsa ntchito m'manja."
+      "body": "Uthenga wa ndalama ukafika, Mulinda imaulemba ndikukuuzani gulu lake. Dinani kuti mutsimikize ndipo imaphunzira. Jambulani risiti pa zomwe mwagula ndi ndalama za m'manja."
     },
     "slide3": {
-      "title": "Sungani, bwerekani, ndi kuyika ndalama mwanzeru",
-      "body": "Khazikitsani zolinga, landirani zikumbutso, onani ngati mungakwanitse ngongole, ndipo dziwani nthawi yoti muyambe kuyika ndalama - ndi mlangizi amene akudziwa  za ndalama zanu."
+      "title": "Fikirani zolinga zanu",
+      "body": "Sungani ndalama za fizi ya sukulu kapena china chilichonse, chenjezedwani bajeti isanathe, ndipo onani ngongole musanaitenge."
+    },
+    "summary": {
+      "title": "Onani komwe ndalama zanu zikupita, zokha.",
+      "body": "Mulinda imawerenga mauthenga anu a Airtel Money, TNM Mpamba ndi banki ndikukukonzerani bajeti. Simufunika kulemba kalikonse.",
+      "check1": "Kujambula kwaulere mwezi uliwonse",
+      "check2": "Masiku anu 30 apitawa, okonzeka mu mphindi imodzi",
+      "check3": "Mauthenga aumwini sawerengedwa"
     }
   },
   "auth": {
@@ -170,6 +178,8 @@
     "confirmPassword": "Tsimikizani achinsinsi",
     "haveAccount": "Muli kale ndi akaunti?",
     "continueWithGoogle": "Pitirizani ndi Google",
+    "continueWithApple": "Pitirizani ndi Apple",
+    "appleUnavailable": "Kulowa ndi Apple sikukupezeka pakali pano.",
     "or": "kapena",
     "resetTitle": "Konzani achinsinsi",
     "resetSubtitle": "Lowetsani imelo yanu ndipo tikutumizirani ulalo wokonzanso.",
@@ -191,7 +201,18 @@
     "optional": "osankha",
     "stepName": "Dzina",
     "stepAccount": "Akaunti",
-    "stepSecurity": "Chitetezo"
+    "stepSecurity": "Chitetezo",
+    "loginIdentifier": "Foni, username kapena imelo",
+    "signUpTitle": "Tsegulani akaunti yanu",
+    "orWithPhone": "kapena ndi foni yanu",
+    "createPassword": "Pangani mawu achinsinsi",
+    "signInLaterHelper": "Mudzalowa ndi foni, username kapena imelo yanu. Imelo ndi yomwe imakuthandizani kukonza achinsinsi omwe mwaiwala.",
+    "chooseCountry": "Sankhani dziko lanu",
+    "searchCountry": "Sakani ndi dzina kapena khodi",
+    "noCountryMatch": "Palibe dziko lofanana ndi zomwe mwasaka",
+    "countryCode": "Khodi ya dziko {}",
+    "foreignNotice": "Mulinda imadziwa bwino ma wallet ndi mabanki a ku Malawi. Mauthenga ochokera m'maiko ena amawerengedwa ndi AI pa Premium, kapena mumawalemba nokha.",
+    "invalidPhone": "Lowetsani nambala ya foni yolondola"
   },
   "nav": {
     "home": "Home",
@@ -228,7 +249,13 @@
     "rejected": "Zachotsedwa",
     "processing": "Tikuwerengabe…",
     "loadError": "Sitinathe kutsegula zoyembekezera.",
-    "retry": "Yesaninso"
+    "retry": "Yesaninso",
+    "merchant": "Wogulitsa",
+    "amount": "Ndalama",
+    "payee": "Analipidwa",
+    "fee": "Chindapusa",
+    "amountRequired": "Lembani ndalama zomwe zili pa risiti.",
+    "possibleDuplicate": "Mwina muli nazo kale zochitikazi: zina zosungidwa zili ndi nambala yofanana."
   },
   "addTxn": {
     "title": "Onjezani zochitika",
@@ -278,6 +305,9 @@
     "body": "Mawu a uthenga",
     "sender": "Wotumiza (sikofunika)",
     "submit": "Werengani uthenga",
+    "copyHint": "Koperani uthenga wa mobile money mu Messages, kenako muuike pano.",
+    "pasteClipboard": "Ikani kuchokera pa clipboard",
+    "clipboardEmpty": "Palibe choti muike. Koperani uthengawo choyamba.",
     "queued": "Talandira - tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
   },
   "receipt": {
@@ -290,7 +320,17 @@
     "chooseImage": "Sankhani mu gallery",
     "submit": "Jambulani risiti",
     "queued": "Talandira - tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
-    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule."
+    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule.",
+    "ready": "Risiti yawerengedwa. Onani zomwe zili mmenemo ndipo muvomereze.",
+    "readyDuplicate": "Risiti yawerengedwa, koma ikuoneka ngati imene munalemba kale. Onani musanavomereze.",
+    "notReceipt": "Izi sizikuoneka ngati risiti ya malipiro, choncho palibe chomwe chawonjezedwa.",
+    "tip": "Ikani risiti pansi bwino pamalo owala ndipo idzaze chithunzi chonse. Makina adzapeza m’mbali mwake.",
+    "crop": "Dulani",
+    "retake": "Jambulaninso",
+    "cropTitle": "Dulani risiti",
+    "captureFailed": "Sitinathe kupeza chithunzi. Yesaninso.",
+    "savedOffline": "Yasungidwa. Risiti idzatumizidwa mukangolumikizana ndi intaneti.",
+    "queueFull": "Pali marisiti ambiri omwe akudikira kutumizidwa. Lumikizanani ndi intaneti, kenako yesaninso."
   },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",
@@ -337,7 +377,9 @@
     "recentActivity": "Zochitika zaposachedwa",
     "noTransactions": "Palibe zochitika. Dinani ＋ kuti muwonjezere.",
     "loadError": "Sitinathe kutsegula dashboard.",
-    "retry": "Yesaninso"
+    "retry": "Yesaninso",
+    "hi": "Moni",
+    "hiName": "Moni {}"
   },
   "insights": {
     "title": "Zidziwitso",
@@ -574,7 +616,7 @@
   "subscription": {
     "tile": {
       "free": "Pulani yaulere · kusunga ndalama ndi kwaulere",
-      "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala",
+      "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
       "trialEnds": "Nthawi yoyesa · yatsala pafupifupi maola {hours}",
       "activeUntil": "{plan} · ikugwira ntchito mpaka {date}"
     },
@@ -583,9 +625,13 @@
       "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha."
     },
     "sms": {
-      "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala",
-      "freeIntro": "Pulani yanu yaulere ili ndi ma SMS {limit}",
-      "usedUp": "Mwagwiritsa ntchito ma SMS anu aulere onse. Mutha kulembabe zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
+      "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
+      "freeIntro": "Pulani yanu yaulere ili ndi ma SMS {limit} pamwezi",
+      "freeIntroUnknown": "Pulani yanu yaulere ili ndi ma SMS mwezi uliwonse",
+      "cardTitle": "Kujambula SMS kokha",
+      "usedOf": "{used} mwa {limit} agwiritsidwa ntchito mwezi uno",
+      "usedUp": "Mwagwiritsa ntchito ma SMS aulere a mwezi uno. Mutha kulembabe zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
+      "usedUpUntil": "Mwagwiritsa ntchito ma SMS aulere a mwezi uno. Abweranso pa {date}. Mpaka nthawiyo mutha kulemba zochitika pamanja kwaulere, kapena kusankha pasi kuti mujambule opanda malire.",
       "howItWorks": "Mauthenga ochokera ku mabanki ndi mobile money odziwika amawerengedwa kwaulere. Ena amadikira mu inbox kuti mudzaze nokha."
     },
     "title": "Kulembetsa",
@@ -1270,5 +1316,64 @@
       "quarterly": "Miyezi itatu iliyonse",
       "yearly": "Chaka chilichonse"
     }
+  },
+  "countries": {
+    "MW": "Malawi",
+    "ZM": "Zambia",
+    "MZ": "Mozambiki",
+    "TZ": "Tanzania",
+    "ZW": "Zimbabwe",
+    "ZA": "South Africa",
+    "KE": "Kenya",
+    "UG": "Uganda",
+    "BW": "Botswana",
+    "GB": "United Kingdom",
+    "US": "United States"
+  },
+  "smsIntro": {
+    "title": "Lolani Mulinda iwerenge mauthenga anu a ndalama?",
+    "body": "Umu ndi m'mene bajeti yanu imadzipangira yokha. Android ikufunsani kenako.",
+    "readTitle": "Timawerenga",
+    "readBody": "Mauthenga a Airtel Money, TNM Mpamba, NBM, FDH ndi Centenary omwe akuonetsa ndalama.",
+    "neverTitle": "Sitiwerenga",
+    "neverBody": "Macheza ndi anthu, ma khodi a nthawi imodzi, kapena mauthenga ochokera kwa wina aliyense. Sachoka pa foni yanu.",
+    "allow": "Lolani ndipo pitirizani",
+    "notNow": "Osati pano, ndilemba ndekha"
+  },
+  "firstImport": {
+    "scanning": "Tikufufuza mauthenga a ndalama a masiku 30 apitawa",
+    "found": {
+      "one": "Tapeza uthenga {} wa ndalama wa masiku 30 apitawa",
+      "other": "Tapeza mauthenga {} a ndalama a masiku 30 apitawa"
+    },
+    "messages": {
+      "one": "uthenga {}",
+      "other": "mauthenga {}"
+    },
+    "note": "Zaulere. Mauthenga a nthawi musanalowe sawerengedwa pa malire anu a mwezi.",
+    "build": "Pangani bajeti yanga",
+    "building": "Tikupanga bajeti yanu",
+    "progress": "{} mwa {} zatumizidwa",
+    "offline": "Mulibe intaneti. Mauthenga anu asungidwa ndipo adzaonjezedwa mukakhala pa intaneti.",
+    "error": "China chake chalakwika. Mutha kubweretsa mauthenga anu pambuyo pake kuchokera ku Capture.",
+    "skip": "Dumphani pakali pano"
+  },
+  "home3": {
+    "last30": "Masiku anu 30 apitawa",
+    "moneyIn": "Ndalama zolowa",
+    "moneyOut": "Ndalama zotuluka",
+    "whereItWent": "Komwe zinapita",
+    "toCheck": "{} zoti muwone",
+    "toCheckBody": "Tsimikizani zomwe Mulinda yalemba kuti iphunzire",
+    "stepsTitle": "Yambani m'masitepe atatu",
+    "stepCapture": "Yatsani kujambula kwa zokha",
+    "stepCaptureSub": "Mauthenga anu a ndalama amasanduka zochitika",
+    "stepPaste": "Ikani uthenga wa ndalama",
+    "stepPasteSub": "Koperani uthenga wa Airtel Money, Mpamba kapena banki",
+    "stepToday": "Onjezani zomwe mwawononga lero",
+    "stepTodaySub": "Ndalama za m'manja nazonso",
+    "stepBudget": "Khazikitsani bajeti imodzi",
+    "stepBudgetSub": "Onani ngati mukuwononga mofulumira",
+    "noCategory": "Palibe gulu pano"
   }
 }

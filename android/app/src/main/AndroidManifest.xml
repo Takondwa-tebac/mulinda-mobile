@@ -20,6 +20,11 @@
         android:label="Mulinda"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- image_cropper: crop a receipt picked from the gallery. -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

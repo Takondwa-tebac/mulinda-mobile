@@ -5,9 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/country_picker.dart';
 import '../providers/auth_controller.dart';
-import '../widgets/terms_accept_sheet.dart';
 
+/// One short sign-up screen: Google first, or phone + username + email +
+/// password. Names and income are asked later, in context. There is no SMS
+/// code: phones cannot be verified.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -15,52 +19,52 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
+/// A username suggestion from an email's local part: lower case, letters,
+/// digits, dots and underscores only.
+String suggestUsername(String email) {
+  final local = email.split('@').first.split('+').first.toLowerCase();
+  final clean = local.replaceAll(RegExp(r'[^a-z0-9._]'), '');
+  return clean.length > 30 ? clean.substring(0, 30) : clean;
+}
+
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  // One form per step so each step validates only its own fields.
-  final _stepKeys = [GlobalKey<FormState>(), GlobalKey<FormState>(), GlobalKey<FormState>()];
-  int _currentStep = 0;
-  final _firstName = TextEditingController();
-  final _middleName = TextEditingController();
-  final _lastName = TextEditingController();
-  final _username = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController();
+  final _username = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _confirm = TextEditingController();
+  Country _country = malawi;
   bool _obscure = true;
   bool _loading = false;
   bool _accepted = false;
 
+  /// Until the user types their own username, it follows the email.
+  bool _usernameEdited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _email.addListener(_suggestUsername);
+  }
+
   @override
   void dispose() {
-    for (final c in [_firstName, _middleName, _lastName, _username, _phone, _email, _password, _confirm]) {
+    for (final c in [_phone, _username, _email, _password]) {
       c.dispose();
     }
     super.dispose();
   }
 
+  void _suggestUsername() {
+    if (_usernameEdited) return;
+    final suggestion = suggestUsername(_email.text);
+    if (suggestion != _username.text) _username.text = suggestion;
+  }
+
   void _openLegal(String slug) => context.push('${Routes.legal}?slug=$slug');
 
-  /// Open the Terms in a scroll-to-accept sheet; ticks the box only if the user
-  /// reads to the end and agrees.
-  Future<void> _reviewTerms() async {
-    final accepted = await showTermsAcceptSheet(context);
-    if (accepted == true && mounted) setState(() => _accepted = true);
-  }
-
-  static const _lastStep = 2;
-
-  /// Validate the current step, then advance — or submit on the final step.
-  void _onContinue() {
-    if (!(_stepKeys[_currentStep].currentState?.validate() ?? false)) return;
-    if (_currentStep < _lastStep) {
-      setState(() => _currentStep++);
-    } else {
-      _submit();
-    }
-  }
-
   Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_accepted) {
       _showError('auth.mustAcceptTerms'.tr());
       return;
@@ -68,17 +72,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _loading = true);
     try {
       await ref.read(authControllerProvider.notifier).register(
-            firstName: _firstName.text.trim(),
-            middleName: _middleName.text.trim(),
-            lastName: _lastName.text.trim(),
-            username: _username.text.trim(),
-            phoneNumber: _phone.text.trim(),
+            phoneNumber: internationalNumber(_country, _phone.text),
             email: _email.text.trim(),
             password: _password.text,
-            passwordConfirmation: _confirm.text,
+            username: _username.text.trim(),
             acceptedTerms: _accepted,
           );
-      // Router guard redirects to home on success.
+      // The router moves on (SMS step on Android, else Home).
+    } on ApiException catch (e) {
+      _showError(e.displayMessage);
+    } catch (_) {
+      _showError('common.somethingWrong'.tr());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _google() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signInWithGoogle();
     } on ApiException catch (e) {
       _showError(e.displayMessage);
     } catch (_) {
@@ -97,204 +110,196 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _currentStep == _lastStep;
     final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text('auth.createAccount'.tr())),
+      appBar: AppBar(),
       body: SafeArea(
         child: AbsorbPointer(
           absorbing: _loading,
-          child: Column(
-            children: [
-              _StepHeader(
-                current: _currentStep,
-                titles: [
-                  'auth.stepName'.tr(),
-                  'auth.stepAccount'.tr(),
-                  'auth.stepSecurity'.tr(),
-                ],
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                  child: _stepForm(_currentStep),
-                ),
-              ),
-              // Fixed bottom action bar — buttons always get full width here,
-              // unlike the cramped controls area of a horizontal Stepper.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-                child: Row(
-                  children: [
-                    if (_currentStep > 0) ...[
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('auth.signUpTitle'.tr(), style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text('auth.registerSubtitle'.tr(), style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant)),
+                  const SizedBox(height: AppSpacing.xl),
+                  FilledButton.icon(
+                    key: const ValueKey('signup-google'),
+                    onPressed: _loading ? null : _google,
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                    icon: const Icon(Icons.g_mobiledata, size: 28),
+                    label: Text('auth.continueWithGoogle'.tr()),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                        child: Text('auth.orWithPhone'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Phone: country button + local number.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CountryCodeButton(
+                        country: _country,
+                        onChanged: (c) => setState(() => _country = c),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed:
-                              _loading ? null : () => setState(() => _currentStep--),
-                          style: OutlinedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(50)),
-                          child: Text('common.back'.tr()),
+                        child: TextFormField(
+                          key: const ValueKey('signup-phone'),
+                          controller: _phone,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.telephoneNumberNational],
+                          decoration: InputDecoration(labelText: 'auth.phoneNumber'.tr()),
+                          validator: _phoneValidator,
                         ),
                       ),
-                      const SizedBox(width: 12),
                     ],
-                    Expanded(
-                      flex: 2,
-                      child: FilledButton(
-                        onPressed: _loading ? null : _onContinue,
-                        style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50)),
-                        child: _loading && isLast
-                            ? SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: scheme.onPrimary,
-                                ),
-                              )
-                            : Text(isLast
-                                ? 'auth.createAccount'.tr()
-                                : 'common.continue'.tr()),
-                      ),
-                    ),
+                  ),
+                  if (_country != malawi) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _Notice(text: 'auth.foreignNotice'.tr()),
                   ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('auth.haveAccount'.tr()),
-                  TextButton(
-                    onPressed: () => context.go(Routes.login),
-                    child: Text('auth.signIn'.tr()),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                  const SizedBox(height: AppSpacing.lg),
 
-  /// The form for the given step. Controllers persist across steps, so values
-  /// are retained when the user navigates back and forth.
-  Widget _stepForm(int step) {
-    switch (step) {
-      case 0:
-        return Form(
-          key: _stepKeys[0],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field(_firstName, 'auth.firstName'.tr(), validator: _required),
-              _field(_middleName, 'auth.middleName'.tr()),
-              _field(_lastName, 'auth.lastName'.tr(), validator: _required),
-            ],
-          ),
-        );
-      case 1:
-        return Form(
-          key: _stepKeys[1],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field(_username, 'auth.username'.tr(), validator: _required),
-              _field(_phone, 'auth.phoneNumber'.tr(),
-                  keyboardType: TextInputType.phone, validator: _required),
-              _field(_email, 'auth.email'.tr(),
-                  keyboardType: TextInputType.emailAddress, validator: _email_),
-            ],
-          ),
-        );
-      default:
-        return Form(
-          key: _stepKeys[2],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field(_password, 'auth.password'.tr(),
-                  obscure: true,
-                  validator: _passwordValidator,
-                  helper: 'auth.passwordHint'.tr()),
-              _field(_confirm, 'auth.confirmPassword'.tr(),
-                  obscure: true, validator: _confirmValidator),
-              const SizedBox(height: 4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _accepted,
-                    // Ticking it requires reading the Terms to the end first;
-                    // unticking is free.
-                    onChanged: (v) {
-                      if (v == true) {
-                        _reviewTerms();
-                      } else {
-                        setState(() => _accepted = false);
-                      }
-                    },
+                  // Username and email side by side.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: const ValueKey('signup-username'),
+                          controller: _username,
+                          textInputAction: TextInputAction.next,
+                          autocorrect: false,
+                          decoration: InputDecoration(labelText: 'auth.username'.tr()),
+                          onChanged: (_) => _usernameEdited = true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: TextFormField(
+                          key: const ValueKey('signup-email'),
+                          controller: _email,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          autocorrect: false,
+                          autofillHints: const [AutofillHints.email],
+                          decoration: InputDecoration(labelText: 'auth.email'.tr()),
+                          validator: _emailValidator,
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text('auth.agreePrefix'.tr()),
-                          _LegalLink('auth.terms'.tr(), _reviewTerms),
-                          Text(' ${'auth.and'.tr()} '),
-                          _LegalLink('auth.privacy'.tr(), () => _openLegal('privacy')),
-                        ],
+                  const SizedBox(height: AppSpacing.lg),
+                  TextFormField(
+                    key: const ValueKey('signup-password'),
+                    controller: _password,
+                    obscureText: _obscure,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: 'auth.createPassword'.tr(),
+                      helperText: 'auth.passwordHint'.tr(),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
+                    validator: _passwordValidator,
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'auth.signInLaterHelper'.tr(),
+                    style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Terms: one checkbox, with links to read them.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        key: const ValueKey('signup-terms'),
+                        value: _accepted,
+                        onChanged: (v) => setState(() => _accepted = v ?? false),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.md),
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text('${'auth.agreePrefix'.tr()} '),
+                              _LegalLink('auth.terms'.tr(), () => _openLegal('terms')),
+                              Text(' ${'auth.and'.tr()} '),
+                              _LegalLink('auth.privacy'.tr(), () => _openLegal('privacy')),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton(
+                    key: const ValueKey('signup-submit'),
+                    onPressed: _loading ? null : _submit,
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                    child: _loading
+                        ? SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.onPrimary),
+                          )
+                        : Text('auth.createAccount'.tr()),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text('auth.haveAccount'.tr()),
+                      TextButton(
+                        onPressed: () => context.go(Routes.login),
+                        child: Text('auth.signIn'.tr()),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        );
-    }
-  }
-
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    bool obscure = false,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    String? helper,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscure && _obscure,
-        keyboardType: keyboardType,
-        textInputAction: TextInputAction.next,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          helperText: helper,
-          suffixIcon: obscure
-              ? IconButton(
-                  icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                )
-              : null,
         ),
       ),
     );
   }
 
-  String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'auth.required'.tr() : null;
+  String? _phoneValidator(String? v) {
+    final digits = (v ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return 'auth.required'.tr();
+    if (digits.length < 6 || digits.length > 14) return 'auth.invalidPhone'.tr();
+    return null;
+  }
 
-  String? _email_(String? v) {
-    if (v == null || v.trim().isEmpty) return 'auth.required'.tr();
-    if (!v.contains('@') || !v.contains('.')) return 'auth.invalidEmail'.tr();
+  String? _emailValidator(String? v) {
+    final value = v?.trim() ?? '';
+    if (value.isEmpty) return 'auth.required'.tr();
+    if (!value.contains('@') || !value.contains('.')) return 'auth.invalidEmail'.tr();
     return null;
   }
 
@@ -303,91 +308,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (v.length < 8) return 'auth.passwordHint'.tr();
     return null;
   }
-
-  String? _confirmValidator(String? v) {
-    if (v != _password.text) return 'auth.passwordsDontMatch'.tr();
-    return null;
-  }
 }
 
-/// Numbered progress header for the signup wizard (e.g. ①─②─③ with the
-/// current step highlighted and completed steps ticked).
-class _StepHeader extends StatelessWidget {
-  const _StepHeader({required this.current, required this.titles});
+/// A quiet information line (icon + text) on a tinted surface.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.text});
 
-  final int current;
-  final List<String> titles;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+    return Container(
+      key: const ValueKey('signup-foreign-notice'),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < titles.length; i++) ...[
-            _Dot(
-              index: i,
-              current: current,
-              label: titles[i],
-            ),
-            if (i < titles.length - 1)
-              Expanded(
-                child: Container(
-                  height: 2,
-                  margin: const EdgeInsets.only(bottom: 18),
-                  color: i < current ? scheme.primary : scheme.outlineVariant,
-                ),
-              ),
-          ],
+          Icon(Icons.info_outline, size: 18, color: scheme.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.4))),
         ],
       ),
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.index, required this.current, required this.label});
-
-  final int index;
-  final int current;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final done = index < current;
-    final active = index == current;
-    final bg = done || active ? scheme.primary : scheme.surfaceContainerHighest;
-    final fg = done || active ? scheme.onPrimary : scheme.onSurfaceVariant;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircleAvatar(
-          radius: 15,
-          backgroundColor: bg,
-          child: done
-              ? Icon(Icons.check, size: 16, color: fg)
-              : Text('${index + 1}',
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
-        ),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: 72,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-              color: active ? scheme.primary : scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -399,14 +345,17 @@ class _LegalLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w600,
-          decoration: TextDecoration.underline,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
+          ),
         ),
       ),
     );

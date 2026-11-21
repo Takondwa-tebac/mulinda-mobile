@@ -8,6 +8,10 @@ abstract class Routes {
   static const resetPassword = '/reset-password';
 
   static const incomeSetup = '/income-setup';
+
+  // First run after sign in (Android): SMS access, then the 30-day import.
+  static const smsIntro = '/welcome/sms';
+  static const firstImport = '/welcome/import';
   static const permissions = '/permissions';
   static const legal = '/legal';
 
@@ -31,6 +35,7 @@ abstract class Routes {
   static const accountDetail = '/account-detail';
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
+  static const receiptOcrDebug = '/debug/receipt-ocr'; // debug builds only
   static const inbox = '/inbox';
   static const bulkSmsImport = '/bulk-sms-import';
   static const manualSmsScan = '/manual-sms-scan';

@@ -26,12 +26,21 @@ class PendingSms {
 
 /// A pending scanned receipt awaiting approval.
 class PendingReceipt {
-  const PendingReceipt({required this.id, this.imageUrl, this.confidence, this.parsed});
+  const PendingReceipt({
+    required this.id,
+    this.imageUrl,
+    this.confidence,
+    this.parsed,
+    this.duplicateTransactionId,
+  });
 
   final String id;
   final String? imageUrl;
   final num? confidence;
   final Map<String, dynamic>? parsed;
+
+  /// An existing transaction with the same reference (likely already recorded).
+  final String? duplicateTransactionId;
 
   String? get amount => parsed?['amount']?.toString();
   String? get merchant => parsed?['merchant']?.toString();
@@ -41,6 +50,7 @@ class PendingReceipt {
         imageUrl: json['image_url']?.toString(),
         confidence: json['confidence'] as num?,
         parsed: (json['parsed'] as Map?)?.cast<String, dynamic>(),
+        duplicateTransactionId: json['duplicate_transaction_id']?.toString(),
       );
 }
 
@@ -63,10 +73,19 @@ class InboxRepository {
 
   Future<void> rejectSms(String id) => _post('/v1/sms/$id/reject');
 
-  Future<void> approveReceipt(String id, {required String financialAccountId, String? categoryId}) =>
+  /// [amount] and [merchant] override what was read from the receipt.
+  Future<void> approveReceipt(
+    String id, {
+    required String financialAccountId,
+    String? categoryId,
+    num? amount,
+    String? merchant,
+  }) =>
       _post('/v1/receipt-scans/$id/approve', body: {
         'financial_account_id': financialAccountId,
         'category_id': ?categoryId,
+        'amount': ?amount,
+        'merchant': ?merchant,
       });
 
   Future<void> rejectReceipt(String id) => _post('/v1/receipt-scans/$id/reject');
