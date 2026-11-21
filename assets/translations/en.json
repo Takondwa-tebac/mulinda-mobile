@@ -863,6 +863,16 @@
     "createHint": "Add it as a new category (needs internet)",
     "loadError": "Could not load the categories."
   },
+  "categoryStyle": {
+    "title": "Icon and colour",
+    "auto": "Let Mulinda choose",
+    "autoHint": "An icon that fits the name and a colour",
+    "icon": "Icon",
+    "color": "Colour",
+    "save": "Save",
+    "pickLook": "Choose icon and colour",
+    "restyleHint": "Press and hold to change its icon and colour"
+  },
   "activity2": {
     "notSpending": "Not counted as spending",
     "account": "Account",

@@ -46,6 +46,7 @@ class Category {
     required this.kind,
     this.icon,
     this.color,
+    this.isSystem = true,
     this.isSpending = true,
   });
 
@@ -56,6 +57,9 @@ class Category {
   /// A Material icon name and a `#RRGGBB` colour from the server; either may be missing.
   final String? icon;
   final String? color;
+
+  /// A default category everyone shares; only the user's own can be restyled.
+  final bool isSystem;
 
   /// False for categories that move money without spending it (e.g. "Moving
   /// my money" between your own accounts). Absent on older servers → true.
@@ -68,6 +72,7 @@ class Category {
       kind: json['kind']?.toString() ?? 'expense',
       icon: json['icon']?.toString(),
       color: json['color']?.toString(),
+      isSystem: json['is_system'] != false,
       isSpending: json['is_spending'] != false,
     );
   }
