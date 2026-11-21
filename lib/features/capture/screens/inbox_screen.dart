@@ -144,7 +144,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => context.pushNamed(Routes.manualSmsScan),
+            onPressed: () => context.push(Routes.manualSmsScan),
             tooltip: 'Manual SMS Scan',
           ),
           IconButton(
@@ -234,7 +234,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 // Review bottom sheet
 // ---------------------------------------------------------------------------
 
-class _ReviewSheet extends StatefulWidget {
+class _ReviewSheet extends ConsumerStatefulWidget {
   const _ReviewSheet({
     required this.isReceipt,
     required this.parsed,
@@ -256,11 +256,32 @@ class _ReviewSheet extends StatefulWidget {
   final String? sender;
 
   @override
-  State<_ReviewSheet> createState() => _ReviewSheetState();
+  ConsumerState<_ReviewSheet> createState() => _ReviewSheetState();
 }
 
-class _ReviewSheetState extends State<_ReviewSheet> {
+class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   Account? _selectedAccount;
+  late List<Account> _accounts = widget.accounts;
+
+  /// Opens Add account, prefilled from the message sender, and comes back with
+  /// the new account selected so the user can approve straight away.
+  Future<void> _addAccount() async {
+    final suggestion = suggestedAccountFor(widget.sender);
+    final saved = await context.push<bool>(
+      Routes.addAccount,
+      extra: suggestion == null ? null : {'name': suggestion.name, 'type': suggestion.type},
+    );
+    if (saved != true || !mounted) return;
+
+    ref.invalidate(accountsProvider);
+    final accounts = await ref.read(accountsProvider.future);
+    if (!mounted) return;
+    setState(() {
+      _accounts = accounts;
+      _selectedAccount = accounts.isEmpty ? null : accounts.last;
+      _error = null;
+    });
+  }
   bool _approving = false;
   bool _rejecting = false;
   String? _error;
@@ -388,10 +409,10 @@ class _ReviewSheetState extends State<_ReviewSheet> {
           ),
           const SizedBox(height: 8),
 
-          if (widget.accounts.isEmpty)
-            Text(
-              'No accounts found. Please add an account first.',
-              style: TextStyle(color: scheme.error, fontSize: 13),
+          if (_accounts.isEmpty)
+            _NeedAccount(
+              sender: widget.sender,
+              onAdd: _busy ? null : _addAccount,
             )
           else
             InputDecorator(
@@ -410,7 +431,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                 isExpanded: true,
                 underline: const SizedBox.shrink(),
                 hint: const Text('Choose an account'),
-                items: widget.accounts
+                items: _accounts
                     .map(
                       (a) => DropdownMenuItem(
                         value: a,
@@ -462,7 +483,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: _busy || widget.accounts.isEmpty ? null : _approve,
+                  onPressed: _busy || _accounts.isEmpty ? null : _approve,
                   child: _approving
                       ? const SizedBox(
                           height: 18,
@@ -473,6 +494,53 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The account a message most likely came from, by its sender.
+({String name, String type})? suggestedAccountFor(String? sender) {
+  final s = (sender ?? '').toLowerCase();
+  if (s.contains('airtel')) return (name: 'Airtel Money', type: 'mobile_money');
+  if (s.contains('mpamba') || s.contains('tnm')) return (name: 'TNM Mpamba', type: 'mobile_money');
+  if (s.contains('nbm') || s.contains('natbank')) return (name: 'NBM', type: 'bank');
+  if (s.contains('fdh')) return (name: 'FDH Bank', type: 'bank');
+  if (s.contains('cente')) return (name: 'Centenary Bank', type: 'bank');
+  return null;
+}
+
+/// Shown instead of a dead end when the user has no account to approve into.
+class _NeedAccount extends StatelessWidget {
+  const _NeedAccount({required this.sender, required this.onAdd});
+
+  final String? sender;
+  final VoidCallback? onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final suggestion = suggestedAccountFor(sender);
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('inbox.needAccount'.tr(), style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            onPressed: onAdd,
+            icon: const Icon(Icons.add),
+            label: Text(
+              suggestion == null ? 'account.add'.tr() : 'inbox.addSuggested'.tr(args: [suggestion.name]),
+            ),
           ),
         ],
       ),

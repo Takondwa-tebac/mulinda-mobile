@@ -145,7 +145,7 @@
     },
     "slide2": {
       "title": "Zochitika zanu, zojambulidwa mwakhama",
-      "body": "Tumizani SMS ya mobile money kapena jambulani risiti - Mulinda imazisandutsa kukhala zochitika. Inu mungovomereza basi."
+      "body": "Uthenga wa ndalama ukafika, Mulinda imaulemba ndi kukuuzani gulu lake. Dinani kuti mutsimikize ndipo imaphunzira. Jambulani risiti pa ndalama zomwe mwagwiritsa ntchito m'manja."
     },
     "slide3": {
       "title": "Sungani, bwerekani, ndi kuyika ndalama mwanzeru",
@@ -215,12 +215,14 @@
     "retry": "Yesaninso"
   },
   "inbox": {
+    "needAccount": "Onjezani akaunti imene ndalamazi zachokera, kenako vomerezani.",
+    "addSuggested": "Onjezani akaunti ya {}",
     "title": "Zoyembekezera",
     "messages": "Mauthenga",
     "receipts": "Marisiti",
     "approve": "Vomerezani",
     "reject": "Kanani",
-    "empty": "Palibe zoyang'ana. SMS zotumizidwa ndi marisiti ojambulidwa zimaonekera pano.",
+    "empty": "Palibe zoyang'ana. Mauthenga ofunika kuwunikidwa ndi marisiti ojambulidwa zimaonekera pano.",
     "emptyTitle": "Mwamaliza zonse",
     "approved": "Zawonjezedwa ku zochitika zanu",
     "rejected": "Zachotsedwa",

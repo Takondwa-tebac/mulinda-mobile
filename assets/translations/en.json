@@ -145,7 +145,7 @@
     },
     "slide2": {
       "title": "Your transactions, captured for you",
-      "body": "Forward a mobile-money SMS or snap a receipt - Mulinda turns it into a transaction. You just approve."
+      "body": "When a money message arrives, Mulinda records it and suggests a category. Tap to confirm and it learns. Scan a receipt for cash spending."
     },
     "slide3": {
       "title": "Save, borrow and invest wisely",
@@ -215,12 +215,14 @@
     "retry": "Retry"
   },
   "inbox": {
+    "needAccount": "Add the account this money came from, then approve.",
+    "addSuggested": "Add {} account",
     "title": "Pending",
     "messages": "Messages",
     "receipts": "Receipts",
     "approve": "Approve",
     "reject": "Reject",
-    "empty": "Nothing to review. Forwarded SMS and scanned receipts show up here.",
+    "empty": "Nothing to review. Messages that need a check and scanned receipts show up here.",
     "emptyTitle": "You're all caught up",
     "approved": "Added to your transactions",
     "rejected": "Dismissed",

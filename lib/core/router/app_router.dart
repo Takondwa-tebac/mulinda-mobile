@@ -134,7 +134,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.coach, builder: (_, _) => const CoachScreen()),
       GoRoute(path: Routes.addTransaction, builder: (_, _) => const AddTransactionScreen()),
-      GoRoute(path: Routes.addAccount, builder: (_, _) => const AddAccountScreen()),
+      GoRoute(
+        path: Routes.addAccount,
+        builder: (_, state) {
+          final prefill = state.extra is Map<String, String> ? state.extra as Map<String, String> : const <String, String>{};
+          return AddAccountScreen(initialName: prefill['name'], initialType: prefill['type']);
+        },
+      ),
       GoRoute(
         path: Routes.accountDetail,
         redirect: (_, s) => s.extra is Account ? null : Routes.activity,

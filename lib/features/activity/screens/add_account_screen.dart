@@ -7,7 +7,11 @@ import '../../../core/network/api_exception.dart';
 import '../data/activity_repository.dart';
 
 class AddAccountScreen extends ConsumerStatefulWidget {
-  const AddAccountScreen({super.key});
+  const AddAccountScreen({super.key, this.initialName, this.initialType});
+
+  /// Prefills the form, e.g. from the sender of a message being approved.
+  final String? initialName;
+  final String? initialType;
 
   @override
   ConsumerState<AddAccountScreen> createState() => _AddAccountScreenState();
@@ -22,6 +26,15 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   String _type = 'mobile_money';
   String _currency = 'MWK';
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _name.text = widget.initialName ?? '';
+    if (widget.initialType != null && _types.contains(widget.initialType)) {
+      _type = widget.initialType!;
+    }
+  }
 
   @override
   void dispose() {
