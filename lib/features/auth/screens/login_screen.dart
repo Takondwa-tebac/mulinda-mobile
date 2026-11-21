@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
@@ -60,6 +62,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _apple() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signInWithApple();
+    } on ApiException catch (e) {
+      _showError(e.displayMessage);
+    } catch (_) {
+      _showError('auth.appleUnavailable'.tr());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -101,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _username,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'auth.username'.tr(),
+                      labelText: 'auth.loginIdentifier'.tr(),
                     ),
                     validator: _required,
                   ),
@@ -147,6 +162,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  // Apple requires this option wherever another social login is
+                  // offered, so it appears on iOS only (Android is unchanged).
+                  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
+                    SignInWithAppleButton(
+                      onPressed: _loading ? () {} : _apple,
+                      text: 'auth.continueWithApple'.tr(),
+                      style: Theme.of(context).brightness == Brightness.dark
+                          ? SignInWithAppleButtonStyle.white
+                          : SignInWithAppleButtonStyle.black,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   OutlinedButton.icon(
                     onPressed: _loading ? null : _google,
                     icon: const Icon(Icons.g_mobiledata, size: 28),

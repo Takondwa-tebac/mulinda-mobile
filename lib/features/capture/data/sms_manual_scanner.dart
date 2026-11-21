@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'sms_auto_capture.dart';
+import 'sms_capability.dart';
 import 'sms_outbox.dart';
 
 void smsScanLog(String message) {
@@ -33,6 +34,9 @@ class SmsManualScanner {
   /// and runs even if auto-capture is off. The launch scan (`manual: false`)
   /// never prompts and does nothing unless the user opted in to auto-capture.
   Future<ScanResult> scanFinancialSms({bool manual = false}) async {
+    if (!SmsCapability.canReadSms) {
+      return ScanResult.success(0, 0, 'Reading SMS is not available on this device');
+    }
     smsScanLog('Starting SMS scan (manual=$manual)');
 
     try {
@@ -55,7 +59,7 @@ class SmsManualScanner {
         return ScanResult.success(
           preFlush.created,
           preFlush.failed,
-          'Offline or not signed in — will retry',
+          'Offline or not signed in - will retry',
           preFlush.duplicates + preFlush.skipped,
         );
       }
@@ -100,7 +104,7 @@ class SmsManualScanner {
       }
 
       final message = result.offline
-          ? 'Offline — ${result.pending} queued, will sync automatically'
+          ? 'Offline - ${result.pending} queued, will sync automatically'
           : 'Scan completed';
       return ScanResult.success(
         result.created + preFlush.created,
@@ -112,6 +116,66 @@ class SmsManualScanner {
       smsScanLog('Scan failed: $e');
       return ScanResult.error('Scan failed: $e');
     }
+  }
+}
+
+/// The first-run history import: money messages from the last 30 days (never
+/// before the server baseline, which for a new account is that same window),
+/// sent through the outbox like any other capture.
+class FirstRunImport {
+  FirstRunImport._();
+  static final FirstRunImport instance = FirstRunImport._();
+
+  static const window = Duration(days: 30);
+
+  final Telephony _telephony = Telephony.instance;
+
+  /// Where the import starts: 30 days ago, or the server baseline if later.
+  static DateTime startFrom(DateTime now, DateTime? baseline) {
+    final windowStart = now.subtract(window);
+    return baseline != null && baseline.isAfter(windowStart) ? baseline : windowStart;
+  }
+
+  /// Financial inbox messages since [startFrom], oldest first. Needs the SMS
+  /// permission; personal messages are filtered out on the phone.
+  Future<List<SmsMessage>> findMessages() async {
+    final baseline = await SmsOutbox.instance.fetchBaseline();
+    final since = startFrom(DateTime.now(), baseline).millisecondsSinceEpoch;
+    final messages = await _telephony.getInboxSms(
+      filter: SmsFilter.where(SmsColumn.DATE).greaterThanOrEqualTo('$since'),
+      sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.ASC)],
+    );
+    return messages.where((m) => SmsAutoCapture.isFinancialSms(m.body ?? '')).toList();
+  }
+
+  /// Queue [messages] and sync them. The scan cursor moves past them once
+  /// they all reached the server, so the launch scan does not read them again.
+  Future<FlushResult> send(List<SmsMessage> messages, {void Function(int done, int total)? onProgress}) async {
+    var newest = 0;
+    for (final m in messages) {
+      final date = m.date ?? DateTime.now().millisecondsSinceEpoch;
+      await SmsOutbox.instance.enqueue(
+        body: (m.body ?? '').trim(),
+        sender: m.address,
+        receivedAtMs: date,
+        origin: SmsOrigin.scan,
+      );
+      if (date > newest) newest = date;
+    }
+    var result = await SmsOutbox.instance.flush(onProgress: onProgress);
+    // Another sync (the launch scan, the retry timer) holds the outbox: wait
+    // for it rather than reporting nothing sent.
+    for (var i = 0; result.busy && i < 10; i++) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      result = await SmsOutbox.instance.flush(onProgress: onProgress);
+    }
+    if (!result.offline && result.failed == 0 && newest > 0) {
+      final prefs = await SharedPreferences.getInstance();
+      if ((prefs.getInt(SmsManualScanner._cursorKey) ?? 0) < newest) {
+        await prefs.setInt(SmsManualScanner._cursorKey, newest);
+      }
+    }
+    return result;
   }
 }
 

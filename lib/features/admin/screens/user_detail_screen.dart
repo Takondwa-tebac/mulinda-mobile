@@ -272,8 +272,7 @@ class _UserDetailContent extends ConsumerWidget {
           _Section(
             title: 'SMS Capture',
             children: [
-              _InfoRow('Free Limit Used', '${user['sms_capture_count'] ?? 0}'),
-              _InfoRow('Remaining', '${(10 - ((user['sms_capture_count'] as num?)?.toInt() ?? 0)).clamp(0, 10)}'),
+              _InfoRow('Free captures used this month', '${user['sms_capture_count'] ?? 0}'),
             ],
           ),
       ],

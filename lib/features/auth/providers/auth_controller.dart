@@ -1,13 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/push_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/offline/cache_store.dart';
+import '../../capture/data/receipt_outbox.dart';
 import '../../capture/data/sms_outbox.dart';
+import '../../onboarding/first_run.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
 import '../data/user.dart';
@@ -109,37 +116,36 @@ class AuthController extends Notifier<AuthState> {
     ref.read(onboardingSeenProvider.notifier).state = true;
   }
 
+  /// A sign in on this phone: run the first-run steps (SMS access, history
+  /// import, first look at Home) before the app proper.
+  void _startFirstRun(User user) {
+    unawaited(ref.read(firstRunProvider.notifier).start(user.id));
+  }
+
+  /// [username] may be a username, an email or a phone number in any format.
   Future<void> login(String username, String password) async {
     final user = await _repo.login(username, password);
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
   Future<void> register({
-    required String firstName,
-    String? middleName,
-    required String lastName,
-    required String username,
     required String phoneNumber,
     required String email,
     required String password,
-    required String passwordConfirmation,
-    String? incomeBracket,
+    String? username,
     bool acceptedTerms = false,
   }) async {
     final user = await _repo.register(
-      firstName: firstName,
-      middleName: middleName,
-      lastName: lastName,
-      username: username,
       phoneNumber: phoneNumber,
       email: email,
       password: password,
-      passwordConfirmation: passwordConfirmation,
-      incomeBracket: incomeBracket,
+      username: username,
       acceptedTerms: acceptedTerms,
     );
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
@@ -157,8 +163,51 @@ class AuthController extends Notifier<AuthState> {
 
     final user = await _repo.googleToken(accessToken);
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
     return true;
+  }
+
+  /// Native Sign in with Apple (iOS) → exchange the identity token for a Mulinda
+  /// token. The nonce ties the token to this attempt. Returns false if the
+  /// user cancelled.
+  Future<bool> signInWithApple() async {
+    final rawNonce = _randomNonce();
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return false;
+      rethrow;
+    }
+
+    final identityToken = credential.identityToken;
+    if (identityToken == null) {
+      throw ApiException('Could not obtain an Apple identity token.');
+    }
+
+    final user = await _repo.appleToken(
+      identityToken: identityToken,
+      nonce: rawNonce,
+      authorizationCode: credential.authorizationCode,
+      firstName: credential.givenName,
+      lastName: credential.familyName,
+    );
+    _markOnboardingSeen();
+    state = AuthState(status: AuthStatus.authenticated, user: user);
+    return true;
+  }
+
+  static String _randomNonce([int length = 32]) {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
   }
 
   /// Declare the user's income bracket (first-run setup) and refresh the user.
@@ -182,6 +231,8 @@ class AuthController extends Notifier<AuthState> {
     String? displayCurrency,
     bool? dailySummaryEnabled,
     String? dailySummaryTime,
+    bool? notifyBudgetAlerts,
+    bool? notifySpendingSpikes,
   }) async {
     final fields = <String, dynamic>{};
     if (firstName != null) fields['first_name'] = firstName;
@@ -191,6 +242,8 @@ class AuthController extends Notifier<AuthState> {
     if (displayCurrency != null) fields['display_currency'] = displayCurrency;
     if (dailySummaryEnabled != null) fields['daily_summary_enabled'] = dailySummaryEnabled;
     if (dailySummaryTime != null) fields['daily_summary_time'] = dailySummaryTime;
+    if (notifyBudgetAlerts != null) fields['notify_budget_alerts'] = notifyBudgetAlerts;
+    if (notifySpendingSpikes != null) fields['notify_spending_spikes'] = notifySpendingSpikes;
 
     final user = await _repo.updateProfile(fields);
     state = AuthState(status: AuthStatus.authenticated, user: user);
@@ -239,6 +292,8 @@ class AuthController extends Notifier<AuthState> {
     await _repo.clearCachedUser();
     await _clearOfflineData();
     await SmsOutbox.instance.clear();
+    await ReceiptOutbox.instance.clear();
+    ref.read(firstRunProvider.notifier).reset();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

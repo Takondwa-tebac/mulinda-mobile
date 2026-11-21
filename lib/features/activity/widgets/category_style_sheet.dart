@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'category_icons.dart';
+import '../../../core/widgets/category_icons.dart';
 
 /// An icon and colour picked for a category. Both null means "let Mulinda
 /// choose" (the server picks ones that fit the name).

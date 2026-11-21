@@ -12,11 +12,15 @@ class PremiumUpsellCard extends StatelessWidget {
     required this.message,
     this.icon = Icons.workspace_premium,
     this.compact = false,
+    this.entitlement,
   });
 
   final String title;
   final String message;
   final IconData icon;
+
+  /// The locked entitlement, so the paywall can lead with what it does.
+  final String? entitlement;
 
   /// Tighter padding for dense spots like the Plan advisory strip.
   final bool compact;
@@ -81,7 +85,12 @@ class PremiumUpsellCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => showPaywall(context, feature: message),
+              onPressed: () => showPaywall(
+                context,
+                feature: message,
+                entitlement: entitlement,
+                surface: 'premium_lock',
+              ),
               icon: const Icon(Icons.lock_open_rounded, size: 18),
               label: Text('subscription.unlock'.tr()),
               style: FilledButton.styleFrom(
@@ -106,18 +115,20 @@ class PremiumLockView extends StatelessWidget {
     required this.title,
     required this.message,
     this.icon = Icons.workspace_premium,
+    this.entitlement,
   });
 
   final String title;
   final String message;
   final IconData icon;
+  final String? entitlement;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: PremiumUpsellCard(title: title, message: message, icon: icon),
+        child: PremiumUpsellCard(title: title, message: message, icon: icon, entitlement: entitlement),
       ),
     );
   }

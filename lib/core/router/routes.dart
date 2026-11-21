@@ -8,6 +8,10 @@ abstract class Routes {
   static const resetPassword = '/reset-password';
 
   static const incomeSetup = '/income-setup';
+
+  // First run after sign in (Android): SMS access, then the 30-day import.
+  static const smsIntro = '/welcome/sms';
+  static const firstImport = '/welcome/import';
   static const permissions = '/permissions';
   static const legal = '/legal';
 
@@ -31,6 +35,7 @@ abstract class Routes {
   static const accountDetail = '/account-detail';
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
+  static const receiptOcrDebug = '/debug/receipt-ocr'; // debug builds only
   static const inbox = '/inbox';
   static const bulkSmsImport = '/bulk-sms-import';
   static const manualSmsScan = '/manual-sms-scan';
@@ -47,6 +52,23 @@ abstract class Routes {
 
   // Transaction detail
   static const transactionDetail = '/transaction-detail';
+
+  // Detail screens by id (notification and deep links). Each loads its item
+  // when no object is passed as `extra`.
+  static const budgetByIdPath = '/budgets/:id';
+  static const loanByIdPath = '/loans/:id';
+  static const goalByIdPath = '/goals/:id';
+  static const investmentByIdPath = '/investments/:id';
+  static const billByIdPath = '/bills/:id';
+  static const dailySummaryByIdPath = '/daily-summaries/:id';
+  static const transactionByIdPath = '/transactions/:id';
+  static String budgetById(String id) => '/budgets/$id';
+  static String loanById(String id) => '/loans/$id';
+  static String goalById(String id) => '/goals/$id';
+  static String investmentById(String id) => '/investments/$id';
+  static String billById(String id) => '/bills/$id';
+  static String dailySummaryById(String id) => '/daily-summaries/$id';
+  static String transactionById(String id) => '/transactions/$id';
 
   // Detail screens (item passed via GoRouter `extra`)
   static const goalDetail = '/goal-detail';

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/section_header.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../widgets/delete_account_dialog.dart';
 import '../widgets/offline_sync_section.dart';
@@ -21,25 +22,32 @@ class PersonalDataScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Personal data & privacy')),
+      appBar: AppBar(title: Text('profile2.personalData'.tr())),
       body: ListView(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + MediaQuery.of(context).padding.bottom),
         children: [
-          _Header(
-            icon: Icons.privacy_tip_outlined,
-            text: 'Your data is yours. Export it, see how it\'s used, or remove it entirely, anytime.',
-          ),
+          _Header(icon: Icons.privacy_tip_outlined, text: 'profile2.dataHeader'.tr()),
           const SizedBox(height: 16),
 
-          _Label('Your data'),
+          SectionHeader('profile2.yourData'.tr(), dense: true),
           Card(
             child: Column(
               children: [
-                _tile(context, Icons.ios_share_outlined, 'Export records',
-                    'Download your transactions as CSV or PDF', () => context.push(Routes.exports)),
+                _tile(
+                  context,
+                  Icons.ios_share_outlined,
+                  'profile2.export'.tr(),
+                  'profile2.exportSub'.tr(),
+                  () => context.push(Routes.exports),
+                ),
                 const Divider(height: 1),
-                _tile(context, Icons.insights_outlined, 'Daily summaries',
-                    'The day-by-day recaps built from your activity', () => context.push(Routes.dailySummaries)),
+                _tile(
+                  context,
+                  Icons.insights_outlined,
+                  'profile2.dailySummaries'.tr(),
+                  'profile2.dailySummariesSub'.tr(),
+                  () => context.push(Routes.dailySummaries),
+                ),
                 const Divider(height: 1),
                 const OfflineSyncTile(),
               ],
@@ -47,31 +55,48 @@ class PersonalDataScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 20),
-          _Label('Transparency'),
+          SectionHeader('profile2.transparency'.tr(), dense: true),
           Card(
             child: Column(
               children: [
-                _tile(context, Icons.data_usage_outlined, 'What we capture & how it\'s used',
-                    'Plain-language summary of your data', () => _openLegal(context, 'data-usage')),
+                _tile(
+                  context,
+                  Icons.data_usage_outlined,
+                  'profile2.howDataUsed'.tr(),
+                  'profile2.howDataUsedSub'.tr(),
+                  () => _openLegal(context, 'data-usage'),
+                ),
                 const Divider(height: 1),
-                _tile(context, Icons.policy_outlined, 'Privacy Policy', null,
-                    () => _openLegal(context, 'privacy')),
+                _tile(
+                  context,
+                  Icons.policy_outlined,
+                  'profile2.privacyPolicy'.tr(),
+                  null,
+                  () => _openLegal(context, 'privacy'),
+                ),
                 const Divider(height: 1),
-                _tile(context, Icons.description_outlined, 'Terms of Service', null,
-                    () => _openLegal(context, 'terms')),
+                _tile(
+                  context,
+                  Icons.description_outlined,
+                  'profile2.terms'.tr(),
+                  null,
+                  () => _openLegal(context, 'terms'),
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 20),
-          _Label('Danger zone'),
+          SectionHeader('profile2.dangerZone'.tr(), dense: true),
           Card(
             color: scheme.errorContainer.withValues(alpha: 0.4),
             child: ListTile(
               leading: Icon(Icons.delete_forever_outlined, color: scheme.error),
-              title: Text('profile.deleteAccount'.tr(),
-                  style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Permanently remove your account and all data'),
+              title: Text(
+                'profile.deleteAccount'.tr(),
+                style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text('profile2.deleteAccountSub'.tr()),
               onTap: user == null ? null : () => showDeleteAccountDialog(context, user.username),
             ),
           ),
@@ -80,8 +105,7 @@ class PersonalDataScreen extends ConsumerWidget {
     );
   }
 
-  void _openLegal(BuildContext context, String slug) =>
-      context.push('${Routes.legal}?slug=$slug');
+  void _openLegal(BuildContext context, String slug) => context.push('${Routes.legal}?slug=$slug');
 
   Widget _tile(BuildContext context, IconData icon, String title, String? subtitle, VoidCallback onTap) {
     return ListTile(
@@ -104,10 +128,7 @@ class _Header extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           Icon(icon, color: scheme.primary),
@@ -115,23 +136,6 @@ class _Header extends StatelessWidget {
           Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.3))),
         ],
       ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  const _Label(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              )),
     );
   }
 }

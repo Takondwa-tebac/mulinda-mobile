@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_date_field.dart';
 
 /// Shared form helpers for the Plan create/edit screens.
 
@@ -22,11 +23,7 @@ Widget pkText({
   );
 }
 
-Widget pkMoney({
-  required TextEditingController controller,
-  required String label,
-  bool required = true,
-}) {
+Widget pkMoney({required TextEditingController controller, required String label, bool required = true}) {
   return pkText(
     controller: controller,
     label: label,
@@ -68,45 +65,37 @@ Widget pkDate({
   DateTime? firstDate,
   DateTime? lastDate,
   bool required = false,
+  ValueChanged<DateTime?>? onClear,
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime.now(),
-          firstDate: firstDate ?? DateTime(2015),
-          lastDate: lastDate ?? DateTime(2100),
-        );
-        if (picked != null) onPick(picked);
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          errorText: required && value == null ? 'auth.required'.tr() : null,
-        ),
-        child: Text(value == null ? '—' : value.toIso8601String().split('T').first),
-      ),
+    child: AppDateField(
+      label: label,
+      value: value,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      required: required,
+      clearable: onClear != null,
+      onChanged: (d) => d == null ? onClear?.call(null) : onPick(d),
     ),
   );
 }
 
 Widget pkSubmit({required bool loading, required String label, required VoidCallback? onPressed}) {
-  return Builder(builder: (context) {
-    return FilledButton(
-      onPressed: loading ? null : onPressed,
-      child: loading
-          ? SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2.5, color: Theme.of(context).colorScheme.onPrimary),
-            )
-          : Text(label),
-    );
-  });
+  return Builder(
+    builder: (context) {
+      return FilledButton(
+        onPressed: loading ? null : onPressed,
+        child: loading
+            ? SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Theme.of(context).colorScheme.onPrimary),
+              )
+            : Text(label),
+      );
+    },
+  );
 }
 
 String? dateToApi(DateTime? d) => d?.toIso8601String().split('T').first;

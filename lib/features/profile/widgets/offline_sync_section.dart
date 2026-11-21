@@ -9,12 +9,14 @@ import '../../../core/offline/mutation_sync.dart';
 import '../../../core/offline/offline_mode.dart';
 import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/semantic_colors.dart';
 import '../../../core/offline/offline_diagnostics.dart';
 import '../../../core/offline/offline_prefetch.dart';
 import '../../../core/offline/offline_storage.dart';
 import '../../../core/offline/prefs.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../capture/data/sms_auto_capture.dart';
+import '../../capture/data/sms_capability.dart';
 import '../../capture/data/sms_manual_scanner.dart';
 import '../../capture/data/sms_outbox.dart';
 
@@ -287,7 +289,7 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
 
     return (
       icon: Icons.check_circle_outline,
-      color: Colors.green.shade700,
+      color: context.semantic.success,
       title: 'Everything is synced',
       detail: 'Last sync ${_ago(status.at)}'
           '${status.created > 0 ? ' · ${status.created} new transaction${status.created == 1 ? '' : 's'} captured' : ''}.',
@@ -376,7 +378,8 @@ class OfflineModeRow extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           const _Point(Icons.edit_outlined, 'Add or edit transactions, goals and loans offline. They sync when you are back online.'),
-          const _Point(Icons.sms_outlined, 'Bank and mobile-money SMS are captured offline too.'),
+          if (SmsCapability.canReadSms)
+            const _Point(Icons.sms_outlined, 'Bank and mobile-money SMS are captured offline too.'),
           if (mode.until != null)
             _Point(Icons.event_available_outlined, 'Included with your plan until ${_date(mode.until!)}.'),
           const _Point(Icons.delete_outline, 'Turning this off deletes the saved data from this phone.'),
