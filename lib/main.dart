@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/analytics/analytics.dart';
 import 'core/localization/ny_localizations.dart';
+import 'core/notifications/in_app_banner.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
@@ -42,8 +45,9 @@ Future<void> main() async {
           ? null
           : DefaultFirebaseOptions.currentPlatform,
     );
+    _reportCrashes();
   } catch (_) {
-    // Firebase not configured for this platform (e.g. desktop dev) — skip.
+    // Firebase not configured for this platform (e.g. desktop dev): skip.
   }
   await NotificationService.init();
   final prefs = await SharedPreferences.getInstance();
@@ -72,6 +76,22 @@ Future<void> main() async {
       ),
     ),
   );
+}
+
+/// Send uncaught errors to Crashlytics: Flutter framework errors (build,
+/// layout, paint) and anything thrown outside it (async gaps, platform
+/// channels). Debug builds keep collection off so local crashes stay local.
+void _reportCrashes() {
+  final crashlytics = FirebaseCrashlytics.instance;
+  unawaited(crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode));
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    crashlytics.recordFlutterFatalError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    crashlytics.recordError(error, stack, fatal: true);
+    return true;
+  };
 }
 
 class MulindaApp extends ConsumerStatefulWidget {
@@ -111,6 +131,10 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
     });
     _initDeepLinks();
     PushService.instance.init(ref);
+    // Once per app start, while the app is in the foreground.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Analytics.track('app_opened', {'locale': context.locale.languageCode});
+    });
   }
 
   Future<void> _initDeepLinks() async {
@@ -197,6 +221,8 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
 
     return MaterialApp.router(
       title: 'Mulinda',
+      // Lets a push that arrives in the foreground show a banner over any screen.
+      scaffoldMessengerKey: rootMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

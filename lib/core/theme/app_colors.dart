@@ -40,4 +40,10 @@ abstract class AppColors {
   static const onError = Color(0xFFFFFFFF);
   static const success = Color(0xFF0A8754);
   static const warning = Color(0xFFE8A317);
+
+  // Darker tones of the brand/status colours for text and icons on white
+  // surfaces, where the bright originals fall below WCAG AA contrast.
+  static const tealInk = Color(0xFF00736A); // ~5.4:1 on white
+  static const warningInk = Color(0xFF8A5A00); // ~6:1 on white
+  static const successInk = Color(0xFF07693F);
 }

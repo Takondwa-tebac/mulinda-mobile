@@ -14,6 +14,7 @@ import '../../../core/storage/token_storage.dart';
 import '../../../core/offline/cache_store.dart';
 import '../../capture/data/receipt_outbox.dart';
 import '../../capture/data/sms_outbox.dart';
+import '../../onboarding/first_run.dart';
 import '../../onboarding/onboarding_prefs.dart';
 import '../data/auth_repository.dart';
 import '../data/user.dart';
@@ -115,37 +116,36 @@ class AuthController extends Notifier<AuthState> {
     ref.read(onboardingSeenProvider.notifier).state = true;
   }
 
+  /// A sign in on this phone: run the first-run steps (SMS access, history
+  /// import, first look at Home) before the app proper.
+  void _startFirstRun(User user) {
+    unawaited(ref.read(firstRunProvider.notifier).start(user.id));
+  }
+
+  /// [username] may be a username, an email or a phone number in any format.
   Future<void> login(String username, String password) async {
     final user = await _repo.login(username, password);
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
   Future<void> register({
-    required String firstName,
-    String? middleName,
-    required String lastName,
-    required String username,
     required String phoneNumber,
     required String email,
     required String password,
-    required String passwordConfirmation,
-    String? incomeBracket,
+    String? username,
     bool acceptedTerms = false,
   }) async {
     final user = await _repo.register(
-      firstName: firstName,
-      middleName: middleName,
-      lastName: lastName,
-      username: username,
       phoneNumber: phoneNumber,
       email: email,
       password: password,
-      passwordConfirmation: passwordConfirmation,
-      incomeBracket: incomeBracket,
+      username: username,
       acceptedTerms: acceptedTerms,
     );
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 
@@ -163,6 +163,7 @@ class AuthController extends Notifier<AuthState> {
 
     final user = await _repo.googleToken(accessToken);
     _markOnboardingSeen();
+    _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
     return true;
   }
@@ -230,6 +231,8 @@ class AuthController extends Notifier<AuthState> {
     String? displayCurrency,
     bool? dailySummaryEnabled,
     String? dailySummaryTime,
+    bool? notifyBudgetAlerts,
+    bool? notifySpendingSpikes,
   }) async {
     final fields = <String, dynamic>{};
     if (firstName != null) fields['first_name'] = firstName;
@@ -239,6 +242,8 @@ class AuthController extends Notifier<AuthState> {
     if (displayCurrency != null) fields['display_currency'] = displayCurrency;
     if (dailySummaryEnabled != null) fields['daily_summary_enabled'] = dailySummaryEnabled;
     if (dailySummaryTime != null) fields['daily_summary_time'] = dailySummaryTime;
+    if (notifyBudgetAlerts != null) fields['notify_budget_alerts'] = notifyBudgetAlerts;
+    if (notifySpendingSpikes != null) fields['notify_spending_spikes'] = notifySpendingSpikes;
 
     final user = await _repo.updateProfile(fields);
     state = AuthState(status: AuthStatus.authenticated, user: user);
@@ -288,6 +293,7 @@ class AuthController extends Notifier<AuthState> {
     await _clearOfflineData();
     await SmsOutbox.instance.clear();
     await ReceiptOutbox.instance.clear();
+    ref.read(firstRunProvider.notifier).reset();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

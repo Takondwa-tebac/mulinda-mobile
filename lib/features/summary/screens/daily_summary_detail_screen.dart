@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/router/routes.dart';
+import '../../../core/widgets/by_id_loader.dart';
 import '../../../core/widgets/receipt_view.dart';
 import '../../activity/data/activity_models.dart';
 import '../data/summary_models.dart';
@@ -14,9 +16,15 @@ import '../data/summary_repository.dart';
 
 /// Detailed breakdown of spending for a specific day with all transactions.
 class DailySummaryDetailScreen extends ConsumerStatefulWidget {
-  const DailySummaryDetailScreen({super.key, required this.summary});
+  const DailySummaryDetailScreen({super.key, required DailySummary this.summary}) : summaryId = null;
 
-  final DailySummary summary;
+  /// Opened by id (from a notification): the summary loads itself.
+  const DailySummaryDetailScreen.byId({super.key, required String this.summaryId}) : summary = null;
+
+  final DailySummary? summary;
+  final String? summaryId;
+
+  String get id => summary?.id ?? summaryId!;
 
   @override
   ConsumerState<DailySummaryDetailScreen> createState() => _DailySummaryDetailScreenState();
@@ -35,9 +43,10 @@ class _DailySummaryDetailScreenState extends ConsumerState<DailySummaryDetailScr
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       if (bytes == null) return;
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/mulinda_daily_${widget.summary.date}.png');
+      final day = widget.summary?.date ?? ref.read(dailySummaryDetailProvider(widget.id)).valueOrNull?.date ?? '';
+      final file = File('${dir.path}/mulinda_daily_$day.png');
       await file.writeAsBytes(bytes.buffer.asUint8List());
-      await Share.shareXFiles([XFile(file.path)], text: 'Mulinda daily summary for ${widget.summary.date}');
+      await Share.shareXFiles([XFile(file.path)], text: 'Mulinda daily summary for $day');
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -45,12 +54,13 @@ class _DailySummaryDetailScreenState extends ConsumerState<DailySummaryDetailScr
 
   @override
   Widget build(BuildContext context) {
-    final summaryDetail = ref.watch(dailySummaryDetailProvider(widget.summary.id));
+    final summaryDetail = ref.watch(dailySummaryDetailProvider(widget.id));
+    final date = widget.summary?.date ?? summaryDetail.valueOrNull?.date ?? '';
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_prettyDate(widget.summary.date)),
+        title: Text(date.isEmpty ? '' : _prettyDate(date)),
         actions: [
           if (_sharing)
             const Padding(
@@ -68,7 +78,11 @@ class _DailySummaryDetailScreenState extends ConsumerState<DailySummaryDetailScr
       body: SafeArea(
         child: summaryDetail.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(child: Text('Could not load summary details.')),
+          error: (e, __) {
+            // Deleted or not this user's: back to the list.
+            if (isGoneError(e)) leaveForList(context, Routes.dailySummaries);
+            return const Center(child: Text('Could not load summary details.'));
+          },
           data: (detail) {
             if (detail.transactions.isEmpty) {
               return const Center(

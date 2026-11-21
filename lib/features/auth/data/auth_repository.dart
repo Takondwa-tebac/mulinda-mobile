@@ -52,31 +52,42 @@ class AuthRepository {
   }
 
   Future<User> register({
-    required String firstName,
-    String? middleName,
-    required String lastName,
-    required String username,
     required String phoneNumber,
     required String email,
     required String password,
-    required String passwordConfirmation,
-    String? incomeBracket,
+    String? username,
     bool acceptedTerms = false,
   }) {
-    final body = <String, dynamic>{
-      'first_name': firstName,
-      'last_name': lastName,
-      'username': username,
-      'phone_number': phoneNumber,
-      'email': email,
+    return _authRequest(
+      '/v1/auth/register',
+      registerBody(
+        phoneNumber: phoneNumber,
+        email: email,
+        password: password,
+        username: username,
+        acceptedTerms: acceptedTerms,
+      ),
+    );
+  }
+
+  /// The sign-up request: only what the API requires (phone, email,
+  /// password), plus the username when one was chosen and the Terms
+  /// acceptance. Names and income are asked later, in context.
+  static Map<String, dynamic> registerBody({
+    required String phoneNumber,
+    required String email,
+    required String password,
+    String? username,
+    bool acceptedTerms = false,
+  }) {
+    final name = username?.trim() ?? '';
+    return {
+      'phone_number': phoneNumber.trim(),
+      'email': email.trim(),
       'password': password,
-      'password_confirmation': passwordConfirmation,
+      if (name.isNotEmpty) 'username': name,
       if (acceptedTerms) 'accepted_terms': true,
     };
-    if (middleName != null && middleName.isNotEmpty) body['middle_name'] = middleName;
-    if (incomeBracket != null) body['income_bracket'] = incomeBracket;
-
-    return _authRequest('/v1/auth/register', body);
   }
 
   Future<User> googleToken(String accessToken) {

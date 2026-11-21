@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard;
@@ -9,7 +11,9 @@ import '../../../core/permissions/permission_service.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../subscription/data/subscription_models.dart';
-import '../../subscription/widgets/premium_lock.dart';
+import '../../subscription/paywall_prompt.dart';
+import '../../subscription/widgets/paywall_sheet.dart';
+import '../../subscription/widgets/subscription_status_tile.dart';
 import '../data/sms_capability.dart';
 
 class PasteSmsScreen extends ConsumerStatefulWidget {
@@ -25,6 +29,9 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
   final _sender = TextEditingController();
   bool _loading = false;
   bool _importLoading = false;
+
+  /// Set when the server says the free captures are used up.
+  bool _limitReached = false;
 
   @override
   void dispose() {
@@ -116,9 +123,16 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref
-          .read(activityRepositoryProvider)
-          .ingestSms(_body.text.trim(), sender: _sender.text.trim());
+      // This screen explains the free-capture limit itself, so the app-wide
+      // paywall prompt stays out of the way while the save runs.
+      await PaywallPrompter.instance.guardSave(
+        () => ref.read(activityRepositoryProvider).ingestSms(
+              _body.text.trim(),
+              sender: _sender.text.trim(),
+            ),
+      );
+      // Free captures left changed: refresh the counts shown in the app.
+      unawaited(ref.read(authControllerProvider.notifier).refresh());
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -126,6 +140,16 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
         Navigator.of(context).pop();
       }
     } on ApiException catch (e) {
+      if (e.code == 'sms_capture_limit_reached') {
+        unawaited(ref.read(authControllerProvider.notifier).refresh());
+        if (mounted) {
+          setState(() {
+            _limitReached = true;
+            _loading = false;
+          });
+        }
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -139,19 +163,14 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    // AI SMS parsing is premium — gate the screen behind a subscription.
-    final entitled =
-        ref.watch(currentUserProvider)?.can(Entitlements.receiptScan) ?? false;
-    if (!entitled) {
-      return Scaffold(
-        appBar: AppBar(title: Text('sms.title'.tr())),
-        body: PremiumLockView(
-          title: 'capture.lockedTitle'.tr(),
-          message: 'capture.lockedSms'.tr(),
-          icon: Icons.sms_outlined,
-        ),
-      );
-    }
+    // Free users may paste SMS too: known banks and mobile-money senders are read
+    // for free (up to the free capture allowance); only AI reading of unknown
+    // formats is premium, and the server decides that.
+    final sub = ref.watch(currentUserProvider)?.subscription ?? const SubscriptionInfo.none();
+    final sms = sub.smsCapture;
+    final limited = !sub.active && (sms?.isLimited ?? true);
+    final remaining = smsCapturesRemaining(sms);
+    final outOfCaptures = limited && (_limitReached || (sms != null && remaining == 0));
 
     return Scaffold(
       appBar: AppBar(
@@ -202,6 +221,15 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
                     ),
                   ),
                 ],
+                if (limited) ...[
+                  const SizedBox(height: 16),
+                  FreeSmsAllowanceCard(
+                    remaining: _limitReached ? 0 : remaining,
+                    limit: sms?.limit ?? 0,
+                    resetsAt: sms?.resetsAt,
+                    known: (sms != null && sms.limit > 0) || _limitReached,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _body,
@@ -221,7 +249,7 @@ class _PasteSmsScreenState extends ConsumerState<PasteSmsScreen> {
                 ),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _loading ? null : _submit,
+                  onPressed: _loading || outOfCaptures ? null : _submit,
                   child: _loading
                       ? SizedBox(
                           height: 22,
@@ -313,6 +341,85 @@ class _SmsPickerSheet extends StatelessWidget {
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Free users: how many free SMS captures are left, with a gentle note (and a
+/// way to see the passes) once two or fewer remain.
+class FreeSmsAllowanceCard extends StatelessWidget {
+  const FreeSmsAllowanceCard({
+    super.key,
+    required this.remaining,
+    required this.limit,
+    this.resetsAt,
+    this.known = true,
+  });
+
+  final int remaining;
+  final int limit;
+
+  /// When this month's free captures come back.
+  final DateTime? resetsAt;
+
+  /// False while the counts have not loaded yet.
+  final bool known;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final left = remaining < 0 ? 0 : remaining;
+    final low = known && left <= 2;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: low ? scheme.tertiaryContainer : scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sms_outlined, size: 18, color: low ? scheme.onTertiaryContainer : scheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  known
+                      ? 'subscription.sms.remaining'.tr(namedArgs: {'remaining': '$left', 'limit': '$limit'})
+                      : limit > 0
+                          ? 'subscription.sms.freeIntro'.tr(namedArgs: {'limit': '$limit'})
+                          : 'subscription.sms.freeIntroUnknown'.tr(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: low ? scheme.onTertiaryContainer : scheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            left == 0 && known
+                ? (resetsAt == null
+                    ? 'subscription.sms.usedUp'.tr()
+                    : 'subscription.sms.usedUpUntil'.tr(namedArgs: {'date': DateFormat('d MMMM', context.locale.languageCode).format(resetsAt!)}))
+                : 'subscription.sms.howItWorks'.tr(),
+            style: TextStyle(fontSize: 12, color: low ? scheme.onTertiaryContainer : scheme.onSurfaceVariant),
+          ),
+          if (low) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => showPaywall(context, entitlement: smsCaptureEntitlement, surface: 'paste_sms'),
+                child: Text('paywall.seePlans'.tr()),
+              ),
+            ),
+          ],
         ],
       ),
     );

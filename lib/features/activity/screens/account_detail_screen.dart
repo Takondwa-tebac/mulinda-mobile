@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_json.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
+import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../../../core/widgets/stat_card.dart';
+import '../../../core/widgets/transaction_tile.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
-
-final accountsProvider =
-    FutureProvider.autoDispose<List<Account>>((ref) => ref.read(activityRepositoryProvider).accounts());
+import '../widgets/txn_view.dart';
 
 /// Shows a single account's balance, a standing verdict (good vs overspending),
 /// and the full list of transactions originating in that account.
@@ -26,6 +33,7 @@ class AccountDetailScreen extends ConsumerWidget {
         title: Text(account.name, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
+            tooltip: 'activity2.deleteAccount'.tr(),
             icon: const Icon(Icons.delete_outline),
             onPressed: () => _showDeleteDialog(context, ref, account),
           ),
@@ -37,19 +45,12 @@ class AccountDetailScreen extends ConsumerWidget {
           await ref.read(accountTransactionsProvider(account.id).future);
         },
         child: txns.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => ListView(
-            children: [
-              const SizedBox(height: 120),
-              Center(child: Text('activity.loadError'.tr())),
-              const SizedBox(height: 12),
-              Center(
-                child: OutlinedButton(
-                  onPressed: () => ref.invalidate(accountTransactionsProvider(account.id)),
-                  child: Text('common.retry'.tr()),
-                ),
-              ),
-            ],
+          loading: () => const SkeletonList(header: true, count: 5),
+          error: (_, _) => ScrollFill(
+            child: ErrorRetry(
+              message: 'activity.loadError'.tr(),
+              onRetry: () => ref.invalidate(accountTransactionsProvider(account.id)),
+            ),
           ),
           data: (list) => _Body(account: account, txns: list),
         ),
@@ -66,10 +67,9 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final incomeMinor =
-        txns.where((t) => t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
-    final expenseMinor =
-        txns.where((t) => !t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
+    final incomeMinor = txns.where((t) => t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
+    // Only real spending: transfers and "moving my money" are left out.
+    final expenseMinor = txns.where((t) => t.countsAsSpending).fold<int>(0, (s, t) => s + t.amount.minorUnits);
     final balanceMinor = account.currentBalance.minorUnits;
 
     return ListView(
@@ -86,34 +86,37 @@ class _Body extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _StatTile(
-              label: 'account.income'.tr(),
-              value: _money(incomeMinor, account.currency),
-              icon: Icons.south_west,
-              positive: true,
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _StatTile(
-              label: 'account.spending'.tr(),
-              value: _money(expenseMinor, account.currency),
-              icon: Icons.north_east,
-              positive: false,
-            )),
+            Expanded(
+              child: StatCard(
+                label: 'account.income'.tr(),
+                value: formatMoney(incomeMinor / 100, account.currency),
+                icon: Icons.south_west,
+                accent: context.semantic.income,
+                valueColor: context.semantic.income,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: StatCard(
+                label: 'account.spending'.tr(),
+                value: formatMoney(expenseMinor / 100, account.currency),
+                icon: Icons.north_east,
+                accent: context.semantic.expense,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
-        Text('account.transactions'.tr(),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
+        SectionHeader('account.transactions'.tr()),
         if (txns.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Text('account.noTransactions'.tr(),
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          )
+          EmptyState(compact: true, icon: Icons.receipt_long_outlined, title: 'account.noTransactions'.tr())
         else
-          ...txns.map((t) => _TxnTile(txn: t)),
+          ...txns.map(
+            (t) => TransactionTile(
+              data: txnTileData(t, meta: t.occurredLocal == null ? null : dayHeaderLabel(t.occurredLocal)),
+              onTap: () => context.push(Routes.transactionById(t.id)),
+            ),
+          ),
       ],
     );
   }
@@ -133,20 +136,26 @@ class _BalanceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_typeLabel(account.type),
-                style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 13)),
+            Text(
+              _typeLabel(account.type),
+              style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 13),
+            ),
             const SizedBox(height: 6),
-            Text(account.currentBalance.formatted,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer)),
+            Text(
+              account.currentBalance.formatted,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer),
+            ),
             const SizedBox(height: 2),
             Text(
-                account.pending
-                    ? '${'account.balance'.tr()} · Waiting to sync'
-                    : account.balanceEstimated
-                        ? '${'account.balance'.tr()} · Estimated until synced'
-                        : 'account.balance'.tr(),
-                style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 12)),
+              account.pending
+                  ? '${'account.balance'.tr()} · ${'activity2.waitingToSync'.tr()}'
+                  : account.balanceEstimated
+                  ? '${'account.balance'.tr()} · ${'activity2.estimated'.tr()}'
+                  : 'account.balance'.tr(),
+              style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.8), fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -192,7 +201,10 @@ class _StandingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: color),
+                ),
                 const SizedBox(height: 2),
                 Text(body, style: TextStyle(color: scheme.onSurface, fontSize: 13, height: 1.3)),
               ],
@@ -205,120 +217,32 @@ class _StandingCard extends StatelessWidget {
 
   (Color, IconData, String, String) _verdict(BuildContext context, ColorScheme scheme) {
     if (balanceMinor < 0) {
-      return (scheme.error, Icons.warning_amber_rounded,
-          'account.overdrawnTitle'.tr(), 'account.overdrawnBody'.tr());
+      return (scheme.error, Icons.warning_amber_rounded, 'account.overdrawnTitle'.tr(), 'account.overdrawnBody'.tr());
     }
     if (expenseMinor > incomeMinor && incomeMinor >= 0 && expenseMinor > 0) {
-      return (Colors.orange.shade800, Icons.trending_down,
-          'account.overspendTitle'.tr(), 'account.overspendBody'.tr());
+      return (
+        context.semantic.warning,
+        Icons.trending_down,
+        'account.overspendTitle'.tr(),
+        'account.overspendBody'.tr(),
+      );
     }
-    return (scheme.primary, Icons.verified_outlined,
-        'account.goodTitle'.tr(), 'account.goodBody'.tr());
+    return (scheme.primary, Icons.verified_outlined, 'account.goodTitle'.tr(), 'account.goodBody'.tr());
   }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.positive,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final bool positive;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = positive ? scheme.primary : scheme.error;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-          ]),
-          const SizedBox(height: 8),
-          Text(value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
-        ],
-      ),
-    );
-  }
-}
-
-class _TxnTile extends StatelessWidget {
-  const _TxnTile({required this.txn});
-  final Txn txn;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final title = txn.merchant?.isNotEmpty == true ? txn.merchant! : (txn.categoryName ?? txn.type);
-
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: txn.isIncome ? scheme.primaryContainer : scheme.surfaceContainerHigh,
-        foregroundColor: txn.isIncome ? scheme.onPrimaryContainer : scheme.onSurface,
-        child: Icon(txn.isIncome ? Icons.south_west : Icons.north_east, size: 18),
-      ),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text([txn.categoryName, txn.date, if (txn.pending) 'Waiting to sync']
-          .where((e) => e != null && e.isNotEmpty)
-          .join(' · ')),
-      trailing: Text(
-        '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}',
-        style: TextStyle(fontWeight: FontWeight.w700, color: txn.isIncome ? scheme.primary : scheme.onSurface),
-      ),
-      onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
-    );
-  }
-}
-
-/// Format minor units into a currency string (the API only preformats per-txn
-/// amounts, so totals are formatted here).
-String _money(int minor, String currency) {
-  const symbols = {'MWK': 'MK', 'USD': '\$', 'ZAR': 'R', 'KES': 'KSh', 'NGN': '₦'};
-  final symbol = symbols[currency] ?? currency;
-  final major = minor / 100;
-  final whole = major.truncateToDouble() == major;
-  final s = major.toStringAsFixed(whole ? 0 : 2);
-  final parts = s.split('.');
-  final grouped = parts[0].replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-  return parts.length > 1 ? '$symbol $grouped.${parts[1]}' : '$symbol $grouped';
 }
 
 Future<void> _showDeleteDialog(BuildContext context, WidgetRef ref, Account account) async {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text('Delete ${account.name}?'),
-      content: Text('This will permanently delete this account and all its transactions. This action cannot be undone.'),
+      title: Text('activity2.deleteAccountTitle'.tr(args: [account.name])),
+      content: Text('activity2.deleteAccountBody'.tr()),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(c, false),
-          child: Text('common.cancel'.tr()),
-        ),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text('common.cancel'.tr())),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(c).colorScheme.error,
-          ),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error),
           onPressed: () => Navigator.pop(c, true),
-          child: Text('Delete'),
+          child: Text('common.delete'.tr()),
         ),
       ],
     ),
@@ -332,13 +256,13 @@ Future<void> _showDeleteDialog(BuildContext context, WidgetRef ref, Account acco
         ref.invalidate(accountsProvider);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('Account deleted successfully')));
+          ..showSnackBar(SnackBar(content: Text('activity2.accountDeleted'.tr())));
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('Failed to delete account')));
+          ..showSnackBar(SnackBar(content: Text('activity2.accountDeleteFailed'.tr())));
       }
     }
   }

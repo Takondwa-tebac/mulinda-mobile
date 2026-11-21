@@ -12,6 +12,7 @@ import '../../subscription/widgets/premium_lock.dart';
 import '../data/coach_chart_repository.dart';
 import '../data/coach_repository.dart';
 import '../widgets/coach_chart_widget.dart';
+import '../../../core/theme/app_icons.dart';
 
 class _Msg {
   _Msg({
@@ -287,7 +288,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         body: PremiumLockView(
           title: 'coach.lockedTitle'.tr(),
           message: 'coach.lockedMessage'.tr(),
-          icon: Icons.auto_awesome,
+          icon: AppIcons.coachFilled,
         ),
       );
     }
@@ -500,7 +501,7 @@ class _Empty extends StatelessWidget {
               radius: 32,
               backgroundColor: scheme.primaryContainer,
               foregroundColor: scheme.onPrimaryContainer,
-              child: const Icon(Icons.auto_awesome, size: 30),
+              child: const Icon(AppIcons.coachFilled, size: 30),
             ),
             const SizedBox(height: 16),
             Text('coach.emptyTitle'.tr(),

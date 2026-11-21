@@ -116,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _username,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'auth.username'.tr(),
+                      labelText: 'auth.loginIdentifier'.tr(),
                     ),
                     validator: _required,
                   ),

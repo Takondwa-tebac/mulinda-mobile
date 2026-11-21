@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/money/currencies.dart';
 import '../../../core/money/money.dart';
 import '../../../core/network/api_exception.dart';
+import '../../activity/data/activity_repository.dart';
 import '../../activity/widgets/category_picker.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../data/budget_pace.dart';
 import '../data/investment_types.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
@@ -27,11 +29,7 @@ List<(String, String)> _entries(List<String> values, String prefix) =>
 mixin _FormSubmit<W extends StatefulWidget> on State<W> {
   bool loading = false;
 
-  Future<void> submit(
-    WidgetRef ref,
-    Future<void> Function() action,
-    ProviderOrFamily listProvider,
-  ) async {
+  Future<void> submit(WidgetRef ref, Future<void> Function() action, ProviderOrFamily listProvider) async {
     setState(() => loading = true);
     try {
       await action();
@@ -70,9 +68,11 @@ class _GoalFormState extends ConsumerState<GoalForm> with _FormSubmit {
   final _formKey = GlobalKey<FormState>();
   late final _name = TextEditingController(text: widget.item?.name ?? '');
   late final _target = TextEditingController(
-      text: widget.item == null ? '' : _major(widget.item!.target).toStringAsFixed(0));
+    text: widget.item == null ? '' : _major(widget.item!.target).toStringAsFixed(0),
+  );
   late final _monthly = TextEditingController(
-      text: widget.item?.monthlyContribution == null ? '' : _major(widget.item!.monthlyContribution!).toStringAsFixed(0));
+    text: widget.item?.monthlyContribution == null ? '' : _major(widget.item!.monthlyContribution!).toStringAsFixed(0),
+  );
   late String _type = widget.item?.type ?? 'custom';
   late DateTime? _targetDate = apiToDate(widget.item?.targetDate);
 
@@ -95,7 +95,11 @@ class _GoalFormState extends ConsumerState<GoalForm> with _FormSubmit {
     if (_monthly.text.trim().isNotEmpty) data['monthly_contribution'] = double.parse(_monthly.text.trim());
 
     final repo = ref.read(planRepositoryProvider);
-    submit(ref, () => widget.item == null ? repo.createGoal(data) : repo.updateGoal(widget.item!.id, data), goalsProvider);
+    submit(
+      ref,
+      () => widget.item == null ? repo.createGoal(data) : repo.updateGoal(widget.item!.id, data),
+      goalsProvider,
+    );
   }
 
   @override
@@ -109,9 +113,20 @@ class _GoalFormState extends ConsumerState<GoalForm> with _FormSubmit {
       saveLabel: edit ? 'form.save'.tr() : 'form.create'.tr(),
       children: [
         pkText(controller: _name, label: 'form.name'.tr(), validator: _req),
-        pkDropdown<String>(value: _type, label: 'form.type'.tr(), entries: _entries(_goalTypes, 'form.goalType'), onChanged: (v) => setState(() => _type = v)),
+        pkDropdown<String>(
+          value: _type,
+          label: 'form.type'.tr(),
+          entries: _entries(_goalTypes, 'form.goalType'),
+          onChanged: (v) => setState(() => _type = v),
+        ),
         pkMoney(controller: _target, label: 'form.target'.tr()),
-        pkDate(context: context, label: 'form.targetDate'.tr(), value: _targetDate, firstDate: DateTime.now().add(const Duration(days: 1)), onPick: (d) => setState(() => _targetDate = d)),
+        pkDate(
+          context: context,
+          label: 'form.targetDate'.tr(),
+          value: _targetDate,
+          firstDate: DateTime.now().add(const Duration(days: 1)),
+          onPick: (d) => setState(() => _targetDate = d),
+        ),
         pkMoney(controller: _monthly, label: 'form.monthly'.tr(), required: false),
       ],
     );
@@ -121,8 +136,13 @@ class _GoalFormState extends ConsumerState<GoalForm> with _FormSubmit {
 // -------------------------------------------------------------- Budget -------
 
 class BudgetForm extends ConsumerStatefulWidget {
-  const BudgetForm({super.key, this.item});
+  const BudgetForm({super.key, this.item, this.initialCategoryId, this.initialName});
   final BudgetItem? item;
+
+  /// For a new budget: start with this category chosen (e.g. from an
+  /// over-spending category on the Plan tab).
+  final String? initialCategoryId;
+  final String? initialName;
 
   @override
   ConsumerState<BudgetForm> createState() => _BudgetFormState();
@@ -130,13 +150,62 @@ class BudgetForm extends ConsumerStatefulWidget {
 
 class _BudgetFormState extends ConsumerState<BudgetForm> with _FormSubmit {
   final _formKey = GlobalKey<FormState>();
-  late final _name = TextEditingController(text: widget.item?.name ?? '');
+  late final _name = TextEditingController(text: widget.item?.name ?? widget.initialName ?? '');
   late final _limit = TextEditingController(
-      text: widget.item == null ? '' : _major(widget.item!.limit).toStringAsFixed(0));
-  late final _alert = TextEditingController(
-      text: ((widget.item?.alertThreshold ?? 0.8) * 100).toStringAsFixed(0));
+    text: widget.item == null ? '' : _major(widget.item!.limit).toStringAsFixed(0),
+  );
+  late final _alert = TextEditingController(text: ((widget.item?.alertThreshold ?? 0.8) * 100).toStringAsFixed(0));
   late String _period = widget.item?.period ?? 'monthly';
-  late String? _categoryId = widget.item?.categoryId;
+  late String? _categoryId = widget.item?.categoryId ?? widget.initialCategoryId;
+
+  /// What was spent in this category over the last full period (major units),
+  /// when it could be worked out; offered as the limit.
+  double? _suggested;
+  bool _limitTouched = false;
+  int _suggestToken = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _limit.addListener(() {
+      if (_limit.text != _suggestedText) _limitTouched = true;
+    });
+    if (widget.item == null) _suggest();
+  }
+
+  String get _suggestedText => _suggested == null ? '' : _suggested!.toStringAsFixed(0);
+
+  /// Sums last period's expenses for the chosen category from the existing
+  /// transactions endpoint. Leaves the field empty when that cannot be known
+  /// for certain (no category, nothing spent, request failed, or more rows
+  /// than one page holds) — it never guesses.
+  Future<void> _suggest() async {
+    final token = ++_suggestToken;
+    final categoryId = _categoryId;
+    setState(() => _suggested = null);
+    if (categoryId == null) return;
+    final (from, to) = lastFullPeriod(_period);
+    try {
+      final rows = await ref
+          .read(activityRepositoryProvider)
+          .expensesForPeriod(categoryId: categoryId, from: from, to: to);
+      if (!mounted || token != _suggestToken) return;
+      if (rows.length >= 100) return; // possibly incomplete
+      final currencies = rows.map((t) => t.amount.currency).toSet();
+      if (currencies.length != 1) return;
+      final minor = rows.fold<int>(0, (s, t) => s + t.amount.minorUnits);
+      if (minor <= 0) return;
+      setState(() {
+        _suggested = (minor / 100).ceilToDouble();
+        if (!_limitTouched || _limit.text.trim().isEmpty) {
+          _limit.text = _suggestedText;
+          _limitTouched = false;
+        }
+      });
+    } catch (_) {
+      // No suggestion; the user types a limit.
+    }
+  }
 
   @override
   void dispose() {
@@ -148,18 +217,18 @@ class _BudgetFormState extends ConsumerState<BudgetForm> with _FormSubmit {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    final data = <String, dynamic>{
-      'period': _period,
-      'limit': double.parse(_limit.text.trim()),
-      'is_active': true,
-    };
+    final data = <String, dynamic>{'period': _period, 'limit': double.parse(_limit.text.trim()), 'is_active': true};
     if (_name.text.trim().isNotEmpty) data['name'] = _name.text.trim();
     if (_categoryId != null) data['category_id'] = _categoryId;
     final alert = double.tryParse(_alert.text.trim());
     if (alert != null) data['alert_threshold'] = (alert / 100).clamp(0, 1);
 
     final repo = ref.read(planRepositoryProvider);
-    submit(ref, () => widget.item == null ? repo.createBudget(data) : repo.updateBudget(widget.item!.id, data), budgetsProvider);
+    submit(
+      ref,
+      () => widget.item == null ? repo.createBudget(data) : repo.updateBudget(widget.item!.id, data),
+      budgetsProvider,
+    );
   }
 
   @override
@@ -178,11 +247,50 @@ class _BudgetFormState extends ConsumerState<BudgetForm> with _FormSubmit {
           child: CategoryPickerField(
             value: _categoryId,
             kind: 'expense',
-            onChanged: (v) => setState(() => _categoryId = v),
+            // A budget only makes sense for real spending, not moving your own money.
+            where: (c) => c.isSpending,
+            onChanged: (v) {
+              setState(() => _categoryId = v);
+              if (widget.item == null) _suggest();
+            },
           ),
         ),
-        pkDropdown<String>(value: _period, label: 'form.period'.tr(), entries: [('weekly', 'form.weekly'.tr()), ('monthly', 'form.monthly_period'.tr())], onChanged: (v) => setState(() => _period = v)),
+        pkDropdown<String>(
+          value: _period,
+          label: 'form.period'.tr(),
+          entries: [('weekly', 'form.weekly'.tr()), ('monthly', 'form.monthly_period'.tr())],
+          onChanged: (v) {
+            setState(() => _period = v);
+            if (widget.item == null) _suggest();
+          },
+        ),
         pkMoney(controller: _limit, label: 'form.limit'.tr()),
+        if (_suggested != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                Icon(Icons.lightbulb_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    (_period == 'weekly' ? 'plan2.suggestedFromLastWeek' : 'plan2.suggestedFromLastMonth').tr(
+                      args: [_suggestedText],
+                    ),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                if (_limit.text != _suggestedText)
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _limit.text = _suggestedText;
+                      _limitTouched = false;
+                    }),
+                    child: Text('plan2.useSuggestion'.tr()),
+                  ),
+              ],
+            ),
+          ),
         pkText(controller: _alert, label: 'form.alertThreshold'.tr(), keyboard: TextInputType.number),
       ],
     );
@@ -204,9 +312,11 @@ class _LoanFormState extends ConsumerState<LoanForm> with _FormSubmit {
   late final _name = TextEditingController(text: widget.item?.name ?? '');
   late final _lender = TextEditingController(text: widget.item?.lender ?? '');
   late final _principal = TextEditingController(
-      text: widget.item == null ? '' : _major(widget.item!.principal).toStringAsFixed(0));
+    text: widget.item == null ? '' : _major(widget.item!.principal).toStringAsFixed(0),
+  );
   late final _rate = TextEditingController(
-      text: widget.item == null ? '' : (widget.item!.annualInterestRate * 100).toStringAsFixed(1));
+    text: widget.item == null ? '' : (widget.item!.annualInterestRate * 100).toStringAsFixed(1),
+  );
   late final _term = TextEditingController(text: widget.item?.termMonths.toString() ?? '12');
   late String _interestType = widget.item?.interestType ?? 'reducing_balance';
   late String _status = widget.item?.status ?? 'active';
@@ -239,7 +349,11 @@ class _LoanFormState extends ConsumerState<LoanForm> with _FormSubmit {
     if (_firstPayment != null) data['first_payment_date'] = dateToApi(_firstPayment);
 
     final repo = ref.read(planRepositoryProvider);
-    submit(ref, () => widget.item == null ? repo.createLoan(data) : repo.updateLoan(widget.item!.id, data), loansProvider);
+    submit(
+      ref,
+      () => widget.item == null ? repo.createLoan(data) : repo.updateLoan(widget.item!.id, data),
+      loansProvider,
+    );
   }
 
   @override
@@ -255,12 +369,36 @@ class _LoanFormState extends ConsumerState<LoanForm> with _FormSubmit {
         pkText(controller: _name, label: 'form.name'.tr(), validator: _req),
         pkText(controller: _lender, label: 'form.lender'.tr()),
         pkMoney(controller: _principal, label: 'form.principal'.tr()),
-        pkText(controller: _rate, label: 'form.interestRate'.tr(), keyboard: const TextInputType.numberWithOptions(decimal: true)),
-        pkDropdown<String>(value: _interestType, label: 'form.interestType'.tr(), entries: _entries(_interestTypes, 'form.interestTypes'), onChanged: (v) => setState(() => _interestType = v)),
+        pkText(
+          controller: _rate,
+          label: 'form.interestRate'.tr(),
+          keyboard: const TextInputType.numberWithOptions(decimal: true),
+        ),
+        pkDropdown<String>(
+          value: _interestType,
+          label: 'form.interestType'.tr(),
+          entries: _entries(_interestTypes, 'form.interestTypes'),
+          onChanged: (v) => setState(() => _interestType = v),
+        ),
         pkText(controller: _term, label: 'form.termMonths'.tr(), keyboard: TextInputType.number, validator: _req),
-        pkDropdown<String>(value: _status, label: 'form.status'.tr(), entries: _entries(_loanStatuses, 'form.loanStatus'), onChanged: (v) => setState(() => _status = v)),
-        pkDate(context: context, label: 'form.disbursedAt'.tr(), value: _disbursedAt, onPick: (d) => setState(() => _disbursedAt = d)),
-        pkDate(context: context, label: 'form.firstPayment'.tr(), value: _firstPayment, onPick: (d) => setState(() => _firstPayment = d)),
+        pkDropdown<String>(
+          value: _status,
+          label: 'form.status'.tr(),
+          entries: _entries(_loanStatuses, 'form.loanStatus'),
+          onChanged: (v) => setState(() => _status = v),
+        ),
+        pkDate(
+          context: context,
+          label: 'form.disbursedAt'.tr(),
+          value: _disbursedAt,
+          onPick: (d) => setState(() => _disbursedAt = d),
+        ),
+        pkDate(
+          context: context,
+          label: 'form.firstPayment'.tr(),
+          value: _firstPayment,
+          onPick: (d) => setState(() => _firstPayment = d),
+        ),
       ],
     );
   }
@@ -280,11 +418,14 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
   final _formKey = GlobalKey<FormState>();
   late final _name = TextEditingController(text: widget.item?.name ?? '');
   late final _amount = TextEditingController(
-      text: widget.item == null ? '' : _major(widget.item!.amountInvested).toStringAsFixed(0));
+    text: widget.item == null ? '' : _major(widget.item!.amountInvested).toStringAsFixed(0),
+  );
   late final _value = TextEditingController(
-      text: widget.item == null ? '' : _major(widget.item!.value).toStringAsFixed(0));
+    text: widget.item == null ? '' : _major(widget.item!.value).toStringAsFixed(0),
+  );
   late final _return = TextEditingController(
-      text: widget.item?.expectedReturn == null ? '' : (widget.item!.expectedReturn! * 100).toStringAsFixed(1));
+    text: widget.item?.expectedReturn == null ? '' : (widget.item!.expectedReturn! * 100).toStringAsFixed(1),
+  );
   late final _notes = TextEditingController(text: widget.item?.notes ?? '');
   late String _type = widget.item?.type ?? 'fixed_deposit';
   late String _status = widget.item?.status ?? 'active';
@@ -321,17 +462,17 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
   Object? _saved(String key) => widget.item?.details[key];
 
   TextEditingController _controllerFor(InvestmentField f) => _detailText.putIfAbsent(f.key, () {
-        final v = _saved(f.key);
-        final text = v == null ? '' : (v is num && v == v.roundToDouble() ? v.toInt().toString() : v.toString());
-        final c = TextEditingController(text: text);
-        c.addListener(() => setState(() {}));
-        return c;
-      });
+    final v = _saved(f.key);
+    final text = v == null ? '' : (v is num && v == v.roundToDouble() ? v.toInt().toString() : v.toString());
+    final c = TextEditingController(text: text);
+    c.addListener(() => setState(() {}));
+    return c;
+  });
 
   Map<String, double?> _numbers(InvestmentTypeDef def) => {
-        for (final f in def.fields)
-          if (f.isNumeric) f.key: double.tryParse(_controllerFor(f).text.trim()),
-      };
+    for (final f in def.fields)
+      if (f.isNumeric) f.key: double.tryParse(_controllerFor(f).text.trim()),
+  };
 
   String _money(double v) {
     final whole = v == v.roundToDouble();
@@ -406,7 +547,11 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
     if (_notes.text.trim().isNotEmpty) data['notes'] = _notes.text.trim();
 
     final repo = ref.read(planRepositoryProvider);
-    submit(ref, () => widget.item == null ? repo.createInvestment(data) : repo.updateInvestment(widget.item!.id, data), investmentsListProvider);
+    submit(
+      ref,
+      () => widget.item == null ? repo.createInvestment(data) : repo.updateInvestment(widget.item!.id, data),
+      investmentsListProvider,
+    );
   }
 
   /// A text field that suggests names as you type (companies listed on the Malawi
@@ -425,7 +570,9 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
         optionsBuilder: (value) {
           final q = value.text.trim().toLowerCase();
           if (q.isEmpty) return f.suggestions;
-          return f.suggestions.where((o) => o.label('en').toLowerCase().contains(q) || o.value.toLowerCase().contains(q));
+          return f.suggestions.where(
+            (o) => o.label('en').toLowerCase().contains(q) || o.value.toLowerCase().contains(q),
+          );
         },
         onSelected: (o) => setState(() {
           final ticker = _detailText['ticker'];
@@ -564,21 +711,49 @@ class _InvestmentFormState extends ConsumerState<InvestmentForm> with _FormSubmi
           )
         else
           pkMoney(controller: _value, label: 'form.currentValue'.tr(), required: false),
-        pkDropdown<String>(value: _status, label: 'form.status'.tr(), entries: _entries(_investStatuses, 'form.investStatus'), onChanged: (v) => setState(() => _status = v)),
+        pkDropdown<String>(
+          value: _status,
+          label: 'form.status'.tr(),
+          entries: _entries(_investStatuses, 'form.investStatus'),
+          onChanged: (v) => setState(() => _status = v),
+        ),
         if (def.interest) ...[
-          pkText(controller: _return, label: 'form.expectedReturn'.tr(), keyboard: const TextInputType.numberWithOptions(decimal: true)),
-          pkDropdown<String>(value: _interestPeriod, label: 'form.interestPeriod'.tr(), entries: _entries(_interestPeriods, 'form.interestPeriods'), onChanged: (v) => setState(() => _interestPeriod = v)),
+          pkText(
+            controller: _return,
+            label: 'form.expectedReturn'.tr(),
+            keyboard: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          pkDropdown<String>(
+            value: _interestPeriod,
+            label: 'form.interestPeriod'.tr(),
+            entries: _entries(_interestPeriods, 'form.interestPeriods'),
+            onChanged: (v) => setState(() => _interestPeriod = v),
+          ),
         ],
-        pkDate(context: context, label: 'form.startedAt'.tr(), value: _startedAt, onPick: (d) => setState(() => _startedAt = d)),
+        pkDate(
+          context: context,
+          label: 'form.startedAt'.tr(),
+          value: _startedAt,
+          onPick: (d) => setState(() => _startedAt = d),
+        ),
         if (def.requiresMaturity)
-          pkDate(context: context, label: 'form.maturityDate'.tr(), value: _maturity, onPick: (d) => setState(() => _maturity = d), required: true),
+          pkDate(
+            context: context,
+            label: 'form.maturityDate'.tr(),
+            value: _maturity,
+            onPick: (d) => setState(() => _maturity = d),
+            required: true,
+          ),
         if (def.reminders.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('investForm.remindMe'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(_reminderHint(def), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35)),
+              subtitle: Text(
+                _reminderHint(def),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.35),
+              ),
               value: _remind,
               onChanged: (v) => setState(() => _remind = v),
             ),
@@ -615,7 +790,9 @@ class _Worked extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
+          Expanded(
+            child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+          ),
           const SizedBox(width: 12),
           Flexible(
             child: FittedBox(
@@ -644,7 +821,8 @@ class _ProjectFormState extends ConsumerState<ProjectForm> with _FormSubmit {
   late final _name = TextEditingController(text: widget.item?.name ?? '');
   late final _description = TextEditingController(text: widget.item?.description ?? '');
   late final _budget = TextEditingController(
-      text: widget.item?.budget == null ? '' : _major(widget.item!.budget!).toStringAsFixed(0));
+    text: widget.item?.budget == null ? '' : _major(widget.item!.budget!).toStringAsFixed(0),
+  );
   late String _status = widget.item?.status ?? 'active';
   late DateTime? _targetDate = apiToDate(widget.item?.targetDate);
 
@@ -664,7 +842,11 @@ class _ProjectFormState extends ConsumerState<ProjectForm> with _FormSubmit {
     if (_targetDate != null) data['target_date'] = dateToApi(_targetDate);
 
     final repo = ref.read(planRepositoryProvider);
-    submit(ref, () => widget.item == null ? repo.createProject(data) : repo.updateProject(widget.item!.id, data), projectsProvider);
+    submit(
+      ref,
+      () => widget.item == null ? repo.createProject(data) : repo.updateProject(widget.item!.id, data),
+      projectsProvider,
+    );
   }
 
   @override
@@ -679,9 +861,19 @@ class _ProjectFormState extends ConsumerState<ProjectForm> with _FormSubmit {
       children: [
         pkText(controller: _name, label: 'form.name'.tr(), validator: _req),
         pkText(controller: _description, label: 'form.description'.tr(), maxLines: 2),
-        pkDropdown<String>(value: _status, label: 'form.status'.tr(), entries: _entries(_projectStatuses, 'form.projectStatus'), onChanged: (v) => setState(() => _status = v)),
+        pkDropdown<String>(
+          value: _status,
+          label: 'form.status'.tr(),
+          entries: _entries(_projectStatuses, 'form.projectStatus'),
+          onChanged: (v) => setState(() => _status = v),
+        ),
         pkMoney(controller: _budget, label: 'form.budget'.tr(), required: false),
-        pkDate(context: context, label: 'form.targetDate'.tr(), value: _targetDate, onPick: (d) => setState(() => _targetDate = d)),
+        pkDate(
+          context: context,
+          label: 'form.targetDate'.tr(),
+          value: _targetDate,
+          onPick: (d) => setState(() => _targetDate = d),
+        ),
       ],
     );
   }
@@ -690,17 +882,16 @@ class _ProjectFormState extends ConsumerState<ProjectForm> with _FormSubmit {
 // --------------------------------------------------------- Action sheets -----
 
 /// Bottom sheet: add a contribution to [goalId].
-Future<void> showContributeSheet(BuildContext context, WidgetRef ref, String goalId) =>
-    _amountSheet(
-      context,
-      ref,
-      title: 'form.contribute'.tr(),
-      action: (data) => ref.read(planRepositoryProvider).contributeGoal(goalId, data),
-      listProvider: goalsProvider,
-      dateKey: 'contributed_at',
-      dateLabel: 'form.contributedAt'.tr(),
-      extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
-    );
+Future<void> showContributeSheet(BuildContext context, WidgetRef ref, String goalId) => _amountSheet(
+  context,
+  ref,
+  title: 'form.contribute'.tr(),
+  action: (data) => ref.read(planRepositoryProvider).contributeGoal(goalId, data),
+  listProvider: goalsProvider,
+  dateKey: 'contributed_at',
+  dateLabel: 'form.contributedAt'.tr(),
+  extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
+);
 
 /// Bottom sheet: edit a contribution.
 Future<void> showEditContributionSheet(
@@ -708,41 +899,34 @@ Future<void> showEditContributionSheet(
   WidgetRef ref,
   String goalId,
   GoalContribution contribution,
-) =>
-    _amountSheet(
-      context,
-      ref,
-      title: 'form.editContribution'.tr(),
-      action: (data) => ref.read(planRepositoryProvider).updateGoalContribution(goalId, contribution.id, data),
-      listProvider: goalsProvider,
-      dateKey: 'contributed_at',
-      dateLabel: 'form.contributedAt'.tr(),
-      extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
-      initialAmount: contribution.amount.amount,
-      initialNote: contribution.note,
-      initialDate: contribution.contributedAt,
-    );
+) => _amountSheet(
+  context,
+  ref,
+  title: 'form.editContribution'.tr(),
+  action: (data) => ref.read(planRepositoryProvider).updateGoalContribution(goalId, contribution.id, data),
+  listProvider: goalsProvider,
+  dateKey: 'contributed_at',
+  dateLabel: 'form.contributedAt'.tr(),
+  extraInvalidate: (r) => r.invalidate(goalContributionsProvider(goalId)),
+  initialAmount: contribution.amount.amount,
+  initialNote: contribution.note,
+  initialDate: contribution.contributedAt,
+);
 
 /// Bottom sheet: record a repayment for [loanId].
-Future<void> showRepaySheet(BuildContext context, WidgetRef ref, String loanId) =>
-    _amountSheet(
-      context,
-      ref,
-      title: 'form.repay'.tr(),
-      action: (data) => ref.read(planRepositoryProvider).repayLoan(loanId, data),
-      listProvider: loansProvider,
-      dateKey: 'paid_at',
-      dateLabel: 'form.paidAt'.tr(),
-      extraInvalidate: (r) => r.invalidate(loanRepaymentsProvider(loanId)),
-    );
+Future<void> showRepaySheet(BuildContext context, WidgetRef ref, String loanId) => _amountSheet(
+  context,
+  ref,
+  title: 'form.repay'.tr(),
+  action: (data) => ref.read(planRepositoryProvider).repayLoan(loanId, data),
+  listProvider: loansProvider,
+  dateKey: 'paid_at',
+  dateLabel: 'form.paidAt'.tr(),
+  extraInvalidate: (r) => r.invalidate(loanRepaymentsProvider(loanId)),
+);
 
 /// Bottom sheet: edit a repayment.
-Future<void> showEditRepaymentSheet(
-  BuildContext context,
-  WidgetRef ref,
-  String loanId,
-  LoanRepayment repayment,
-) =>
+Future<void> showEditRepaymentSheet(BuildContext context, WidgetRef ref, String loanId, LoanRepayment repayment) =>
     _amountSheet(
       context,
       ref,
@@ -780,12 +964,18 @@ Future<void> _amountSheet(
       // the form is taller than what is left on small screens.
       child: SingleChildScrollView(
         padding: EdgeInsets.only(
-          left: 20, right: 20, top: 4,
+          left: 20,
+          right: 20,
+          top: 4,
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
         ),
         child: _AmountSheetBody(
-          title: title, action: action, listProvider: listProvider,
-          dateKey: dateKey, dateLabel: dateLabel, ref: ref,
+          title: title,
+          action: action,
+          listProvider: listProvider,
+          dateKey: dateKey,
+          dateLabel: dateLabel,
+          ref: ref,
           extraInvalidate: extraInvalidate,
           initialAmount: initialAmount,
           initialNote: initialNote,

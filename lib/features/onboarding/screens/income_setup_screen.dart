@@ -1,9 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/permissions/permission_service.dart';
+import '../../../core/router/routes.dart';
 import '../../auth/providers/auth_controller.dart';
 
 /// First-run: the user declares their monthly income band, which drives the
@@ -33,13 +34,15 @@ class _IncomeSetupScreenState extends ConsumerState<IncomeSetupScreen> {
     if (band == null) return;
     setState(() => _loading = true);
 
-    // First-run is a natural moment to ask for notification permission
-    // (bill & loan-repayment reminders). Best-effort, never blocks.
-    await ref.read(permissionServiceProvider).requestNotifications();
-
     try {
       await ref.read(authControllerProvider.notifier).setIncomeBracket(band);
-      // Router guard routes to home once the bracket is set.
+      // No longer a forced first-run step: go back to where it was opened.
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(Routes.home);
+      }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

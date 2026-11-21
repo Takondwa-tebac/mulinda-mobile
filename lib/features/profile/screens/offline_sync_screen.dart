@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/offline_sync_section.dart';
@@ -10,7 +11,7 @@ class OfflineSyncScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Offline capture & sync')),
+      appBar: AppBar(title: Text('profile2.offlineSync'.tr())),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -20,10 +21,7 @@ class OfflineSyncScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: const [
                 Card(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: OfflineModeRow(),
-                  ),
+                  child: Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: OfflineModeRow()),
                 ),
                 SizedBox(height: 12),
                 Card(child: SavedDataCard()),
