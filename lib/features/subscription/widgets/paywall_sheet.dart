@@ -32,6 +32,11 @@ Future<bool> showPaywall(
     'entitlement': resolvedEntitlement,
   };
   Analytics.track('upgrade_prompt_viewed', trackProps);
+  // Opened from a locked feature (not the subscription screen or the trial
+  // banner): record which feature drew the tap.
+  if (resolvedEntitlement != null) {
+    Analytics.track('premium_feature_tapped', {'feature': resolvedEntitlement, 'surface': surface});
+  }
 
   PaywallPrompter.instance.sheetOpened();
   bool? result;
