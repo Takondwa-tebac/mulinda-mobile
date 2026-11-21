@@ -236,12 +236,14 @@
     "retry": "Retry"
   },
   "inbox": {
+    "needAccount": "Add the account this money came from, then approve.",
+    "addSuggested": "Add {} account",
     "title": "Pending",
     "messages": "Messages",
     "receipts": "Receipts",
     "approve": "Approve",
     "reject": "Reject",
-    "empty": "Nothing to review. Forwarded SMS and scanned receipts show up here.",
+    "empty": "Nothing to review. Messages that need a check and scanned receipts show up here.",
     "emptyTitle": "You're all caught up",
     "approved": "Added to your transactions",
     "rejected": "Dismissed",

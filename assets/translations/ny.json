@@ -236,12 +236,14 @@
     "retry": "Yesaninso"
   },
   "inbox": {
+    "needAccount": "Onjezani akaunti imene ndalamazi zachokera, kenako vomerezani.",
+    "addSuggested": "Onjezani akaunti ya {}",
     "title": "Zoyembekezera",
     "messages": "Mauthenga",
     "receipts": "Marisiti",
     "approve": "Vomerezani",
     "reject": "Kanani",
-    "empty": "Palibe zoyang'ana. SMS zotumizidwa ndi marisiti ojambulidwa zimaonekera pano.",
+    "empty": "Palibe zoyang'ana. Mauthenga ofunika kuwunikidwa ndi marisiti ojambulidwa zimaonekera pano.",
     "emptyTitle": "Mwamaliza zonse",
     "approved": "Zawonjezedwa ku zochitika zanu",
     "rejected": "Zachotsedwa",
