@@ -126,15 +126,15 @@
       "sms": "Mwalipira {} kwa SHOPRITE AREA 47. Ref MP2411…",
       "goalName": "Cholinga cha fizi ya sukulu",
       "toGo": "{} zatsala",
-      "hours": "Maola 24",
+      "hours": "Kwaulere",
       "benefitChat": "Chezani ndi Mulinda",
       "benefitInsights": "Malangizo apamwamba",
       "benefitAi": "AI imawerenga marisiti ndi ma SMS",
       "noCard": "Palibe khadi. Palibe chimene chimapitirira chokha."
     },
     "trial": {
-      "title": "Yesani premium kwaulere kwa maola 24",
-      "body": "Akaunti yanu imayamba ndi maola 24 oyesa premium kwaulere: mlangizi wa AI, malangizo apamwamba, ndi AI yowerenga marisiti ndi ma SMS. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."
+      "title": "Yesani Premium kwaulere mukaifuna",
+      "body": "Nthawi yoyamba mukatsegula chinthu cha Premium, kuyesa kwaulere kumayamba: mlangizi wa AI, malangizo apamwamba, ndi AI yowerenga marisiti ndi ma SMS. Simufunika khadi kapena kulipira, ndipo palibe chimene chimapitirira chokha. Ikatha, zonse zomwe mwalemba zimakhalabe zaulere."
     },
     "chooseLanguage": "Sankhani Chiyankhulo chanu",
     "skip": "Dumphani",
@@ -618,11 +618,13 @@
       "free": "Pulani yaulere · kusunga ndalama ndi kwaulere",
       "freeSms": "Pulani yaulere · ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
       "trialEnds": "Nthawi yoyesa · yatsala pafupifupi maola {hours}",
-      "activeUntil": "{plan} · ikugwira ntchito mpaka {date}"
+      "activeUntil": "{plan} · ikugwira ntchito mpaka {date}",
+      "trialEndsDays": "Kuyesa kwaulere · masiku {days} atsala"
     },
     "trialBanner": {
       "title": "Nthawi yoyesa yaulere: yatsala pafupifupi maola {hours}",
-      "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha."
+      "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha.",
+      "titleDays": "Kuyesa kwaulere: masiku {days} atsala"
     },
     "sms": {
       "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
@@ -1385,5 +1387,90 @@
     "stepBudget": "Khazikitsani bajeti imodzi",
     "stepBudgetSub": "Onani ngati mukuwononga mofulumira",
     "noCategory": "Palibe gulu pano"
+  },
+  "upgrade": {
+    "pricing": {
+      "title": "Sankhani pasi yanu",
+      "onTrial": "Kuyesa kwaulere kwanu kukupitirira. Sankhani pasi pokhapokha ngati mukufuna Premium ikatha.",
+      "bestValue": "Mtengo wabwino koposa",
+      "howToPay": "Mudzalipira patsamba lotetezedwa la PayChangu ndi Airtel Money, TNM Mpamba kapena khadi. Ma pasi sapitiriza okha.",
+      "continue": "Pitirizani kulipira · {amount}",
+      "notCompleted": "Kulipira sikunatheke. Simunalipiritsidwe kanthu.",
+      "compareTitle": "Zomwe Premium imawonjezera"
+    },
+    "limit": {
+      "title": "Mwagwiritsa ntchito mauthenga anu {limit} aulere a mwezi uno",
+      "titleNoCount": "Mwagwiritsa ntchito mauthenga aulere a mwezi uno",
+      "waiting": "Mauthenga a ndalama omwe akudikira: {count}",
+      "benefitCapture": "Kulemba mauthenga onse okha popanda malire, kuyambira ndi omwe akudikira",
+      "benefitCoach": "Komanso mlangizi wa ndalama ndi malangizo ozama",
+      "dayPass": "Tengani pasi ya tsiku limodzi · {amount}",
+      "seeAll": "Onani ma pasi onse",
+      "notNow": "Osati pano",
+      "notNowUntil": "Osati pano, abweranso kwaulere pa {date}",
+      "stillFree": "Kulemba ndalama nokha, ma bajeti ndi zolinga zimakhalabe zaulere."
+    },
+    "trial": {
+      "started": "Premium yayatsidwa kwa masiku {days}",
+      "startedNoDays": "Premium yayatsidwa",
+      "startedBody": "Simukufunika kulipira pano. Kuyesa kukatha mumabwerera ku dongosolo laulere, pokhapokha mutasankha pasi.",
+      "continue": "Pitirizani",
+      "offer": "Yesani Premium kwaulere kwa masiku {days}",
+      "offerNoDays": "Yesani Premium kwaulere",
+      "offerBody": "Simukufunika kulipira. Palibe chimene chimapitirira chokha.",
+      "start": "Yambani kuyesa kwaulere",
+      "startDays": "Yambani kuyesa kwaulere kwa masiku {days}",
+      "startNoDays": "Yambani kuyesa kwaulere",
+      "failed": "Sitinathe kuyambitsa kuyesa kwaulere. Onani intaneti yanu ndipo yesaninso."
+    },
+    "topUp": {
+      "title": "Isandutseni sabata ndi {amount} yokha",
+      "body": "Zomwe mwalipira pa pasi ya lero zikuwerengedwa ku sabata.",
+      "cta": "Isandutseni sabata, {amount}"
+    },
+    "done": {
+      "title": "Premium ili yoyaka mpaka {date}",
+      "titleNoDate": "Premium ili yoyaka",
+      "body": "Tidzakukumbutsani tsiku limodzi isanathe. Palibe chimene chimapitirira chokha.",
+      "pass": "Pasi",
+      "paid": "Mwalipira",
+      "topUpLabel": "{plan} (kuwonjezera)",
+      "cta": "Zatheka"
+    }
+  },
+  "referral": {
+    "title": "Itanani anzanu",
+    "entryTitle": "Itanani anzanu",
+    "entrySub": "Nonse mumalandira masiku a Premium aulere",
+    "headline": "Itanani anzanu ndipo mulandire masiku {days} a Premium pa aliyense",
+    "headlineReward": "masiku {days} a Premium",
+    "headlineNoDays": "Itanani anzanu ndipo mulandire masiku a Premium pa aliyense",
+    "scoreTitle": "Zotsatira zanu",
+    "signedUp": "Alembetsa",
+    "daysEarned": "Masiku omwe mwapeza",
+    "signedUpInfo": "Anzanu omwe apanga akaunti ndi ulalo kapena khodi yanu.",
+    "signedUpWaiting": "{count} mwa iwo akudikira uthenga wawo woyamba wa ndalama, kenako nonse mulandira masiku anu {days}.",
+    "signedUpWaitingNoDays": "{count} mwa iwo akudikira uthenga wawo woyamba wa ndalama, kenako nonse mulandira masiku anu a Premium.",
+    "daysEarnedInfo": "Masiku a Premium owonjezeredwa ku akaunti yanu kuchokera ku maitanidwe: masiku {days} pa mnzanu aliyense yemwe mauthenga ake a ndalama ayamba kuwonekera.",
+    "daysEarnedInfoNoDays": "Masiku a Premium owonjezeredwa ku akaunti yanu kuchokera ku maitanidwe, pa mnzanu aliyense yemwe mauthenga ake a ndalama ayamba kuwonekera.",
+    "inviteTitle": "Itanani anzanu",
+    "linkLabel": "Ulalo woitanira",
+    "codeLabel": "Khodi yoitanira",
+    "linkCopied": "Ulalo woitanira wakopedwa",
+    "codeCopied": "Khodi yoitanira yakopedwa",
+    "copyHint": "Kopani",
+    "howTitle": "Momwe zimagwirira ntchito",
+    "howRow": "Onani momwe mphotho zimagwirira ntchito",
+    "howSheetTitle": "Momwe mphotho zimagwirira ntchito",
+    "step1": "Tumizani ulalo kapena khodi yanu kwa mnzanu.",
+    "step2": "Amaika Mulinda ndipo uthenga wawo woyamba wa ndalama umawonekera.",
+    "step3": "Nonse mumalandira masiku {days} a Premium, owonjezeredwa pa pasi iliyonse yomwe muli nayo.",
+    "step3NoDays": "Nonse mumalandira masiku a Premium aulere, owonjezeredwa pa pasi iliyonse yomwe muli nayo.",
+    "qrTitle": "Jambulani kuti mulowe Mulinda",
+    "qrLabel": "Khodi ya QR ya ulalo wanu woitanira",
+    "qrBody": "Mnzanu amajambula iyi ndi kamera ya foni yake. Imatsegula tsamba lanu loitanira lomwe lili ndi ulalo wa Play Store.",
+    "qrButton": "Khodi ya QR",
+    "shareButton": "Itanani anzanu",
+    "done": "Zatheka"
   }
 }

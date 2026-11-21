@@ -415,7 +415,12 @@ class FreeSmsAllowanceCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => showPaywall(context, entitlement: smsCaptureEntitlement, surface: 'paste_sms'),
+                onPressed: () => showPaywall(
+                  context,
+                  entitlement: smsCaptureEntitlement,
+                  surface: 'paste_sms',
+                  limitReached: left == 0 && known,
+                ),
                 child: Text('paywall.seePlans'.tr()),
               ),
             ),

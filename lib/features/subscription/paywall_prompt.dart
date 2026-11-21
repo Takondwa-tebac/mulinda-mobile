@@ -124,16 +124,18 @@ class PaywallPrompter {
   }
 
   /// Show [presentation] for [trigger] using the app's navigator context.
-  /// [openPaywall] opens the sheet (injected to keep this file free of UI deps).
+  /// [openPaywall] opens the paywall (injected to keep this file free of UI
+  /// deps); `automatic` is true when no tap asked for it, so nothing that
+  /// needs consent (such as starting the free trial) happens by itself.
   static void present(
     BuildContext context,
     PaywallTrigger trigger,
     PaywallPresentation presentation,
-    Future<void> Function(BuildContext context, PaywallTrigger trigger)
+    Future<void> Function(BuildContext context, PaywallTrigger trigger, {required bool automatic})
     openPaywall,
   ) {
     if (presentation == PaywallPresentation.sheet) {
-      unawaited(openPaywall(context, trigger));
+      unawaited(openPaywall(context, trigger, automatic: true));
       return;
     }
     final messenger = ScaffoldMessenger.maybeOf(context);
@@ -144,7 +146,7 @@ class PaywallPrompter {
           content: Text(paywallHeadlineKey(trigger.entitlement).tr()),
           action: SnackBarAction(
             label: 'paywall.seePlans'.tr(),
-            onPressed: () => unawaited(openPaywall(context, trigger)),
+            onPressed: () => unawaited(openPaywall(context, trigger, automatic: false)),
           ),
         ),
       );

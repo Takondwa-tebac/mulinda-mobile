@@ -126,15 +126,15 @@
       "sms": "You paid {} to SHOPRITE AREA 47. Ref MP2411…",
       "goalName": "School fees goal",
       "toGo": "{} to go",
-      "hours": "24 h",
+      "hours": "Free",
       "benefitChat": "Chat with Mulinda",
       "benefitInsights": "Advanced insights",
       "benefitAi": "AI reads receipts and SMS",
       "noCard": "No card. Nothing renews by itself."
     },
     "trial": {
-      "title": "Try premium free for 24 hours",
-      "body": "Your account starts with a 24-hour free trial of premium: the AI coach, advanced insights and AI reading of receipts and SMS. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
+      "title": "Try Premium free when you need it",
+      "body": "The first time you open a Premium feature, a free trial starts: the AI coach, advanced insights and AI reading of receipts and SMS. No card or payment needed, and nothing renews by itself. When it ends, everything you record stays free."
     },
     "chooseLanguage": "Choose your language",
     "skip": "Skip",
@@ -618,11 +618,13 @@
       "free": "Free plan · core tracking is free",
       "freeSms": "Free plan · {remaining} of {limit} free SMS captures left this month",
       "trialEnds": "Free trial · about {hours} h left",
-      "activeUntil": "{plan} · active until {date}"
+      "activeUntil": "{plan} · active until {date}",
+      "trialEndsDays": "Free trial · {days} days left"
     },
     "trialBanner": {
       "title": "Free trial: about {hours} h left",
-      "body": "Premium features are on. Your records stay free after it ends."
+      "body": "Premium features are on. Your records stay free after it ends.",
+      "titleDays": "Free trial: {days} days left"
     },
     "sms": {
       "remaining": "{remaining} of {limit} free SMS captures left this month",
@@ -1385,5 +1387,90 @@
     "stepBudget": "Set one budget",
     "stepBudgetSub": "See when spending runs ahead",
     "noCategory": "No category yet"
+  },
+  "upgrade": {
+    "pricing": {
+      "title": "Choose your pass",
+      "onTrial": "Your free trial is on. Choose a pass only if you want Premium after it ends.",
+      "bestValue": "Best value",
+      "howToPay": "You'll pay on PayChangu's secure page with Airtel Money, TNM Mpamba or card. Passes never renew by themselves.",
+      "continue": "Continue to payment · {amount}",
+      "notCompleted": "Payment not completed. You were not charged.",
+      "compareTitle": "What Premium adds"
+    },
+    "limit": {
+      "title": "You've used your {limit} free messages this month",
+      "titleNoCount": "You've used this month's free messages",
+      "waiting": "Money messages waiting: {count}",
+      "benefitCapture": "Unlimited automatic recording, starting with the messages waiting",
+      "benefitCoach": "Plus the money coach and deeper insights",
+      "dayPass": "Get a Day pass · {amount}",
+      "seeAll": "See all passes",
+      "notNow": "Not now",
+      "notNowUntil": "Not now, they come back free on {date}",
+      "stillFree": "Adding spending by hand, budgets and goals stay free."
+    },
+    "trial": {
+      "started": "Premium is on for {days} days",
+      "startedNoDays": "Premium is on",
+      "startedBody": "No payment needed now. When the trial ends you go back to the free plan, unless you choose a pass.",
+      "continue": "Continue",
+      "offer": "Try Premium free for {days} days",
+      "offerNoDays": "Try Premium free",
+      "offerBody": "No payment needed. Nothing renews by itself.",
+      "start": "Start free trial",
+      "startDays": "Start your free {days}-day trial",
+      "startNoDays": "Start your free trial",
+      "failed": "Couldn't start the free trial. Check your connection and try again."
+    },
+    "topUp": {
+      "title": "Make it a week for {amount} more",
+      "body": "What you paid for today's Day pass counts toward the week.",
+      "cta": "Make it a week, {amount}"
+    },
+    "done": {
+      "title": "Premium is on until {date}",
+      "titleNoDate": "Premium is on",
+      "body": "We'll remind you the day before it ends. Nothing renews by itself.",
+      "pass": "Pass",
+      "paid": "Paid",
+      "topUpLabel": "{plan} (top-up)",
+      "cta": "Done"
+    }
+  },
+  "referral": {
+    "title": "Invite friends",
+    "entryTitle": "Invite friends",
+    "entrySub": "You both get free Premium days",
+    "headline": "Invite friends and get {days} days of Premium for each one",
+    "headlineReward": "{days} days of Premium",
+    "headlineNoDays": "Invite friends and get Premium days for each one",
+    "scoreTitle": "Your score",
+    "signedUp": "Signed up",
+    "daysEarned": "Days earned",
+    "signedUpInfo": "Friends who created an account with your link or code.",
+    "signedUpWaiting": "{count} of them are waiting for their first money message, then you both get your {days} days.",
+    "signedUpWaitingNoDays": "{count} of them are waiting for their first money message, then you both get your Premium days.",
+    "daysEarnedInfo": "Premium days added to your account from invites: {days} days for every friend whose money messages started showing up.",
+    "daysEarnedInfoNoDays": "Premium days added to your account from invites, for every friend whose money messages started showing up.",
+    "inviteTitle": "Invite your friends",
+    "linkLabel": "Invite link",
+    "codeLabel": "Invite code",
+    "linkCopied": "Invite link copied",
+    "codeCopied": "Invite code copied",
+    "copyHint": "Copy",
+    "howTitle": "How it works",
+    "howRow": "See how rewards work",
+    "howSheetTitle": "How rewards work",
+    "step1": "Send your link or code to a friend.",
+    "step2": "They install Mulinda and their first money message shows up.",
+    "step3": "You both get {days} days of Premium, added on top of any pass you have.",
+    "step3NoDays": "You both get free Premium days, added on top of any pass you have.",
+    "qrTitle": "Scan to join Mulinda",
+    "qrLabel": "QR code for your invite link",
+    "qrBody": "Your friend scans this with their phone camera. It opens your invite page with the Play Store link.",
+    "qrButton": "QR code",
+    "shareButton": "Invite friends",
+    "done": "Done"
   }
 }

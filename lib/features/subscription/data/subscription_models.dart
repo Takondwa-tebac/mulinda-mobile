@@ -47,6 +47,9 @@ class SubscriptionInfo {
     this.entitlements = const [],
     this.smsCapture,
     this.offlineModeUntil,
+    this.trialAvailable,
+    this.trialDays,
+    this.topUp,
   });
 
   final bool active;
@@ -62,6 +65,16 @@ class SubscriptionInfo {
   /// Kept on the device so entitlement can be checked with no connection.
   final DateTime? offlineModeUntil;
 
+  /// Whether a first premium tap may start the free trial. Null when the API
+  /// did not say (an older payload), so the app asks `GET /subscription`.
+  final bool? trialAvailable;
+
+  /// Length of the free trial in days, from the API.
+  final int? trialDays;
+
+  /// "Make it a week" offer while a paid Day pass is running, else null.
+  final TopUpOffer? topUp;
+
   bool can(String entitlement) => entitlements.contains(entitlement);
 
   const SubscriptionInfo.none()
@@ -73,7 +86,10 @@ class SubscriptionInfo {
       isTrial = false,
       entitlements = const [],
       smsCapture = null,
-      offlineModeUntil = null;
+      offlineModeUntil = null,
+      trialAvailable = null,
+      trialDays = null,
+      topUp = null;
 
   factory SubscriptionInfo.fromJson(Map<String, dynamic> json) {
     return SubscriptionInfo(
@@ -94,8 +110,29 @@ class SubscriptionInfo {
       offlineModeUntil: json['offline_mode'] is Map
           ? DateTime.tryParse(((json['offline_mode'] as Map)['until'] ?? '').toString())
           : null,
+      trialAvailable: json['trial_available'] is bool ? json['trial_available'] as bool : null,
+      trialDays: int.tryParse(json['trial_days']?.toString() ?? ''),
+      topUp: json['top_up'] is Map
+          ? TopUpOffer.fromJson((json['top_up'] as Map).cast<String, dynamic>())
+          : null,
     );
   }
+}
+
+/// The price of turning a running paid Day pass into a Week (the week price
+/// minus what was paid for the day), as offered by the API.
+class TopUpOffer {
+  const TopUpOffer({required this.period, required this.amountMinor, required this.currency});
+
+  final String period;
+  final int amountMinor;
+  final String currency;
+
+  factory TopUpOffer.fromJson(Map<String, dynamic> json) => TopUpOffer(
+    period: json['period']?.toString() ?? 'week',
+    amountMinor: int.tryParse(json['amount_minor']?.toString() ?? '') ?? 0,
+    currency: json['currency']?.toString() ?? 'MWK',
+  );
 }
 
 /// SMS capture usage information for free tier users.

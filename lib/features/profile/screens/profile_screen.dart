@@ -127,7 +127,18 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
 
-          _Section(title: 'subscription.title'.tr(), children: const [SubscriptionStatusTile()]),
+          _Section(
+            title: 'subscription.title'.tr(),
+            children: [
+              const SubscriptionStatusTile(),
+              _Row(
+                icon: Icons.card_giftcard_outlined,
+                title: 'referral.entryTitle'.tr(),
+                subtitle: 'referral.entrySub'.tr(),
+                onTap: () => context.push(Routes.referral),
+              ),
+            ],
+          ),
 
           _Section(
             title: 'profile2.help'.tr(),

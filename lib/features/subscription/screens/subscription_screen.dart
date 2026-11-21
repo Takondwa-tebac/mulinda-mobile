@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/semantic_colors.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../data/subscription_models.dart';
 import '../data/subscription_repository.dart';
 import '../widgets/paywall_sheet.dart';
+import '../widgets/top_up_card.dart';
 import '../checkout_flow.dart';
 
 class SubscriptionScreen extends ConsumerStatefulWidget {
@@ -106,6 +109,19 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
             children: [
               _StatusCard(sub: sub, onSubscribe: () => showPaywall(context, surface: 'subscription_screen')),
+              const TopUpCard(surface: 'subscription_screen', margin: EdgeInsets.only(top: AppSpacing.lg)),
+              const SizedBox(height: AppSpacing.lg),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  key: const ValueKey('subscription-invite'),
+                  leading: Icon(Icons.card_giftcard_outlined, color: context.semantic.brandInk),
+                  title: Text('referral.entryTitle'.tr()),
+                  subtitle: Text('referral.entrySub'.tr()),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.referral),
+                ),
+              ),
               const SizedBox(height: 24),
               Text(
                 'subscription.invoices'.tr(),
@@ -247,6 +263,10 @@ class _StatusCard extends StatelessWidget {
                 label: Text(
                   sub.active
                       ? 'subscription.extend'.tr()
+                      : sub.trialAvailable == true
+                      ? (sub.trialDays == null
+                            ? 'upgrade.trial.startNoDays'.tr()
+                            : 'upgrade.trial.startDays'.tr(namedArgs: {'days': '${sub.trialDays}'}))
                       : 'subscription.subscribe'.tr(),
                 ),
               ),

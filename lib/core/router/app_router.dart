@@ -55,6 +55,7 @@ import '../../features/admin/screens/audit_trail_screen.dart';
 import '../../features/admin/screens/push_notification_screen.dart';
 import '../../features/admin/screens/user_management_screen.dart';
 import '../../features/admin/screens/user_detail_screen.dart';
+import '../../features/referral/screens/referral_screen.dart';
 import '../../features/subscription/data/subscription_models.dart';
 import '../../features/subscription/screens/receipt_screen.dart';
 import '../../features/subscription/screens/subscription_screen.dart';
@@ -246,6 +247,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Subscriptions & receipts
       GoRoute(path: Routes.subscription, builder: (_, _) => const SubscriptionScreen()),
+      GoRoute(path: Routes.referral, builder: (_, _) => const ReferralScreen()),
       GoRoute(
         path: Routes.receipt,
         redirect: (_, s) => s.extra is InvoiceModel ? null : Routes.subscription,

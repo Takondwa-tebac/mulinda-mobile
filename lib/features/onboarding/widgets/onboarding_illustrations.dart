@@ -518,7 +518,7 @@ class RingPainter extends CustomPainter {
 
 // ----------------------------------------------------------------- Slide 4 --
 
-/// The 24-hour trial: an orange ring fills, the premium benefits check
+/// The free trial: an orange ring fills, the premium benefits check
 /// in one by one, then "No card. Nothing renews by itself."
 class TrialIllustration extends StatelessWidget {
   const TrialIllustration({super.key, required this.active});

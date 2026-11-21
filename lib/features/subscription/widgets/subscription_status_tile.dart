@@ -26,6 +26,9 @@ String subscriptionStatusLine(SubscriptionInfo sub, DateTime now) {
       final hours = ends.difference(now).inMinutes <= 60
           ? 1
           : (ends.difference(now).inMinutes / 60).ceil();
+      if (hours > 48) {
+        return 'subscription.tile.trialEndsDays'.tr(namedArgs: {'days': '${(hours / 24).ceil()}'});
+      }
       return 'subscription.tile.trialEnds'.tr(namedArgs: {'hours': '$hours'});
     }
     return 'subscription.tile.activeUntil'.tr(

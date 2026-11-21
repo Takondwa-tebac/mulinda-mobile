@@ -33,12 +33,32 @@ class SubscriptionRepository {
     }
   }
 
+  /// Start the free trial (first premium tap). [deviceId] lets the server
+  /// allow one trial per phone. Throws an [ApiException] with code
+  /// `trial_unavailable` (409) when this account or phone already had one.
+  Future<SubscriptionInfo> startTrial({String? deviceId}) async {
+    try {
+      final res = await _dio.post(
+        '/v1/subscription/trial',
+        data: {'device_id': ?(deviceId == null || deviceId.isEmpty ? null : deviceId)},
+        // The caller handles every outcome itself.
+        options: Options(extra: {'paywall': false}),
+      );
+      return SubscriptionInfo.fromJson(
+        (res.data['data'] as Map).cast<String, dynamic>(),
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
   /// Start a checkout for [period]; returns the pending invoice with checkout_url.
-  Future<InvoiceModel> checkout(String period) async {
+  /// [topUp] pays only the difference to turn a running Day pass into a Week.
+  Future<InvoiceModel> checkout(String period, {bool topUp = false}) async {
     try {
       final res = await _dio.post(
         '/v1/subscription/checkout',
-        data: {'period': period},
+        data: {'period': period, if (topUp) 'top_up': true},
       );
       return InvoiceModel.fromJson(
         (res.data['data'] as Map).cast<String, dynamic>(),

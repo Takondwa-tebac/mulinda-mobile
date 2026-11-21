@@ -87,6 +87,7 @@ abstract class Routes {
   // Subscriptions & billing
   static const subscription = '/subscription';
   static const receipt = '/receipt';
+  static const referral = '/referral';
 
   // Admin (visible only to admin / super-admin users)
   static const admin = '/admin';

@@ -1,5 +1,6 @@
 package tech.lyncsystems.mulinda
 
+import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -28,6 +29,18 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         result.success(null)
                     }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Per-app device id, sent once when the free trial starts so the server
+        // can allow one trial per phone (it keeps only a salted hash).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "mulinda/device")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "androidId" -> result.success(
+                        Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID),
+                    )
                     else -> result.notImplemented()
                 }
             }
