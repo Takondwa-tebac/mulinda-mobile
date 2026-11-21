@@ -27,6 +27,7 @@ import '../data/dashboard_repository.dart';
 import '../data/spending_insight.dart';
 import '../widgets/first_visit_cards.dart';
 import '../widgets/spending_chart.dart';
+import '../../subscription/widgets/top_up_card.dart';
 import '../../subscription/widgets/trial_banner.dart';
 import '../../../shared/plural.dart';
 import '../../../core/theme/app_icons.dart';
@@ -121,6 +122,8 @@ class _Dashboard extends ConsumerWidget {
 
         // Renders nothing unless a free trial is running.
         const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
+        // Renders nothing unless a paid Day pass can be topped up to a week.
+        const TopUpCard(surface: 'home', margin: EdgeInsets.only(bottom: AppSpacing.lg)),
 
         if (imported) ...[
           const Last30DaysCard(),

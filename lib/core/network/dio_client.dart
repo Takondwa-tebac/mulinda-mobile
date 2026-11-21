@@ -154,7 +154,13 @@ void _offerPaywall(Ref ref, DioException error) {
       context,
       trigger,
       presentation,
-      (ctx, t) => showPaywall(ctx, entitlement: t.entitlement, surface: 'api_402'),
+      (ctx, t, {required automatic}) => showPaywall(
+        ctx,
+        entitlement: t.entitlement,
+        surface: 'api_402',
+        limitReached: t.code == 'sms_capture_limit_reached',
+        automatic: automatic,
+      ),
     );
   });
 }

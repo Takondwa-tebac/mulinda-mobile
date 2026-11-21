@@ -6,7 +6,7 @@ import '../../auth/providers/auth_controller.dart';
 import '../data/subscription_models.dart';
 import 'paywall_sheet.dart';
 
-/// "Free trial: about N hours left" — shown only while the registration trial is
+/// "Free trial: N days (or about N hours) left", shown only while the trial is
 /// running (hidden otherwise). States the real time left; no countdown timer or
 /// pressure. Tapping shows what stays free and what the passes cost.
 class TrialBanner extends ConsumerWidget {
@@ -45,9 +45,14 @@ class TrialBanner extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'subscription.trialBanner.title'.tr(
-                        namedArgs: {'hours': '$hours'},
-                      ),
+                      // Days for a longer trial, hours near the end.
+                      hours > 48
+                          ? 'subscription.trialBanner.titleDays'.tr(
+                              namedArgs: {'days': '${(hours / 24).ceil()}'},
+                            )
+                          : 'subscription.trialBanner.title'.tr(
+                              namedArgs: {'hours': '$hours'},
+                            ),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: scheme.onSecondaryContainer,

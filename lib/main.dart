@@ -32,6 +32,7 @@ import 'features/capture/data/sms_outbox.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'features/auth/providers/auth_controller.dart';
+import 'features/referral/data/referral_capture.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -127,9 +128,11 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       if (next.status == AuthStatus.authenticated) {
         PushService.instance.registerToken(ref);
         _refreshOfflineData();
+        _claimReferral();
       }
     });
     _initDeepLinks();
+    _checkInstallReferrer();
     PushService.instance.init(ref);
     // Once per app start, while the app is in the foreground.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -147,7 +150,27 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
     _linkSub = _appLinks.uriLinkStream.listen(_onLink, onError: (_) {});
   }
 
+  PendingReferralStore get _referrals => PendingReferralStore(ref.read(sharedPreferencesProvider));
+
+  /// First launch after a Play Store install from an invite: keep the code.
+  Future<void> _checkInstallReferrer() async {
+    await ReferralCapture.checkInstallReferrer(_referrals);
+    _claimReferral();
+  }
+
+  /// Already signed in when an invite code arrived: claim it now.
+  void _claimReferral() {
+    if (!mounted) return;
+    unawaited(ReferralCapture.claimPending(ProviderScope.containerOf(context, listen: false), _referrals));
+  }
+
   void _onLink(Uri uri) {
+    // An invite link (https://<domain>/i/{code}): keep the code for sign-up.
+    final referral = referralCodeFromUri(uri);
+    if (referral != null) {
+      unawaited(_referrals.save(referral).then((_) => _claimReferral()));
+      return;
+    }
     final isReset = uri.host == 'reset-password' || uri.pathSegments.contains('reset-password');
     if (isReset) {
       _pendingLink = uri;

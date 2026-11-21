@@ -18,3 +18,8 @@ Map<String, dynamic> moneyJson(double major, String currency) => {
       'amount': major,
       'formatted': formatMoney(major, currency),
     };
+
+/// `MK 1,500` from integer minor units: [formatMoney] without the `.00` of a
+/// whole amount, for short labels such as prices on buttons.
+String formatMinorShort(int minorUnits, String currency) =>
+    formatMoney(minorUnits / 100, currency).replaceFirst(RegExp(r'\.00$'), '');

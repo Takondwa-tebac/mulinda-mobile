@@ -58,6 +58,16 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="mulinda" android:host="reset-password"/>
             </intent-filter>
+            <!-- Invite links: https://mulinda-api.sukulusmis.africa/i/{code} open the
+                 app when installed (verified through /.well-known/assetlinks.json). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="mulinda-api.sukulusmis.africa"
+                      android:pathPrefix="/i/"/>
+            </intent-filter>
         </activity>
 
         <!-- another_telephony: the plugin ships the IncomingSmsReceiver class but

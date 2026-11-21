@@ -360,6 +360,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
             context,
             entitlement: smsCaptureEntitlement,
             surface: 'inbox_approve',
+            limitReached: true,
           );
         }
       } else if (mounted) {

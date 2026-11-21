@@ -57,6 +57,7 @@ class AuthRepository {
     required String password,
     String? username,
     bool acceptedTerms = false,
+    String? referralCode,
   }) {
     return _authRequest(
       '/v1/auth/register',
@@ -66,19 +67,22 @@ class AuthRepository {
         password: password,
         username: username,
         acceptedTerms: acceptedTerms,
+        referralCode: referralCode,
       ),
     );
   }
 
   /// The sign-up request: only what the API requires (phone, email,
   /// password), plus the username when one was chosen and the Terms
-  /// acceptance. Names and income are asked later, in context.
+  /// acceptance. Names and income are asked later, in context. A friend's
+  /// invite code, when one is waiting, rides along as `referral_code`.
   static Map<String, dynamic> registerBody({
     required String phoneNumber,
     required String email,
     required String password,
     String? username,
     bool acceptedTerms = false,
+    String? referralCode,
   }) {
     final name = username?.trim() ?? '';
     return {
@@ -87,11 +91,15 @@ class AuthRepository {
       'password': password,
       if (name.isNotEmpty) 'username': name,
       if (acceptedTerms) 'accepted_terms': true,
+      if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
     };
   }
 
-  Future<User> googleToken(String accessToken) {
-    return _authRequest('/v1/auth/google/token', {'access_token': accessToken});
+  Future<User> googleToken(String accessToken, {String? referralCode}) {
+    return _authRequest('/v1/auth/google/token', {
+      'access_token': accessToken,
+      if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
+    });
   }
 
   /// Exchange a Sign in with Apple identity token (bound to [nonce]) for a
@@ -102,8 +110,10 @@ class AuthRepository {
     String? authorizationCode,
     String? firstName,
     String? lastName,
+    String? referralCode,
   }) {
     return _authRequest('/v1/auth/apple/token', {
+      if (referralCode != null && referralCode.isNotEmpty) 'referral_code': referralCode,
       'identity_token': identityToken,
       'nonce': nonce,
       // Lets the server keep Apple's token so it can revoke it on account deletion.

@@ -12,6 +12,8 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/notifications/push_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/offline/cache_store.dart';
+import '../../../core/offline/prefs.dart';
+import '../../referral/data/referral_capture.dart';
 import '../../capture/data/receipt_outbox.dart';
 import '../../capture/data/sms_outbox.dart';
 import '../../onboarding/first_run.dart';
@@ -36,6 +38,17 @@ class AuthController extends Notifier<AuthState> {
 
   @override
   AuthState build() => const AuthState(status: AuthStatus.unknown);
+
+  /// A friend's invite code waiting to go with a sign-up, if any. Social
+  /// sign-ins keep it afterwards: for an existing account the server ignores
+  /// it, and `ReferralCapture.claimPending` settles it once signed in.
+  PendingReferralStore? get _pendingReferral {
+    try {
+      return PendingReferralStore(ref.read(sharedPreferencesProvider));
+    } catch (_) {
+      return null; // Preferences not set up (tests): no code.
+    }
+  }
 
   /// Resolve the initial status from any persisted token (called by splash).
   /// Holds a minimum duration so the splash is visible, and never hangs: the
@@ -137,13 +150,17 @@ class AuthController extends Notifier<AuthState> {
     String? username,
     bool acceptedTerms = false,
   }) async {
+    final referral = _pendingReferral;
     final user = await _repo.register(
       phoneNumber: phoneNumber,
       email: email,
       password: password,
       username: username,
       acceptedTerms: acceptedTerms,
+      referralCode: referral?.read(),
     );
+    // Sent with the new account; the server ignores an unknown or own code.
+    await referral?.clear();
     _markOnboardingSeen();
     _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
@@ -161,7 +178,7 @@ class AuthController extends Notifier<AuthState> {
       throw ApiException('Could not obtain a Google access token.');
     }
 
-    final user = await _repo.googleToken(accessToken);
+    final user = await _repo.googleToken(accessToken, referralCode: _pendingReferral?.read());
     _markOnboardingSeen();
     _startFirstRun(user);
     state = AuthState(status: AuthStatus.authenticated, user: user);
@@ -198,6 +215,7 @@ class AuthController extends Notifier<AuthState> {
       authorizationCode: credential.authorizationCode,
       firstName: credential.givenName,
       lastName: credential.familyName,
+      referralCode: _pendingReferral?.read(),
     );
     _markOnboardingSeen();
     state = AuthState(status: AuthStatus.authenticated, user: user);
