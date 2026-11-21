@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'sms_auto_capture.dart';
+import 'sms_capability.dart';
 import 'sms_outbox.dart';
 
 void smsScanLog(String message) {
@@ -33,6 +34,9 @@ class SmsManualScanner {
   /// and runs even if auto-capture is off. The launch scan (`manual: false`)
   /// never prompts and does nothing unless the user opted in to auto-capture.
   Future<ScanResult> scanFinancialSms({bool manual = false}) async {
+    if (!SmsCapability.canReadSms) {
+      return ScanResult.success(0, 0, 'Reading SMS is not available on this device');
+    }
     smsScanLog('Starting SMS scan (manual=$manual)');
 
     try {

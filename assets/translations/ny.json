@@ -178,6 +178,8 @@
     "confirmPassword": "Tsimikizani achinsinsi",
     "haveAccount": "Muli kale ndi akaunti?",
     "continueWithGoogle": "Pitirizani ndi Google",
+    "continueWithApple": "Pitirizani ndi Apple",
+    "appleUnavailable": "Kulowa ndi Apple sikukupezeka pakali pano.",
     "or": "kapena",
     "resetTitle": "Konzani achinsinsi",
     "resetSubtitle": "Lowetsani imelo yanu ndipo tikutumizirani ulalo wokonzanso.",
@@ -245,7 +247,13 @@
     "rejected": "Zachotsedwa",
     "processing": "Tikuwerengabe…",
     "loadError": "Sitinathe kutsegula zoyembekezera.",
-    "retry": "Yesaninso"
+    "retry": "Yesaninso",
+    "merchant": "Wogulitsa",
+    "amount": "Ndalama",
+    "payee": "Analipidwa",
+    "fee": "Chindapusa",
+    "amountRequired": "Lembani ndalama zomwe zili pa risiti.",
+    "possibleDuplicate": "Mwina muli nazo kale zochitikazi: zina zosungidwa zili ndi nambala yofanana."
   },
   "addTxn": {
     "title": "Onjezani zochitika",
@@ -295,6 +303,9 @@
     "body": "Mawu a uthenga",
     "sender": "Wotumiza (sikofunika)",
     "submit": "Werengani uthenga",
+    "copyHint": "Koperani uthenga wa mobile money mu Messages, kenako muuike pano.",
+    "pasteClipboard": "Ikani kuchokera pa clipboard",
+    "clipboardEmpty": "Palibe choti muike. Koperani uthengawo choyamba.",
     "queued": "Talandira - tikuwerenga uthenga wanu. Udzaonekera mukavomereza."
   },
   "receipt": {
@@ -307,7 +318,17 @@
     "chooseImage": "Sankhani mu gallery",
     "submit": "Jambulani risiti",
     "queued": "Talandira - tikuwerenga risiti yanu. Idzaonekera mukavomereza.",
-    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule."
+    "cameraDenied": "Pakufunika chilolezo cha kamera kuti mujambule.",
+    "ready": "Risiti yawerengedwa. Onani zomwe zili mmenemo ndipo muvomereze.",
+    "readyDuplicate": "Risiti yawerengedwa, koma ikuoneka ngati imene munalemba kale. Onani musanavomereze.",
+    "notReceipt": "Izi sizikuoneka ngati risiti ya malipiro, choncho palibe chomwe chawonjezedwa.",
+    "tip": "Ikani risiti pansi bwino pamalo owala ndipo idzaze chithunzi chonse. Makina adzapeza m’mbali mwake.",
+    "crop": "Dulani",
+    "retake": "Jambulaninso",
+    "cropTitle": "Dulani risiti",
+    "captureFailed": "Sitinathe kupeza chithunzi. Yesaninso.",
+    "savedOffline": "Yasungidwa. Risiti idzatumizidwa mukangolumikizana ndi intaneti.",
+    "queueFull": "Pali marisiti ambiri omwe akudikira kutumizidwa. Lumikizanani ndi intaneti, kenako yesaninso."
   },
   "income": {
     "title": "Mumapeza ndalama zingati pa mwezi?",

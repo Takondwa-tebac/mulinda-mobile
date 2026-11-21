@@ -178,6 +178,8 @@
     "confirmPassword": "Confirm password",
     "haveAccount": "Already have an account?",
     "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "appleUnavailable": "Sign in with Apple is not available right now.",
     "or": "or",
     "resetTitle": "Reset password",
     "resetSubtitle": "Enter your email and we'll send you a reset link.",
@@ -245,7 +247,13 @@
     "rejected": "Dismissed",
     "processing": "Still reading…",
     "loadError": "Couldn't load pending items.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "merchant": "Merchant",
+    "amount": "Amount",
+    "payee": "Paid to",
+    "fee": "Fee",
+    "amountRequired": "Enter the amount on the receipt.",
+    "possibleDuplicate": "You may already have this transaction: a saved one has the same reference."
   },
   "addTxn": {
     "title": "Add transaction",
@@ -295,6 +303,9 @@
     "body": "Message text",
     "sender": "Sender (optional)",
     "submit": "Read message",
+    "copyHint": "Copy the mobile-money message from Messages, then paste it here.",
+    "pasteClipboard": "Paste from clipboard",
+    "clipboardEmpty": "Nothing to paste. Copy the message first.",
     "queued": "Got it - we're reading your message. It'll appear once you approve it."
   },
   "receipt": {
@@ -307,7 +318,17 @@
     "chooseImage": "Choose from gallery",
     "submit": "Scan receipt",
     "queued": "Got it - we're reading your receipt. It'll appear once you approve it.",
-    "cameraDenied": "Camera access is needed to take a photo."
+    "cameraDenied": "Camera access is needed to take a photo.",
+    "ready": "Receipt read. Check the details and approve it.",
+    "readyDuplicate": "Receipt read, but it looks like one you already recorded. Check before approving.",
+    "notReceipt": "This doesn't look like a payment receipt, so nothing was added.",
+    "tip": "Lay the receipt flat in good light and let it fill the frame. The scanner finds the edges for you.",
+    "crop": "Crop",
+    "retake": "Retake",
+    "cropTitle": "Crop the receipt",
+    "captureFailed": "Couldn't get the photo. Please try again.",
+    "savedOffline": "Saved. The receipt will upload as soon as you're back online.",
+    "queueFull": "Too many receipts are waiting to upload. Connect to the internet, then try again."
   },
   "income": {
     "title": "What's your monthly income?",

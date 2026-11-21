@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,6 +15,7 @@ import '../../features/export/screens/export_screen.dart';
 import '../../features/summary/screens/daily_summaries_screen.dart';
 import '../../features/capture/screens/paste_sms_screen.dart';
 import '../../features/capture/screens/scan_receipt_screen.dart';
+import '../../features/capture/screens/receipt_ocr_debug_screen.dart';
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -148,6 +149,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.pasteSms, builder: (_, _) => const PasteSmsScreen()),
       GoRoute(path: Routes.scanReceipt, builder: (_, _) => const ScanReceiptScreen()),
+      if (kDebugMode)
+        GoRoute(path: Routes.receiptOcrDebug, builder: (_, _) => const ReceiptOcrDebugScreen()),
       GoRoute(
         path: Routes.inbox,
         // `?item=<id>&kind=sms|receipt` (from a notification) opens that item.
