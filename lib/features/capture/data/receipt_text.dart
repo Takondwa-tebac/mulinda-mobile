@@ -5,7 +5,7 @@ import 'receipt_ocr.dart';
 /// ("33,968. 00"), "O" for "0" ("07-0ct-2026"), and 8s for 0s on dot-matrix
 /// till printers ("DATE 2826-18-19").
 
-final _currency = RegExp(r'^(MWK|MK|K)\.?\s*', caseSensitive: false);
+final _currency = RegExp(r'^(MWK|M[VW]+K|MYIK|MK|K)\.?\s*', caseSensitive: false);
 final _number = RegExp(r'^\d{1,3}(?:[,.]\d{3})+(?:[.,]\d{1,2})?$|^\d+(?:[.,]\d{1,2})?$');
 
 /// Parses a line that is nothing but an amount ("MWK 10,000.00",
@@ -72,7 +72,8 @@ DateTime? parseDate(String text, {DateTime? now}) {
     return null;
   }
 
-  for (final m in RegExp(r'\b(\d{4})-(\d{1,2})-(\d{1,2})\b').allMatches(s)) {
+  // "2026-06 18": a dash lost in a faded print.
+  for (final m in RegExp(r'\b(\d{4})-(\d{1,2})[-\s](\d{1,2})\b').allMatches(s)) {
     final date = build(m[1]!, m[2]!, m[3]!, null);
     if (date != null) return _withTime(date, s.substring(m.end));
   }
@@ -82,7 +83,12 @@ DateTime? parseDate(String text, {DateTime? now}) {
     final date = build(m[3]!, '$month', m[1]!, month);
     if (date != null) return _withTime(date, s.substring(m.end));
   }
-  for (final m in RegExp(r'\b(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})\b').allMatches(s)) {
+  for (final m in RegExp(r'\b(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})\b|\b(\d{1,2})-(\d{1,2})-(\d{4})\b').allMatches(s)) {
+    if (m[4] != null) {
+      final date = build(m[6]!, m[5]!, m[4]!, null);
+      if (date != null) return _withTime(date, s.substring(m.end));
+      continue;
+    }
     final date = build(m[3]!, m[2]!, m[1]!, null);
     if (date != null) return _withTime(date, s.substring(m.end));
   }
@@ -92,7 +98,8 @@ DateTime? parseDate(String text, {DateTime? now}) {
 /// The digit string as read, then with OCR'd 8s turned back into 0s.
 Iterable<String> _repairs(String digits) sync* {
   yield digits;
-  final eights = [for (var i = 0; i < digits.length; i++) if (digits[i] == '8') i];
+  // Faded photos also read 0 as 9 ("94/08/2026", "2926").
+  final eights = [for (var i = 0; i < digits.length; i++) if (digits[i] == '8' || digits[i] == '9') i];
   if (eights.isEmpty || eights.length > 4) return;
   for (var mask = 1; mask < 1 << eights.length; mask++) {
     final chars = digits.split('');
