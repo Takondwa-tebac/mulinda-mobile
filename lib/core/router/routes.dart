@@ -8,6 +8,10 @@ abstract class Routes {
   static const resetPassword = '/reset-password';
 
   static const incomeSetup = '/income-setup';
+
+  // First run after sign in (Android): SMS access, then the 30-day import.
+  static const smsIntro = '/welcome/sms';
+  static const firstImport = '/welcome/import';
   static const permissions = '/permissions';
   static const legal = '/legal';
 

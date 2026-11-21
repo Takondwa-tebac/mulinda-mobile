@@ -113,7 +113,8 @@
       "11": "Novembala",
       "12": "Disembala"
     },
-    "itemGone": "Chinthu chimenecho sichikupezekanso."
+    "itemGone": "Chinthu chimenecho sichikupezekanso.",
+    "somethingWrong": "China chake chalakwika. Yesaninso."
   },
   "onboarding": {
     "anim": {
@@ -1349,6 +1350,7 @@
     "stepToday": "Onjezani zomwe mwawononga lero",
     "stepTodaySub": "Ndalama za m'manja nazonso",
     "stepBudget": "Khazikitsani bajeti imodzi",
-    "stepBudgetSub": "Onani ngati mukuwononga mofulumira"
+    "stepBudgetSub": "Onani ngati mukuwononga mofulumira",
+    "noCategory": "Palibe gulu pano"
   }
 }

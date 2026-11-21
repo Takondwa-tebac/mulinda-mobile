@@ -16,13 +16,16 @@ import '../../../core/widgets/transaction_tile.dart';
 import '../../activity/data/activity_feed.dart';
 import '../../activity/widgets/txn_view.dart';
 import '../../auth/providers/auth_controller.dart';
+import '../../activity/data/activity_repository.dart' show reviewCountProvider;
 import '../../insights/data/insights_repository.dart';
+import '../../onboarding/first_run.dart';
 import '../../plan/data/budget_pace.dart';
 import '../../plan/data/plan_models.dart';
 import '../../plan/data/plan_repository.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import '../data/spending_insight.dart';
+import '../widgets/first_visit_cards.dart';
 import '../widgets/spending_chart.dart';
 import '../../subscription/widgets/trial_banner.dart';
 import '../../../shared/plural.dart';
@@ -36,7 +39,12 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(dashboardProvider);
-    final firstName = ref.watch(currentUserProvider)?.firstName;
+    final user = ref.watch(currentUserProvider);
+    final firstName = user?.firstName;
+    // The first visit is remembered as seen; this session keeps greeting it.
+    if (ref.watch(firstRunProvider.select((s) => s.firstVisit)) && user != null) {
+      ref.read(firstRunProvider.notifier).markHomeSeen(user.id);
+    }
     final unread = ref.watch(unreadInsightsCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
@@ -93,9 +101,13 @@ class _Dashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final greeting = firstName == null || firstName!.isEmpty
-        ? 'home.greeting'.tr()
-        : '${'home.greeting'.tr()}, $firstName';
+    final firstRun = ref.watch(firstRunProvider);
+    final greeting = homeGreeting(firstName: firstName, firstVisit: firstRun.firstVisit);
+    final imported = firstRun.firstVisit && firstRun.importedCount > 0;
+    final toCheck = imported ? (ref.watch(reviewCountProvider).valueOrNull ?? 0) : 0;
+    // Nothing recorded yet, or SMS capture skipped on the first visit: the
+    // three steps that get the budget going.
+    final showSteps = data.isFirstRun || (firstRun.firstVisit && firstRun.smsSkipped);
     final needs = data.needsAttention ?? 0;
     final spending = data.spendingByCategory.where((r) => r.amount.minorUnits > 0).toList();
 
@@ -110,7 +122,12 @@ class _Dashboard extends ConsumerWidget {
         // Renders nothing unless a free trial is running.
         const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
 
-        if (data.isFirstRun) ...[const _FirstRunCard(), const SizedBox(height: AppSpacing.lg)],
+        if (imported) ...[
+          const Last30DaysCard(),
+          if (toCheck > 0) ToCheckCard(count: toCheck),
+        ],
+
+        if (showSteps) GetStartedSteps(hasTransactions: data.recent.isNotEmpty, hasBudget: data.budgetsTotal > 0),
 
         if (needs > 0) ...[
           _AttentionCard(count: needs, onTap: () => _openNeedsCategory(context, ref)),
@@ -598,57 +615,6 @@ class _CoachCard extends StatelessWidget {
         ),
         trailing: Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
         onTap: onTap,
-      ),
-    );
-  }
-}
-
-/// Shown until anything has been recorded: the three ways to get started.
-class _FirstRunCard extends StatelessWidget {
-  const _FirstRunCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    Widget step(IconData icon, String title, String body, String route) => ListTile(
-      leading: CircleAvatar(
-        backgroundColor: scheme.primaryContainer,
-        foregroundColor: scheme.onPrimaryContainer,
-        child: Icon(icon),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(body),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push(route),
-    );
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs),
-              child: Text(
-                'home2.getStartedTitle'.tr(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Text('home2.getStartedBody'.tr(), style: TextStyle(color: scheme.onSurfaceVariant)),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            step(
-              Icons.account_balance_wallet_outlined,
-              'home2.stepAccount'.tr(),
-              'home2.stepAccountSub'.tr(),
-              Routes.addAccount,
-            ),
-            step(Icons.sms_outlined, 'home2.stepSms'.tr(), 'home2.stepSmsSub'.tr(), Routes.pasteSms),
-            step(Icons.edit_outlined, 'home2.stepManual'.tr(), 'home2.stepManualSub'.tr(), Routes.addTransaction),
-          ],
-        ),
       ),
     );
   }

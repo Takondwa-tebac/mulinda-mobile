@@ -113,7 +113,8 @@
       "11": "November",
       "12": "December"
     },
-    "itemGone": "That item is no longer available."
+    "itemGone": "That item is no longer available.",
+    "somethingWrong": "Something went wrong. Please try again."
   },
   "onboarding": {
     "anim": {
@@ -1349,6 +1350,7 @@
     "stepToday": "Add today's spending",
     "stepTodaySub": "Cash counts too",
     "stepBudget": "Set one budget",
-    "stepBudgetSub": "See when spending runs ahead"
+    "stepBudgetSub": "See when spending runs ahead",
+    "noCategory": "No category yet"
   }
 }

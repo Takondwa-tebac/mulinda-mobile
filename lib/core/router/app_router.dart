@@ -28,7 +28,10 @@ import '../../features/insights/screens/insights_screen.dart';
 import '../../features/profile/screens/offline_sync_screen.dart';
 import '../../features/insights/screens/notification_detail_screen.dart';
 import '../../features/onboarding/onboarding_prefs.dart';
+import '../../features/onboarding/first_run.dart';
+import '../../features/onboarding/screens/first_import_screen.dart';
 import '../../features/onboarding/screens/income_setup_screen.dart';
+import '../../features/onboarding/screens/sms_intro_screen.dart';
 import '../../features/plan/data/plan_models.dart';
 import '../../features/plan/screens/goal_detail_screen.dart';
 import '../../features/plan/screens/investment_detail_screen.dart';
@@ -96,16 +99,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         return seen ? Routes.login : Routes.onboarding;
       }
 
-      // Authenticated. First-run: declare income bracket before the app proper.
-      final user = ref.read(authControllerProvider).user;
-      final needsIncomeSetup = user != null && user.declaredIncomeBracket == null;
-      if (needsIncomeSetup) {
-        return loc == Routes.incomeSetup ? null : Routes.incomeSetup;
+      // Authenticated. Just signed in on Android: ask for SMS access (and
+      // offer the 30-day import) before Home. Income is no longer forced here;
+      // it is asked in context where it is used.
+      final landing = loc == Routes.splash || authEntryPages.contains(loc);
+      if (landing && ref.read(firstRunProvider).smsStepPending) {
+        return Routes.smsIntro;
       }
 
-      // Bounce off the splash, auth-entry pages, and the (now-complete) setup —
-      // but NOT publicAnywhere pages (permissions, legal), which stay reachable.
-      if (loc == Routes.splash || authEntryPages.contains(loc) || loc == Routes.incomeSetup) {
+      // Bounce off the splash and auth-entry pages, but NOT publicAnywhere
+      // pages (permissions, legal) or the first-run steps.
+      if (landing) {
         return Routes.home;
       }
       return null;
@@ -124,6 +128,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: Routes.incomeSetup, builder: (_, _) => const IncomeSetupScreen()),
+      GoRoute(path: Routes.smsIntro, builder: (_, _) => const SmsIntroScreen()),
+      GoRoute(path: Routes.firstImport, builder: (_, _) => const FirstImportScreen()),
       GoRoute(
         path: Routes.permissions,
         builder: (_, s) => PermissionsScreen(fromOnboarding: s.uri.queryParameters['onboarding'] == 'true'),
