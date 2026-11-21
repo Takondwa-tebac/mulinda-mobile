@@ -31,6 +31,7 @@ abstract class Routes {
   static const accountDetail = '/account-detail';
   static const pasteSms = '/paste-sms';
   static const scanReceipt = '/scan-receipt';
+  static const receiptOcrDebug = '/debug/receipt-ocr'; // debug builds only
   static const inbox = '/inbox';
   static const bulkSmsImport = '/bulk-sms-import';
   static const manualSmsScan = '/manual-sms-scan';
