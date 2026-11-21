@@ -145,9 +145,9 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
                 title: _title(txn),
                 subtitle: displayMerchant(txn),
                 amountLine: detailAmountLabel(txn),
-                amountColor: txn.isIncome
-                    ? context.semantic.income
-                    : (txn.notSpending ? Theme.of(context).colorScheme.onSurfaceVariant : context.semantic.expense),
+                amountColor: txn.notSpending || txn.notIncome
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : (txn.isIncome ? context.semantic.income : context.semantic.expense),
                 statusColor: txn.isIncome ? context.semantic.success : Theme.of(context).colorScheme.primary,
                 detailsHeading: 'activity2.detail.details'.tr(),
                 rows: _rows(txn),
@@ -281,9 +281,12 @@ class _CategoryCard extends StatelessWidget {
                         categorisationExplanation(txn),
                         style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
                       ),
-                      if (txn.notSpending) ...[
+                      if (txn.notSpending || txn.notIncome) ...[
                         const SizedBox(height: AppSpacing.xs),
-                        StatusChip(label: 'activity2.notSpending'.tr(), icon: Icons.swap_horiz),
+                        StatusChip(
+                          label: (txn.notIncome ? 'activity2.notIncome' : 'activity2.notSpending').tr(),
+                          icon: Icons.swap_horiz,
+                        ),
                       ],
                       if (needs) ...[
                         const SizedBox(height: AppSpacing.xs),
@@ -587,10 +590,10 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
 }
 
 /// The amount with its direction sign, matching the Activity list: income "+",
-/// spending "-", and money moved between the user's own accounts (a
-/// non-spending category) unsigned, because it is neither.
+/// spending "-", and money moved between the user's own accounts or sent and
+/// returned (a non-spending category) unsigned, because it is neither.
 @visibleForTesting
 String detailAmountLabel(Txn txn) {
-  if (txn.notSpending) return txn.amount.formatted;
+  if (txn.notSpending || txn.notIncome) return txn.amount.formatted;
   return '${txn.isIncome ? '+' : '-'}${txn.amount.formatted}';
 }

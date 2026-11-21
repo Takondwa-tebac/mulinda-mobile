@@ -119,6 +119,30 @@ void main() {
       final g = groupByDay([moved(), _txn('x', 'expense', 1000, '2026-11-04T10:00:00')]).single;
       expect(g.outMinor, 1000);
     });
+
+    Txn returned() => Txn.fromJson({
+      'id': 'r',
+      'type': 'income',
+      'amount': _money(9000),
+      'occurred_at': '2026-11-04T13:00:00',
+      'category': {'id': 'ret', 'name': 'Sent and returned', 'icon': 'u_turn_left', 'is_spending': false},
+    });
+
+    test('income in a category that does not count is not income', () {
+      expect(returned().notIncome, isTrue);
+      expect(returned().countsAsIncome, isFalse);
+      expect(returned().notSpending, isFalse);
+      expect(_txn('i', 'income', 1000, null).countsAsIncome, isTrue);
+    });
+
+    test('is left out of the money in for the day', () {
+      final g = groupByDay([returned(), _txn('i', 'income', 1000, '2026-11-04T10:00:00')]).single;
+      expect(g.inMinor, 1000);
+    });
+
+    test('money sent and returned is unsigned in the detail amount', () {
+      expect(detailAmountLabel(returned()), 'MK 90');
+    });
   });
 
   group('list filters and pages', () {

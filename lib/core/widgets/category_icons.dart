@@ -46,6 +46,7 @@ const _icons = <String, IconData>{
   'category': Icons.category,
   // Non-spending and newer system categories.
   'swap_horiz': Icons.swap_horiz,
+  'u_turn_left': Icons.u_turn_left,
   'volunteer_activism': Icons.volunteer_activism,
 };
 

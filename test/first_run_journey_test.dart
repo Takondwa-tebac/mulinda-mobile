@@ -255,6 +255,8 @@ void main() {
         t('5', 'expense', 9000, cat: 'Savings', spending: false),
         t('6', 'transfer', 4000),
         t('7', 'expense', 1000),
+        // Sent to a friend and sent back: not income.
+        t('8', 'income', 9000, cat: 'Sent and returned', spending: false),
       ], uncategorised: 'No category yet');
       expect(summary.moneyIn.minorUnits, 5000000);
       expect(summary.moneyOut.minorUnits, 1300000);

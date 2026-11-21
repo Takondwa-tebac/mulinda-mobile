@@ -877,6 +877,7 @@
   },
   "activity2": {
     "notSpending": "Siziwerengedwa ngati zogula",
+    "notIncome": "Siziwerengedwa ngati ndalama zolowa",
     "account": "Akaunti",
     "accountDeleteFailed": "Sitinathe kufufuta akauntiyi",
     "accountDeleted": "Akaunti yafufutidwa",
