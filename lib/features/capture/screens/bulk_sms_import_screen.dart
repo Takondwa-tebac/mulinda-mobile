@@ -8,9 +8,17 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/inbox_repository.dart';
 import '../data/sms_auto_capture.dart';
+import '../data/sms_senders.dart';
+
+/// One message read from the phone's inbox.
+typedef InboxSms = ({String body, String sender, DateTime? receivedAt});
 
 class BulkSmsImportScreen extends ConsumerStatefulWidget {
-  const BulkSmsImportScreen({super.key});
+  const BulkSmsImportScreen({super.key, this.loadInbox});
+
+  /// Reads the inbox instead of the phone (tests and previews). When null,
+  /// the screen asks for SMS permission and reads the device inbox.
+  final Future<List<InboxSms>> Function()? loadInbox;
 
   @override
   ConsumerState<BulkSmsImportScreen> createState() =>
@@ -27,22 +35,39 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
   DateTime? _toDate;
   String? _selectedVendor;
 
-  final _vendors = [
-    {'id': null, 'name': 'All Vendors'},
-    {'id': 'mpamba', 'name': 'TNM Mpamba'},
-    {'id': 'airtel', 'name': 'Airtel Money'},
-    {'id': 'fdh', 'name': 'FDH'},
-    {'id': 'nbs', 'name': 'NBS'},
-    {'id': 'nbm', 'name': 'NBM'},
-    {'id': 'centenary', 'name': 'Centenary'},
-  ];
+  /// Filter options built from the messages on the phone: each known
+  /// provider that has messages, then every other sender, with counts.
+  List<({String? id, String label})> get _vendorOptions {
+    final counts = <String, int>{};
+    final otherNames = <String, String>{};
+    for (final sms in _allSms) {
+      final sender = sms['sender']?.toString() ?? '';
+      final vendor = SmsSenders.providerFor(sender);
+      if (vendor != null) {
+        counts[vendor] = (counts[vendor] ?? 0) + 1;
+      } else if (SmsSenders.normalise(sender).isNotEmpty) {
+        final id = '$SmsSenders.senderPrefix$sender';
+        counts[id] = (counts[id] ?? 0) + 1;
+        otherNames[id] = sender;
+      }
+    }
+    return [
+      (id: null, label: 'All senders (${_allSms.length})'),
+      for (final entry in SmsSenders.known.entries)
+        if (counts.containsKey(entry.key))
+          (id: entry.key, label: '${entry.value.name} (${counts[entry.key]})'),
+      for (final entry in otherNames.entries)
+        (id: entry.key, label: '${entry.value} (${counts[entry.key]})'),
+    ];
+  }
 
   @override
   void initState() {
     super.initState();
-    // Default to today's date (date-only, so the whole day is included)
+    // Default to the last 30 days (date-only, so whole days are included).
+    // Today only hid most messages and made the sender filter look broken.
     final today = DateUtils.dateOnly(DateTime.now());
-    _fromDate = today;
+    _fromDate = today.subtract(const Duration(days: 30));
     _toDate = today;
     // Auto-scan SMS on load
     Future.microtask(() => _scanSms());
@@ -122,30 +147,12 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
       }).toList();
     }
 
-    // Filter by vendor
-    if (_selectedVendor != null) {
-      filtered = filtered.where((sms) {
-        final sender = sms['sender']?.toString() ?? '';
-        final senderLower = sender.toLowerCase();
-        
-        // Match based on vendor keywords
-        switch (_selectedVendor) {
-          case 'mpamba':
-            return senderLower.contains('mpamba') || senderLower.contains('tnm');
-          case 'airtel':
-            return senderLower.contains('airtel');
-          case 'fdh':
-            return senderLower.contains('fdh');
-          case 'nbs':
-            return senderLower.contains('nbs') || senderLower.contains('national bank');
-          case 'nbm':
-            return senderLower.contains('nbm') || senderLower.contains('national bank');
-          case 'centenary':
-            return senderLower.contains('centenary');
-          default:
-            return true;
-        }
-      }).toList();
+    // Filter by sender (known provider or one exact sender)
+    final vendor = _selectedVendor;
+    if (vendor != null) {
+      filtered = filtered
+          .where((sms) => SmsSenders.matches(sms['sender']?.toString() ?? '', vendor))
+          .toList();
     }
 
     return filtered;
@@ -205,9 +212,8 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
     setState(() => _scanning = true);
 
     try {
-      final granted = await _telephony.requestSmsPermissions ?? false;
-
-      if (!granted) {
+      final inbox = await (widget.loadInbox ?? _readDeviceInbox)();
+      if (inbox == null) {
         if (mounted) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
@@ -220,23 +226,15 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
         return;
       }
 
-      final messages = await _telephony.getInboxSms();
-
-      final financialSms = messages
-          .where((msg) => _isFinancialSms(msg.body ?? ''))
-          .toList();
-
       setState(() {
-        _allSms = financialSms
+        _allSms = inbox
+            .where((msg) => _isFinancialSms(msg.body))
             .map(
               (msg) => {
-                'body': msg.body ?? '',
-                'sender': msg.sender ?? '',
-                'received_at': msg.date != null
-                    ? DateTime.fromMillisecondsSinceEpoch(
-                        msg.date!,
-                      ).toIso8601String()
-                    : DateTime.now().toIso8601String(),
+                'body': msg.body,
+                'sender': msg.sender,
+                'received_at':
+                    (msg.receivedAt ?? DateTime.now()).toIso8601String(),
               },
             )
             .toList();
@@ -249,7 +247,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(content: Text('Found ${_allSms.length} financial SMS')),
+            // Count what the user will see: the messages that match the
+            // current dates and sender, not everything on the phone.
+            SnackBar(content: Text(_scanSummary(_filteredSms.length, _allSms.length))),
           );
       }
     } catch (e) {
@@ -264,7 +264,30 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
   }
 
   /// One shared rule for what looks like a money SMS (see [SmsAutoCapture.isFinancialSms]).
+  /// The device inbox, or null when SMS permission is refused.
+  Future<List<InboxSms>?> _readDeviceInbox() async {
+    final granted = await _telephony.requestSmsPermissions ?? false;
+    if (!granted) return null;
+    final messages = await _telephony.getInboxSms();
+    return [
+      for (final msg in messages)
+        (
+          body: msg.body ?? '',
+          sender: msg.sender,
+          receivedAt: msg.date != null
+              ? DateTime.fromMillisecondsSinceEpoch(msg.date!)
+              : null,
+        ),
+    ];
+  }
+
   bool _isFinancialSms(String body) => SmsAutoCapture.isFinancialSms(body);
+
+  /// "Found 12 financial SMS" when nothing is filtered out, otherwise
+  /// "12 of 340 financial SMS match your filters".
+  static String _scanSummary(int shown, int total) => shown == total
+      ? 'Found $total financial SMS'
+      : '$shown of $total financial SMS match your filters';
 
   Future<void> _importSms() async {
     final selectedSms = _filteredSms
@@ -286,7 +309,9 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
       final dio = ref.read(dioProvider);
       await dio.post(
         '/v1/sms/bulk-import',
-        data: {'messages': selectedSms, 'vendor_filter': _selectedVendor},
+        // The sender filter is applied here already; only the ticked
+        // messages are sent, so the server imports exactly those.
+        data: {'messages': selectedSms},
       );
 
       if (mounted) {
@@ -406,15 +431,18 @@ class _BulkSmsImportScreenState extends ConsumerState<BulkSmsImportScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: DropdownButtonFormField<String?>(
-                value: _selectedVendor,
+                value: _vendorOptions.any((o) => o.id == _selectedVendor)
+                    ? _selectedVendor
+                    : null,
+                isExpanded: true,
                 decoration: InputDecoration(
-                  labelText: 'Filter by vendor',
+                  labelText: 'Filter by sender',
                   border: OutlineInputBorder(),
                 ),
-                items: _vendors.map((vendor) {
+                items: _vendorOptions.map((option) {
                   return DropdownMenuItem<String?>(
-                    value: vendor['id'] as String?,
-                    child: Text(vendor['name'] as String),
+                    value: option.id,
+                    child: Text(option.label, overflow: TextOverflow.ellipsis),
                   );
                 }).toList(),
                 onChanged: (value) {

@@ -51,6 +51,24 @@ const _icons = <String, IconData>{
 
 IconData categoryIcon(String? name) => _icons[name] ?? Icons.label_outline;
 
+/// Icons a person can pick for a category of their own, in the order shown.
+const categoryIconChoices = <String>[
+  'restaurant', 'shopping_cart', 'directions_bus', 'local_gas_station', 'home', 'bolt',
+  'wifi', 'phone_android', 'school', 'local_hospital', 'favorite', 'church',
+  'volunteer_activism', 'card_giftcard', 'child_care', 'groups', 'elderly', 'pets',
+  'checkroom', 'fitness_center', 'movie', 'flight', 'build', 'home_work', 'store',
+  'work', 'payments', 'savings', 'trending_up', 'account_balance', 'description',
+  'shield', 'pie_chart', 'category',
+];
+
+/// Colours a person can pick for a category (the same palette the server
+/// picks from when they leave it to Mulinda).
+const categoryColorChoices = <String>[
+  '#E67E22', '#3498DB', '#8E44AD', '#16A085', '#E74C3C', '#2980B9', '#E91E63',
+  '#795548', '#9B59B6', '#27AE60', '#00897B', '#EC407A', '#F39C12', '#5C6BC0',
+  '#26A69A', '#AB47BC', '#EF5350', '#42A5F5', '#66BB6A', '#FFA726', '#8D6E63',
+];
+
 /// `#RRGGBB` (or `#AARRGGBB`) to a colour, or null when it is missing or not valid.
 Color? parseHexColor(String? hex) {
   if (hex == null) return null;

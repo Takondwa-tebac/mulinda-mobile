@@ -6,6 +6,7 @@ import '../../../core/network/api_exception.dart';
 import '../data/activity_models.dart';
 import '../data/activity_repository.dart';
 import '../../../core/widgets/category_icons.dart';
+import 'category_style_sheet.dart';
 
 /// What the user chose in the picker: a category, or none. Returned wrapped so
 /// that closing the sheet without choosing (null) is different from choosing none.
@@ -253,12 +254,43 @@ class _CategoryPickerListState extends ConsumerState<CategoryPickerList> {
     super.dispose();
   }
 
-  Future<void> _create(String name) async {
+  /// Choose an icon and colour first (optional), then create.
+  Future<void> _createStyled(String name) async {
+    final style = await showCategoryStyleSheet(context, name: name.trim());
+    if (style == null || !mounted) return;
+    await _create(name, style: style);
+  }
+
+  /// Restyle one of the user's own categories (long press).
+  Future<void> _restyle(Category category) async {
+    final style = await showCategoryStyleSheet(
+      context,
+      name: category.name,
+      icon: category.icon,
+      color: category.color,
+      allowAuto: false,
+    );
+    if (style == null || style.icon == null || style.color == null || !mounted) return;
+    try {
+      await ref.read(activityRepositoryProvider).updateCategoryStyle(category.id, icon: style.icon!, color: style.color!);
+      ref.invalidate(categoriesProvider);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.displayMessage)));
+    }
+  }
+
+  Future<void> _create(String name, {CategoryStyleChoice? style}) async {
     setState(() => _creating = true);
     try {
-      final created = await ref
-          .read(activityRepositoryProvider)
-          .createCategory(name: name.trim(), kind: widget.createKind);
+      final created = await ref.read(activityRepositoryProvider).createCategory(
+            name: name.trim(),
+            kind: widget.createKind,
+            icon: style?.icon,
+            color: style?.color,
+          );
       // Wait for the refreshed list, so the field can show the new category at once.
       ref.invalidate(categoriesProvider);
       await ref.read(categoriesProvider.future);
@@ -349,8 +381,10 @@ class _CategoryPickerListState extends ConsumerState<CategoryPickerList> {
                   enabled: enabled,
                   leading: CategoryAvatar(icon: c.icon, color: c.color),
                   title: Text(c.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: c.isSystem ? null : Text('categoryStyle.restyleHint'.tr()),
                   trailing: c.id == widget.selectedId ? const Icon(Icons.check) : null,
                   onTap: () => widget.onSelected(CategoryChoice(c.id)),
+                  onLongPress: c.isSystem ? null : () => _restyle(c),
                 ),
               if (matches.isEmpty && query.isNotEmpty)
                 Padding(
@@ -379,6 +413,12 @@ class _CategoryPickerListState extends ConsumerState<CategoryPickerList> {
                   subtitle: Text('categoryPicker.createHint'.tr()),
                   enabled: enabled,
                   onTap: () => _create(query),
+                  trailing: IconButton(
+                    key: const ValueKey('category-create-styled'),
+                    tooltip: 'categoryStyle.pickLook'.tr(),
+                    icon: const Icon(Icons.palette_outlined),
+                    onPressed: enabled ? () => _createStyled(query) : null,
+                  ),
                 ),
             ],
           ),
