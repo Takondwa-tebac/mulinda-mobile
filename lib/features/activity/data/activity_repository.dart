@@ -177,15 +177,6 @@ class ActivityRepository {
     }
   }
 
-  Future<void> scanReceipt(String filePath) async {
-    try {
-      final form = FormData.fromMap({'file': await MultipartFile.fromFile(filePath)});
-      await _dio.post('/v1/receipt-scans', data: form);
-    } on DioException catch (e) {
-      throw ApiException.fromDio(e);
-    }
-  }
-
   Future<List<T>> _list<T>(
     String path,
     T Function(Map<String, dynamic>) fromJson, {

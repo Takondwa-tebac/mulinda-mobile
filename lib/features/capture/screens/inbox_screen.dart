@@ -27,6 +27,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     required Map<String, dynamic>? parsed,
     String? imageUrl,
     String? sender,
+    bool possibleDuplicate = false,
   }) async {
     final repo = ref.read(inboxRepositoryProvider);
     final accounts = await ref
@@ -49,11 +50,17 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           parsed: parsed,
           imageUrl: imageUrl,
           sender: sender,
+          possibleDuplicate: possibleDuplicate,
           accounts: accounts,
           scrollController: scrollController,
-          onApprove: (accountId) async {
+          onApprove: (accountId, edits) async {
             if (isReceipt) {
-              await repo.approveReceipt(id, financialAccountId: accountId);
+              await repo.approveReceipt(
+                id,
+                financialAccountId: accountId,
+                amount: edits.amount,
+                merchant: edits.merchant,
+              );
             } else {
               await repo.approveSms(id, financialAccountId: accountId);
             }
@@ -214,6 +221,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                     isReceipt: true,
                     parsed: r.parsed,
                     imageUrl: r.imageUrl,
+                    possibleDuplicate: r.duplicateTransactionId != null,
                   ),
                 ),
               ),
@@ -229,6 +237,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 // Review bottom sheet
 // ---------------------------------------------------------------------------
 
+/// The user's corrections to a scanned receipt before it is saved.
+class ReceiptEdits {
+  const ReceiptEdits({this.amount, this.merchant});
+
+  final num? amount;
+  final String? merchant;
+}
+
 class _ReviewSheet extends StatefulWidget {
   const _ReviewSheet({
     required this.isReceipt,
@@ -239,16 +255,18 @@ class _ReviewSheet extends StatefulWidget {
     required this.scrollController,
     this.imageUrl,
     this.sender,
+    this.possibleDuplicate = false,
   });
 
   final bool isReceipt;
   final Map<String, dynamic>? parsed;
   final List<Account> accounts;
-  final Future<void> Function(String accountId) onApprove;
+  final Future<void> Function(String accountId, ReceiptEdits edits) onApprove;
   final Future<void> Function() onReject;
   final ScrollController scrollController;
   final String? imageUrl;
   final String? sender;
+  final bool possibleDuplicate;
 
   @override
   State<_ReviewSheet> createState() => _ReviewSheetState();
@@ -260,19 +278,45 @@ class _ReviewSheetState extends State<_ReviewSheet> {
   bool _rejecting = false;
   String? _error;
 
+  // A receipt's amount and merchant can be corrected before saving: what the
+  // phone read may be incomplete (handwriting, a faded till slip).
+  late final _amount = TextEditingController(text: _initialAmount);
+  late final _merchant = TextEditingController(text: widget.parsed?['merchant']?.toString() ?? '');
+
+  String get _initialAmount {
+    final value = num.tryParse(widget.parsed?['amount']?.toString() ?? '');
+    return value == null ? '' : value.toStringAsFixed(2);
+  }
+
   bool get _busy => _approving || _rejecting;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _merchant.dispose();
+    super.dispose();
+  }
 
   Future<void> _approve() async {
     if (_selectedAccount == null) {
       setState(() => _error = 'Please select an account');
       return;
     }
+    final amount = num.tryParse(_amount.text.replaceAll(',', '').trim());
+    if (widget.isReceipt && (amount == null || amount <= 0)) {
+      setState(() => _error = 'inbox.amountRequired'.tr());
+      return;
+    }
+    final merchant = _merchant.text.trim();
     setState(() {
       _approving = true;
       _error = null;
     });
     try {
-      await widget.onApprove(_selectedAccount!.id);
+      await widget.onApprove(
+        _selectedAccount!.id,
+        ReceiptEdits(amount: amount, merchant: merchant.isEmpty ? null : merchant),
+      );
       if (mounted) Navigator.of(context).pop('approved');
     } on ApiException catch (e) {
       if (e.code == 'sms_capture_limit_reached') {
@@ -340,6 +384,54 @@ class _ReviewSheetState extends State<_ReviewSheet> {
           ),
           const SizedBox(height: 20),
 
+          if (widget.possibleDuplicate) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.errorContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.content_copy_outlined, color: scheme.onErrorContainer, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'inbox.possibleDuplicate'.tr(),
+                      style: TextStyle(color: scheme.onErrorContainer),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          if (widget.isReceipt) ...[
+            TextField(
+              controller: _merchant,
+              enabled: !_busy,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: 'inbox.merchant'.tr(),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amount,
+              enabled: !_busy,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'inbox.amount'.tr(),
+                prefixText: '$currency ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Extracted details card
           Container(
             width: double.infinity,
@@ -350,13 +442,16 @@ class _ReviewSheetState extends State<_ReviewSheet> {
             ),
             child: Column(
               children: [
-                if (merchant != null) _DetailRow('Merchant', merchant),
-                if (amount != null)
+                if (!widget.isReceipt && merchant != null) _DetailRow('Merchant', merchant),
+                if (!widget.isReceipt && amount != null)
                   _DetailRow(
                     'Amount',
                     '$currency ${double.tryParse(amount.toString())?.toStringAsFixed(2) ?? amount}',
                   ),
                 _DetailRow('Type', type[0].toUpperCase() + type.substring(1)),
+                if (parsed['payee'] != null) _DetailRow('inbox.payee'.tr(), parsed['payee'].toString()),
+                if (num.tryParse(parsed['fee']?.toString() ?? '') case final fee? when fee > 0)
+                  _DetailRow('inbox.fee'.tr(), '$currency ${fee.toStringAsFixed(2)}'),
                 if (widget.sender != null) _DetailRow('Sender', widget.sender!),
                 if (parsed['reference'] != null)
                   _DetailRow('Reference', parsed['reference'].toString()),
