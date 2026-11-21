@@ -182,7 +182,9 @@
     "crop": "Crop",
     "retake": "Retake",
     "cropTitle": "Crop the receipt",
-    "captureFailed": "Couldn't get the photo. Please try again."
+    "captureFailed": "Couldn't get the photo. Please try again.",
+    "savedOffline": "Saved. The receipt will upload as soon as you're back online.",
+    "queueFull": "Too many receipts are waiting to upload. Connect to the internet, then try again."
   },
   "income": {
     "title": "What's your monthly income?",

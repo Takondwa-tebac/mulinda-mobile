@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -15,7 +16,9 @@ import '../../subscription/data/subscription_models.dart';
 import '../../subscription/widgets/premium_lock.dart';
 import '../data/inbox_repository.dart';
 import '../data/receipt_capture.dart';
+import '../data/receipt_outbox.dart';
 import '../data/receipt_scanner.dart';
+import '../data/sms_background_sync.dart';
 
 class ScanReceiptScreen extends ConsumerStatefulWidget {
   const ScanReceiptScreen({super.key});
@@ -33,20 +36,42 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   String _clientId = ReceiptScanner.newClientId();
   bool _loading = false;
 
-  ReceiptCapture get _capture => ReceiptCapture(
-        ref.read(receiptCaptureDeviceProvider),
-        requestCamera: ref.read(permissionServiceProvider).requestCamera,
-      );
+  /// One per screen: it remembers every temporary file the capture makes
+  /// (picker copies, crops, shrunk copies) so they are deleted, not left to
+  /// fill the phone's storage.
+  late final _capture = ReceiptCapture(
+    ref.read(receiptCaptureDeviceProvider),
+    requestCamera: ref.read(permissionServiceProvider).requestCamera,
+  );
+
+  /// The preview, decoded at screen size: a 2400 px image held at full size
+  /// would cost ~20 MB of image cache for a thumbnail.
+  ImageProvider? _preview;
+
+  @override
+  void dispose() {
+    _preview?.evict();
+    // Queued receipts have their own copy; everything else goes.
+    _capture.discardAll();
+    super.dispose();
+  }
+
+  void _show(String path) {
+    _preview?.evict();
+    final width = (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round();
+    _preview = ResizeImage(FileImage(File(path)), width: width, policy: ResizeImagePolicy.fit);
+    setState(() {
+      _image = path;
+      _clientId = ReceiptScanner.newClientId();
+    });
+    // The image it replaces (a retake, a crop) is no longer needed.
+    _capture.discardAll(keep: path);
+  }
 
   Future<void> _take(Future<String?> Function() capture) async {
     try {
       final path = await capture();
-      if (path != null && mounted) {
-        setState(() {
-          _image = path;
-          _clientId = ReceiptScanner.newClientId();
-        });
-      }
+      if (path != null && mounted) _show(path);
     } on CameraDenied {
       _snack('receipt.cameraDenied'.tr());
     } catch (e) {
@@ -73,9 +98,40 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
         flags = await readFlags();
       }
       final onDevice = flags[FeatureKeys.receiptOnDevice] ?? false;
-      final result = await ref.read(receiptScannerProvider).scan(image, onDevice: onDevice, clientId: _clientId);
+      final reading = onDevice ? await ref.read(receiptScannerProvider).read(image) : null;
+
+      // Queued first, sent second: if the connection drops or the app is
+      // closed mid-upload, the receipt is still on the phone and goes later.
+      final outbox = ref.read(receiptOutboxProvider);
+      final queued = await outbox.enqueue(
+        imagePath: image,
+        clientId: _clientId,
+        draft: reading?.draft.toPayload(),
+        ocrLines: reading?.ocrLines,
+        metrics: await _metrics(image, reading),
+      );
+      if (!queued) {
+        if (mounted) setState(() => _loading = false);
+        _snack('receipt.queueFull'.tr());
+        return;
+      }
+      await _capture.discardAll();
+
+      final upload = await outbox.send(_clientId);
       if (!mounted) return;
       ref.invalidate(pendingReceiptsProvider);
+      final result = switch (upload) {
+        ReceiptUploaded(:final result) => result,
+        ReceiptRejected(:final error) => throw error,
+        ReceiptQueued() => null,
+      };
+      if (result == null) {
+        // Offline or the server is busy: the outbox keeps retrying.
+        unawaited(SmsBackgroundSync.syncWhenOnline());
+        _snack('receipt.savedOffline'.tr());
+        Navigator.of(context).pop();
+        return;
+      }
       switch (result.outcome) {
         case ReceiptScanOutcome.ready:
           _snack(result.duplicateTransactionId != null
@@ -86,7 +142,13 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           _snack('receipt.queued'.tr());
           Navigator.of(context).pop();
         case ReceiptScanOutcome.notReceipt:
-          setState(() => _loading = false);
+          // Its temporary image is gone with the upload: start again.
+          _preview?.evict();
+          setState(() {
+            _loading = false;
+            _image = null;
+            _preview = null;
+          });
           _snack('receipt.notReceipt'.tr());
       }
     } on ApiException catch (e) {
@@ -96,8 +158,23 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
       } else {
         _snack(e.displayMessage);
       }
+    } catch (e) {
+      // Never leave the screen spinning; a queued receipt still goes later.
+      debugPrint('receipt submit failed: $e');
+      if (mounted) setState(() => _loading = false);
+      _snack('receipt.captureFailed'.tr());
     }
   }
+
+  /// The scan's timing report for the admin analytics: how long OCR and the
+  /// parser took on this phone, and what sort of phone it is.
+  Future<Map<String, dynamic>> _metrics(String image, DeviceReading? reading) async => {
+        if (reading?.ocrMs != null) 'ocr_ms': reading!.ocrMs,
+        if (reading?.parseMs != null) 'parse_ms': reading!.parseMs,
+        if (reading != null) 'lines': reading.document.lines.length,
+        'image_bytes': ?imageBytes(image),
+        ...await ScanDeviceInfo.get(),
+      };
 
   /// Scanning is paused (the AI service is busy): offer to add the expense by hand.
   Future<void> _offerManualEntry() async {
@@ -196,12 +273,12 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                       : Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.file(File(_image!), fit: BoxFit.contain),
+                            Image(image: _preview!, fit: BoxFit.contain),
                             Positioned(
                               right: 8,
                               bottom: 8,
                               child: FilledButton.tonalIcon(
-                                onPressed: _loading ? null : () => _take(() async => await _capture.recrop(_image!) ?? _image),
+                                onPressed: _loading ? null : () => _take(() => _capture.recrop(_image!)),
                                 icon: const Icon(Icons.crop),
                                 label: Text('receipt.crop'.tr()),
                               ),
