@@ -4,11 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/analytics/analytics.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/semantic_colors.dart';
+import '../onboarding_prefs.dart';
 import '../widgets/onboarding_illustrations.dart';
 
-/// Four branded intro slides (the last one explains the free trial honestly) with a persistent language toggle (Chichewa
-/// default, switchable here) and Skip / Next / Get started controls. Each slide has a small code-built animation that
-/// plays when the slide becomes active (see onboarding_illustrations.dart).
+/// Four branded intro slides (the fourth explains the free trial honestly) and
+/// a closing summary, with a persistent language toggle and Skip / Next / Get
+/// started controls. Each of the first four slides has a small code-built
+/// animation that plays when the slide becomes active (see
+/// onboarding_illustrations.dart). Skip jumps to the summary; Get started opens
+/// sign up. SMS access is asked for after sign in, not here.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -19,6 +25,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _index = 0;
+  bool _skipped = false;
 
   static final _slides = <_SlideData>[
     _SlideData((active) => BalanceIllustration(active: active), 'onboarding.slide1.title', 'onboarding.slide1.body'),
@@ -28,7 +35,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _SlideData((active) => TrialIllustration(active: active), 'onboarding.trial.title', 'onboarding.trial.body'),
   ];
 
-  bool get _isLast => _index == _slides.length - 1;
+  /// The animated slides plus the closing summary.
+  static int get _pageCount => _slides.length + 1;
+
+  bool get _isLast => _index == _pageCount - 1;
 
   @override
   void dispose() {
@@ -36,20 +46,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // Hand off to the permissions screen, which explains each permission and
-  // then marks onboarding seen + proceeds to login.
-  void _goPermissions({required bool skipped}) {
+  void _skip() {
+    _skipped = true;
+    _controller.animateToPage(_pageCount - 1, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+  }
+
+  /// Onboarding is done: remember it and open sign up.
+  Future<void> _finish() async {
     Analytics.track('onboarding_completed', {
       'step': _index + 1,
-      'reason': skipped ? 'skipped' : 'finished',
+      'reason': _skipped ? 'skipped' : 'finished',
       'locale': context.locale.languageCode,
     });
-    context.go('${Routes.permissions}?onboarding=true');
+    await OnboardingPrefs.markSeen();
+    if (mounted) context.go(Routes.register);
   }
 
   void _next() {
     if (_isLast) {
-      _goPermissions(skipped: false);
+      _finish();
     } else {
       _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
@@ -61,14 +76,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar: language toggle + Skip.
+            // Top bar: language toggle + Skip (hidden on the summary).
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.sm, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const _LanguageToggle(),
-                  TextButton(onPressed: () => _goPermissions(skipped: true), child: Text('onboarding.skip'.tr())),
+                  Visibility(
+                    visible: !_isLast,
+                    maintainSize: true,
+                    maintainAnimation: true,
+                    maintainState: true,
+                    child: TextButton(onPressed: _skip, child: Text('onboarding.skip'.tr())),
+                  ),
                 ],
               ),
             ),
@@ -76,19 +97,85 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView.builder(
                 controller: _controller,
                 onPageChanged: (i) => setState(() => _index = i),
-                itemCount: _slides.length,
-                itemBuilder: (_, i) => _Slide(data: _slides[i], active: i == _index),
+                itemCount: _pageCount,
+                itemBuilder: (_, i) =>
+                    i < _slides.length ? _Slide(data: _slides[i], active: i == _index) : const _SummarySlide(),
               ),
             ),
-            _Dots(count: _slides.length, index: _index),
+            _Dots(count: _pageCount, index: _index),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: FilledButton(
                 onPressed: _next,
                 child: Text((_isLast ? 'onboarding.getStarted' : 'onboarding.next').tr()),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The closing slide: what Mulinda does in one line, and three promises.
+class _SummarySlide extends StatelessWidget {
+  const _SummarySlide();
+
+  static const _checks = ['onboarding.summary.check1', 'onboarding.summary.check2', 'onboarding.summary.check3'];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, box) => SingleChildScrollView(
+        key: const ValueKey('onboarding-summary'),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: box.maxHeight),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // The logo sits on white in both themes, as on the splash screen.
+              Container(
+                width: 72,
+                height: 72,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Image.asset('assets/logo.png', excludeFromSemantics: true),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'onboarding.summary.title'.tr(),
+                style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'onboarding.summary.body'.tr(),
+                style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              for (final key in _checks)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 22, color: context.semantic.success),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(key.tr(), style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
         ),
       ),
     );

@@ -90,11 +90,29 @@ void main() {
     expect(find.text('60%'), findsOneWidget);
     expect(find.text('${formatMoney(kDemoGoalLeft, 'MWK')} to go'), findsOneWidget);
 
-    // Slide 4: the trial benefits and the honest "no card" line.
+    // Slide 4: the trial benefits and the honest "no card" line. Tracking is
+    // never promised as unlimited.
     await _next(tester);
-    expect(find.text('Unlimited SMS capture'), findsOneWidget);
+    expect(find.text('AI reads receipts and SMS'), findsOneWidget);
+    expect(find.textContaining('Unlimited'), findsNothing);
     expect(find.text('No card. Nothing renews by itself.'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
+
+    // Slide 5: the summary with its three promises and Get started.
+    await _next(tester);
+    expect(find.text('See where your money goes, automatically.'), findsOneWidget);
+    expect(find.text('Personal messages are never read'), findsOneWidget);
     expect(find.text('Get started'), findsOneWidget);
+  });
+
+  testWidgets('Skip jumps to the summary slide', (tester) async {
+    await _pump(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('onboarding-summary')), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
+    expect(_dotWidth(tester, 4), 24);
   });
 
   testWidgets('slide 2 shows the suggestion before confirming it', (tester) async {
