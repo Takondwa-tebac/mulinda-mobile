@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/notifications/notification_router.dart';
 import '../../core/router/routes.dart';
+import '../../core/theme/app_icons.dart';
 import '../../core/offline/offline_status.dart';
 import '../../core/widgets/app_update_banner.dart';
+import '../../core/widgets/scroll_aware_fab.dart';
 import '../auth/providers/auth_controller.dart';
 import '../auth/widgets/terms_update_dialog.dart';
 import '../activity/data/activity_repository.dart';
 import '../capture/data/inbox_repository.dart';
+import '../../shared/plural.dart';
 
 /// The signed-in shell: a 4-tab bottom nav with a central "＋" capture FAB.
 /// The AI coach is intentionally NOT a tab — it's reached from Home and
@@ -26,10 +30,23 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   bool _termsPrompted = false;
 
+  /// Hides the capture button while a tab's list scrolls.
+  final _fab = ScrollAwareFabController();
+
+  @override
+  void dispose() {
+    _fab.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptTerms());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybePromptTerms();
+      // A notification tapped before sign-in (or on a cold start) opens now.
+      NotificationRouter.instance.flushPending(ref);
+    });
   }
 
   /// Prompt once per app session if the user is behind on the Terms. Re-checks
@@ -44,10 +61,11 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
-  void _goBranch(int index) => widget.navigationShell.goBranch(
-        index,
-        initialLocation: index == widget.navigationShell.currentIndex,
-      );
+  void _goBranch(int index) {
+    // A new tab starts with the capture button showing.
+    _fab.show();
+    widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,70 +73,71 @@ class _AppShellState extends ConsumerState<AppShell> {
     // Catch the user loading (or changing) after the first frame.
     ref.listen(currentUserProvider, (_, _) => _maybePromptTerms());
 
-    // Watch for pending items to animate activity tab
-    final pendingCount = ref.watch(pendingCountProvider);
-    final reviewCount = ref.watch(reviewCountProvider).maybeWhen(data: (n) => n, orElse: () => 0);
-    final hasPendingItems = pendingCount > 0 || reviewCount > 0;
+    final badgeCount = ref.watch(activityBadgeCountProvider);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          // Offline mode: "showing saved data" bar. It handles the status-bar
-          // inset itself, so the content below drops its own top padding.
-          const OfflineBanner(),
-          Expanded(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeTop: ref.watch(offlineBannerVisibleProvider),
-              child: Stack(
-                children: [
-                  navigationShell,
-                  // Floats over the content so it never shifts the layout.
-                  const SafeArea(
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: AppUpdateBanner(),
+    // Scroll notifications from every tab bubble up to this scope.
+    return ScrollAwareFabScope(
+      controller: _fab,
+      child: Scaffold(
+        body: Column(
+          children: [
+            // Offline mode: "showing saved data" bar. It handles the status-bar
+            // inset itself, so the content below drops its own top padding.
+            const OfflineBanner(),
+            Expanded(
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: ref.watch(offlineBannerVisibleProvider),
+                child: Stack(
+                  children: [
+                    navigationShell,
+                    // Floats over the content so it never shifts the layout.
+                    const SafeArea(
+                      child: Align(alignment: Alignment.topCenter, child: AppUpdateBanner()),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      // Hide the capture FAB on the Profile tab (index 3) — it only clutters
-      // and overlaps content there.
-      floatingActionButton: navigationShell.currentIndex == 3
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _showCaptureSheet(context),
-              child: const Icon(Icons.add),
+          ],
+        ),
+        // The capture button lives on Home and Activity only; Plan has its own
+        // "+" menu in the app bar and Profile has nothing to capture.
+        floatingActionButton: !showsCaptureButton(navigationShell.currentIndex)
+            ? null
+            : ScrollAwareFab(
+                child: FloatingActionButton(
+                  tooltip: 'capture.title'.tr(),
+                  onPressed: () => _showCaptureSheet(context),
+                  child: const Icon(Icons.add),
+                ),
+              ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: _goBranch,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: 'nav.home'.tr(),
             ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _goBranch,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: 'nav.home'.tr(),
-          ),
-          NavigationDestination(
-            icon: _ActivityIcon(hasPending: hasPendingItems),
-            selectedIcon: _ActivityIcon(hasPending: hasPendingItems, selected: true),
-            label: 'nav.activity'.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.insights_outlined),
-            selectedIcon: const Icon(Icons.insights),
-            label: 'nav.plan'.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: 'nav.profile'.tr(),
-          ),
-        ],
+            NavigationDestination(
+              icon: _ActivityIcon(count: badgeCount),
+              selectedIcon: _ActivityIcon(count: badgeCount, selected: true),
+              label: 'nav.activity'.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(AppIcons.plan),
+              selectedIcon: const Icon(AppIcons.planSelected),
+              label: 'nav.plan'.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person),
+              label: 'nav.profile'.tr(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,11 +146,13 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// captured before popping so the sheet context can be safely torn down.
   void _open(BuildContext context, String route) {
     final router = GoRouter.of(context);
+    _fab.show();
     Navigator.of(context).pop();
     router.push(route);
   }
 
   void _showCaptureSheet(BuildContext context) {
+    _fab.show();
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -143,8 +164,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('capture.title'.tr(),
-                    style: Theme.of(context).textTheme.titleLarge),
+                child: Text('capture.title'.tr(), style: Theme.of(context).textTheme.titleLarge),
               ),
             ),
             _CaptureTile(
@@ -159,7 +179,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
             _CaptureTile(
               icon: Icons.upload_file,
-              label: 'Bulk SMS Import',
+              label: 'activity2.bulkSmsImport'.tr(),
               onTap: () => _open(context, Routes.bulkSmsImport),
             ),
             _CaptureTile(
@@ -199,41 +219,32 @@ class _CaptureTile extends StatelessWidget {
 }
 
 class _ActivityIcon extends StatelessWidget {
-  const _ActivityIcon({required this.hasPending, this.selected = false});
+  const _ActivityIcon({required this.count, this.selected = false});
 
-  final bool hasPending;
+  final int count;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(
-          selected ? Icons.receipt_long : Icons.receipt_long_outlined,
-        ),
-        if (hasPending)
-          Positioned(
-            right: -2,
-            top: -2,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: scheme.error,
-                shape: BoxShape.circle,
-              ),
-              child: const Text(
-                '!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-      ],
+    final icon = Icon(selected ? Icons.receipt_long : Icons.receipt_long_outlined);
+    if (count <= 0) return icon;
+    return Semantics(
+      label: trCount('activity2.badgeSemantics', count),
+      child: Badge(label: Text(count > 99 ? '99+' : '$count'), child: icon),
     );
   }
 }
+
+/// The number on the Activity tab: inbox proposals waiting for approval plus
+/// auto-recorded rows waiting for review. Rows that only need a category are
+/// left out on purpose: most real accounts have many of them, so the badge
+/// would sit at 99+ and stop meaning anything. Home's attention card covers them.
+final activityBadgeCountProvider = Provider.autoDispose<int>((ref) {
+  final inbox = ref.watch(pendingCountProvider);
+  final review = ref.watch(reviewCountProvider).valueOrNull ?? 0;
+  return inbox + review;
+});
+
+/// Whether the shell shows its capture "+" on the tab at [index]
+/// (0 Home, 1 Activity, 2 Plan, 3 Profile).
+bool showsCaptureButton(int index) => index == 0 || index == 1;

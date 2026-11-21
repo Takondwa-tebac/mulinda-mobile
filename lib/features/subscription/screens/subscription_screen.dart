@@ -9,7 +9,7 @@ import '../../auth/providers/auth_controller.dart';
 import '../data/subscription_models.dart';
 import '../data/subscription_repository.dart';
 import '../widgets/paywall_sheet.dart';
-import 'checkout_webview_screen.dart';
+import '../checkout_flow.dart';
 
 class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
@@ -58,31 +58,17 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   Future<void> _completePayment(InvoiceModel invoice) async {
     setState(() => _resuming = invoice.id);
     try {
-      var checkoutUrl = invoice.checkoutUrl;
-
       // No stored URL (rare) — regenerate a fresh checkout for the same period.
-      if (checkoutUrl == null) {
-        final fresh = await ref
-            .read(subscriptionRepositoryProvider)
-            .checkout(invoice.period);
-        checkoutUrl = fresh.checkoutUrl;
+      final target = invoice.checkoutUrl != null
+          ? invoice
+          : await ref.read(subscriptionRepositoryProvider).checkout(invoice.period);
+      if (!mounted) return;
+      final outcome = await runCheckout(context, ref, target);
+      if (!mounted) return;
+      if (outcome != null) {
+        announceCheckoutOutcome(context, outcome, onRetry: () => _completePayment(invoice));
       }
-      if (checkoutUrl == null || !mounted) return;
-
-      final completed = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          builder: (_) => CheckoutWebViewScreen(checkoutUrl: checkoutUrl!),
-        ),
-      );
-
-      if (completed == true && mounted) {
-        try {
-          await ref.read(subscriptionRepositoryProvider).verify(invoice.id);
-        } on ApiException catch (_) {
-          // settled later by webhook/poller
-        }
-        await _refresh();
-      }
+      await _refresh();
     } on ApiException catch (e) {
       _snack(e.displayMessage, error: true);
     } finally {
@@ -119,7 +105,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
             children: [
-              _StatusCard(sub: sub, onSubscribe: () => showPaywall(context)),
+              _StatusCard(sub: sub, onSubscribe: () => showPaywall(context, surface: 'subscription_screen')),
               const SizedBox(height: 24),
               Text(
                 'subscription.invoices'.tr(),

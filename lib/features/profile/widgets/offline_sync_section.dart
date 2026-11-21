@@ -9,6 +9,7 @@ import '../../../core/offline/mutation_sync.dart';
 import '../../../core/offline/offline_mode.dart';
 import '../../../core/offline/offline_sync_runner.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/semantic_colors.dart';
 import '../../../core/offline/offline_diagnostics.dart';
 import '../../../core/offline/offline_prefetch.dart';
 import '../../../core/offline/offline_storage.dart';
@@ -287,7 +288,7 @@ class _OfflineSyncSectionState extends ConsumerState<OfflineSyncSection>
 
     return (
       icon: Icons.check_circle_outline,
-      color: Colors.green.shade700,
+      color: context.semantic.success,
       title: 'Everything is synced',
       detail: 'Last sync ${_ago(status.at)}'
           '${status.created > 0 ? ' · ${status.created} new transaction${status.created == 1 ? '' : 's'} captured' : ''}.',

@@ -168,7 +168,7 @@ class _SpendTile extends StatelessWidget {
         txn.amount.formatted,
         style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface),
       ),
-      onTap: () => context.push(Routes.transactionDetail, extra: txn.id),
+      onTap: () => context.push(Routes.transactionById(txn.id)),
     );
   }
 }

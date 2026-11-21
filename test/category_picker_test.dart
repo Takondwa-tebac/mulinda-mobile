@@ -19,6 +19,14 @@ void main() {
       expect(filterCategories(_all, ''), hasLength(3));
     });
 
+    test('can leave out categories that are not spending (budget picker)', () {
+      const own = Category(id: 'c9', name: 'Moving my money', kind: 'expense', icon: 'swap_horiz', isSpending: false);
+      final picked = filterCategories([..._all, own], '', kind: 'expense', where: (c) => c.isSpending);
+      expect(picked.map((c) => c.name), ['Food', 'Transport']);
+      expect(categoryIcon('swap_horiz'), Icons.swap_horiz);
+      expect(categoryIcon('volunteer_activism'), Icons.volunteer_activism);
+    });
+
     test('only offers categories of the kind being picked', () {
       expect(filterCategories(_all, '', kind: 'income').map((c) => c.name), ['Salary']);
     });
@@ -46,7 +54,13 @@ void main() {
     });
 
     test('a category keeps the icon and colour the server sends', () {
-      final c = Category.fromJson({'id': '1', 'name': 'Food', 'kind': 'expense', 'icon': 'restaurant', 'color': '#E67E22'});
+      final c = Category.fromJson({
+        'id': '1',
+        'name': 'Food',
+        'kind': 'expense',
+        'icon': 'restaurant',
+        'color': '#E67E22',
+      });
       expect(c.icon, 'restaurant');
       expect(c.color, '#E67E22');
       expect(Category.fromJson({'id': '2', 'name': 'X'}).icon, isNull);
@@ -56,20 +70,19 @@ void main() {
   group('the picker', () {
     Future<void> open(WidgetTester tester, {String? selected}) async {
       String? chosen = selected;
-      await tester.pumpWidget(ProviderScope(
-        overrides: [categoriesProvider.overrideWith((ref) async => _all)],
-        child: MaterialApp(
-          home: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, setState) => CategoryPickerField(
-                value: chosen,
-                kind: 'expense',
-                onChanged: (v) => setState(() => chosen = v),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [categoriesProvider.overrideWith((ref) async => _all)],
+          child: MaterialApp(
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) =>
+                    CategoryPickerField(value: chosen, kind: 'expense', onChanged: (v) => setState(() => chosen = v)),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CategoryPickerField));
       await tester.pumpAndSettle();

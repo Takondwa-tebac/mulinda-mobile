@@ -17,6 +17,8 @@ class User {
     this.displayCurrency = 'MWK',
     this.dailySummaryEnabled = true,
     this.dailySummaryTime = '18:00',
+    this.notifyBudgetAlerts = true,
+    this.notifySpendingSpikes = true,
     this.termsVersion,
     this.termsCurrentVersion,
     this.roles = const [],
@@ -38,6 +40,12 @@ class User {
   final String displayCurrency;
   final bool dailySummaryEnabled;
   final String dailySummaryTime; // "HH:MM", local (Africa/Blantyre)
+
+  /// Push when a budget nears or passes its limit.
+  final bool notifyBudgetAlerts;
+
+  /// Push when spending in a category jumps well above the usual week.
+  final bool notifySpendingSpikes;
   final String? termsVersion; // version the user accepted
   final String? termsCurrentVersion; // latest published version
   final List<String> roles;
@@ -72,6 +80,8 @@ class User {
       displayCurrency: json['display_currency']?.toString() ?? 'MWK',
       dailySummaryEnabled: json['daily_summary_enabled'] != false,
       dailySummaryTime: json['daily_summary_time']?.toString() ?? '18:00',
+      notifyBudgetAlerts: json['notify_budget_alerts'] != false,
+      notifySpendingSpikes: json['notify_spending_spikes'] != false,
       termsVersion: json['terms_version']?.toString(),
       termsCurrentVersion: json['terms_current_version']?.toString(),
       roles:

@@ -24,8 +24,46 @@ class ActivityRepository {
     }
   }
 
-  Future<List<Txn>> transactions() =>
-      _list('/v1/transactions', Txn.fromJson, query: {'per_page': 50});
+  /// Page size of the Activity list. The first unfiltered page uses the same
+  /// request as [transactions], so it is shared with the offline cache.
+  static const pageSize = 50;
+
+  Future<List<Txn>> transactions() => _list('/v1/transactions', Txn.fromJson, query: {'per_page': pageSize});
+
+  /// One page of transactions matching [query]. `hasMore` comes from the
+  /// pagination `meta` (`current_page` / `last_page`); without it, a full page
+  /// is taken to mean there may be more.
+  Future<TxnPage> transactionsPage(TxnQuery query, {int page = 1, int perPage = pageSize}) async {
+    try {
+      final res = await _dio.get(
+        '/v1/transactions',
+        queryParameters: {...query.toParams(), 'per_page': perPage, if (page > 1) 'page': page},
+      );
+      return parseTxnPage(res.data, page: page, perPage: perPage);
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
+
+  /// Set (or clear, with null) a transaction's category. With
+  /// [applyToSimilar] the server also recategorises the user's other
+  /// unconfirmed rows from the same merchant.
+  Future<CategoryUpdate> setCategory(String id, String? categoryId, {bool applyToSimilar = false}) async {
+    try {
+      final res = await _dio.post(
+        '/v1/transactions/$id/category',
+        data: {'category_id': categoryId, 'apply_to_similar': applyToSimilar},
+      );
+      final body = (res.data as Map).cast<String, dynamic>();
+      final meta = (body['meta'] as Map?)?.cast<String, dynamic>() ?? const {};
+      return CategoryUpdate(
+        txn: Txn.fromJson((body['data'] as Map).cast<String, dynamic>()),
+        similarUpdated: (meta['similar_updated'] as num?)?.toInt() ?? 0,
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
+  }
 
   /// Full detail for one transaction — includes the source SMS, fee/levy
   /// children, and account, which the list endpoint omits.
@@ -42,7 +80,8 @@ class ActivityRepository {
   /// Updates the editable fields of a transaction. Category, merchant and notes
   /// are always sent so they can be cleared (the API accepts nulls for them);
   /// [type] is only sent when it should change (income | expense).
-  Future<Txn> updateTransaction(String id, {
+  Future<Txn> updateTransaction(
+    String id, {
     String? type,
     String? categoryId,
     String? merchant,
@@ -69,23 +108,20 @@ class ActivityRepository {
   /// otherwise all of them. Fee and levy lines are included because they count
   /// toward the spend too. [from] and [to] are `YYYY-MM-DD`, both inclusive.
   Future<List<Txn>> expensesForPeriod({String? categoryId, String? from, String? to}) => _list(
-        '/v1/transactions',
-        Txn.fromJson,
-        query: {
-          'type': 'expense',
-          'include_children': 1,
-          'per_page': 100,
-          'category_id': ?categoryId,
-          'from': ?from,
-          if (to != null) 'to': '${to}T23:59:59',
-        },
-      );
+    '/v1/transactions',
+    Txn.fromJson,
+    query: {
+      'type': 'expense',
+      'include_children': 1,
+      'per_page': 100,
+      'category_id': ?categoryId,
+      'from': ?from,
+      if (to != null) 'to': '${to}T23:59:59',
+    },
+  );
 
-  Future<List<Txn>> transactionsForAccount(String accountId) => _list(
-        '/v1/transactions',
-        Txn.fromJson,
-        query: {'financial_account_id': accountId, 'per_page': 200},
-      );
+  Future<List<Txn>> transactionsForAccount(String accountId) =>
+      _list('/v1/transactions', Txn.fromJson, query: {'financial_account_id': accountId, 'per_page': 200});
 
   Future<void> createTransaction({
     required String accountId,
@@ -141,11 +177,8 @@ class ActivityRepository {
   }
 
   /// Transactions auto-recorded from SMS that are awaiting the user's review.
-  Future<List<Txn>> reviewTransactions() => _list(
-        '/v1/transactions',
-        Txn.fromJson,
-        query: {'needs_review': 1, 'per_page': 100},
-      );
+  Future<List<Txn>> reviewTransactions() =>
+      _list('/v1/transactions', Txn.fromJson, query: {'needs_review': 1, 'per_page': 100});
 
   /// Confirm auto-recorded items — clears the review flag on each (and its
   /// fee/levy children).
@@ -201,21 +234,38 @@ class ActivityRepository {
   }
 }
 
-final activityRepositoryProvider =
-    Provider<ActivityRepository>((ref) => ActivityRepository(ref.read(dioProvider)));
+/// Reads a paginated `GET /v1/transactions` body.
+TxnPage parseTxnPage(dynamic data, {required int page, required int perPage}) {
+  final body = data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
+  final list = (body['data'] as List?) ?? const [];
+  final items = list.map((e) => Txn.fromJson((e as Map).cast<String, dynamic>())).toList();
+  final meta = (body['meta'] as Map?)?.cast<String, dynamic>();
+  final current = (meta?['current_page'] as num?)?.toInt() ?? page;
+  final last = (meta?['last_page'] as num?)?.toInt();
+  return TxnPage(
+    items: items,
+    page: current,
+    hasMore: last != null ? current < last : items.length >= perPage,
+    total: (meta?['total'] as num?)?.toInt(),
+  );
+}
 
-final accountsProvider =
-    FutureProvider.autoDispose<List<Account>>((ref) => ref.read(activityRepositoryProvider).accounts());
+final activityRepositoryProvider = Provider<ActivityRepository>((ref) => ActivityRepository(ref.read(dioProvider)));
 
-final categoriesProvider =
-    FutureProvider.autoDispose<List<Category>>((ref) => ref.read(activityRepositoryProvider).categories());
+final accountsProvider = FutureProvider.autoDispose<List<Account>>(
+  (ref) => ref.read(activityRepositoryProvider).accounts(),
+);
 
-final transactionsProvider =
-    FutureProvider.autoDispose<List<Txn>>((ref) => ref.read(activityRepositoryProvider).transactions());
+final categoriesProvider = FutureProvider.autoDispose<List<Category>>(
+  (ref) => ref.read(activityRepositoryProvider).categories(),
+);
+
+final transactionsProvider = FutureProvider.autoDispose<List<Txn>>(
+  (ref) => ref.read(activityRepositoryProvider).transactions(),
+);
 
 /// Transactions belonging to a single account (for the account detail screen).
-final accountTransactionsProvider =
-    FutureProvider.autoDispose.family<List<Txn>, String>(
+final accountTransactionsProvider = FutureProvider.autoDispose.family<List<Txn>, String>(
   (ref, accountId) => ref.read(activityRepositoryProvider).transactionsForAccount(accountId),
 );
 

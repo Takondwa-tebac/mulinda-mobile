@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/localization/ny_localizations.dart';
+import 'core/notifications/in_app_banner.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/notifications/push_service.dart';
 import 'core/router/app_router.dart';
@@ -186,6 +187,8 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
 
     return MaterialApp.router(
       title: 'Mulinda',
+      // Lets a push that arrives in the foreground show a banner over any screen.
+      scaffoldMessengerKey: rootMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

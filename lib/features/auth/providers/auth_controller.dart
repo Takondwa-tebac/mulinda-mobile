@@ -182,6 +182,8 @@ class AuthController extends Notifier<AuthState> {
     String? displayCurrency,
     bool? dailySummaryEnabled,
     String? dailySummaryTime,
+    bool? notifyBudgetAlerts,
+    bool? notifySpendingSpikes,
   }) async {
     final fields = <String, dynamic>{};
     if (firstName != null) fields['first_name'] = firstName;
@@ -191,6 +193,8 @@ class AuthController extends Notifier<AuthState> {
     if (displayCurrency != null) fields['display_currency'] = displayCurrency;
     if (dailySummaryEnabled != null) fields['daily_summary_enabled'] = dailySummaryEnabled;
     if (dailySummaryTime != null) fields['daily_summary_time'] = dailySummaryTime;
+    if (notifyBudgetAlerts != null) fields['notify_budget_alerts'] = notifyBudgetAlerts;
+    if (notifySpendingSpikes != null) fields['notify_spending_spikes'] = notifySpendingSpikes;
 
     final user = await _repo.updateProfile(fields);
     state = AuthState(status: AuthStatus.authenticated, user: user);

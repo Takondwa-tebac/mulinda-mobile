@@ -8,18 +8,54 @@ import '../../../core/router/routes.dart';
 import '../../activity/data/activity_models.dart';
 import '../../activity/data/activity_repository.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../subscription/paywall_prompt.dart';
 import '../../subscription/widgets/paywall_sheet.dart';
 import '../data/inbox_repository.dart';
 import '../data/sms_manual_scanner.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
-  const InboxScreen({super.key});
+  const InboxScreen({super.key, this.openItemId, this.openReceipt = false});
+
+  /// Opened from a notification about one item: open its review sheet.
+  final String? openItemId;
+  final bool openReceipt;
 
   @override
   ConsumerState<InboxScreen> createState() => _InboxScreenState();
 }
 
 class _InboxScreenState extends ConsumerState<InboxScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.openItemId;
+    if (id != null) WidgetsBinding.instance.addPostFrameCallback((_) => _openById(id));
+  }
+
+  /// Opens the review sheet for the item a notification pointed at, once the
+  /// lists have loaded.
+  Future<void> _openById(String id) async {
+    try {
+      if (widget.openReceipt) {
+        final receipts = await ref.read(pendingReceiptsProvider.future);
+        final r = receipts.where((e) => e.id == id).firstOrNull;
+        if (r != null && mounted) {
+          await _openReview(id: r.id, isReceipt: true, parsed: r.parsed, imageUrl: r.imageUrl);
+        }
+      } else {
+        final messages = await ref.read(pendingSmsProvider.future);
+        final m = messages.where((e) => e.id == id).firstOrNull;
+        if (m != null && mounted) {
+          await _openReview(id: m.id, isReceipt: false, parsed: m.parsed, sender: m.sender);
+        }
+      }
+    } catch (_) {
+      // The list itself shows the error.
+    }
+  }
+
   Future<void> _openReview({
     required String id,
     required bool isReceipt,
@@ -139,46 +175,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 child: Center(child: CircularProgressIndicator()),
               ),
             if (hasError)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  children: [
-                    const Icon(Icons.wifi_off_outlined, size: 48),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Could not load inbox',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      errorMessage ?? 'Unknown error',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () {
-                        ref.invalidate(pendingSmsProvider);
-                        ref.invalidate(pendingReceiptsProvider);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+              ErrorRetry(
+                message: errorMessage,
+                onRetry: () {
+                  ref.invalidate(pendingSmsProvider);
+                  ref.invalidate(pendingReceiptsProvider);
+                },
               ),
             if (empty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 64),
-                child: Text(
-                  'inbox.empty'.tr(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
+              EmptyState(
+                icon: Icons.inbox_outlined,
+                title: 'inbox.emptyTitle'.tr(),
+                body: 'inbox.empty'.tr(),
               ),
             if (smsList.isNotEmpty) ...[
               _Header('inbox.messages'.tr()),
@@ -269,13 +277,21 @@ class _ReviewSheetState extends State<_ReviewSheet> {
       _error = null;
     });
     try {
-      await widget.onApprove(_selectedAccount!.id);
+      // This screen shows its own paywall below, so the global 402 prompt
+      // must not also fire for this save.
+      await PaywallPrompter.instance.guardSave(
+        () => widget.onApprove(_selectedAccount!.id),
+      );
       if (mounted) Navigator.of(context).pop('approved');
     } on ApiException catch (e) {
       if (e.code == 'sms_capture_limit_reached') {
         if (mounted) {
           Navigator.of(context).pop();
-          showPaywall(context, feature: 'SMS auto-capture');
+          showPaywall(
+            context,
+            entitlement: smsCaptureEntitlement,
+            surface: 'inbox_approve',
+          );
         }
       } else if (mounted) {
         setState(() => _error = e.displayMessage);
