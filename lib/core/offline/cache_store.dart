@@ -91,9 +91,18 @@ class EncryptedCacheStore implements CacheStore, MutationStore {
           assert(raw.select('PRAGMA cipher;').isNotEmpty,
               'SQLite3 Multiple Ciphers is not linked — check the hooks block in pubspec.yaml');
           raw.execute("PRAGMA key = '$hexKey';");
-          // The app and the background sync job may both open this file.
-          raw.execute('PRAGMA journal_mode = WAL;');
+          // The app and the background sync job may both open this file. Wait for
+          // the other one first, so switching to WAL below does not fail straight
+          // away with "database is locked" while it holds the file.
           raw.execute('PRAGMA busy_timeout = 5000;');
+          try {
+            raw.execute('PRAGMA journal_mode = WAL;');
+          } on sqlite.SqliteException catch (e) {
+            // WAL is stored in the file once set, so an earlier open almost always
+            // made it stick. If the other connection still holds the file, keep
+            // going in the current mode rather than failing every read and save.
+            OfflineDiagnostics.record('Switching saved data to WAL', e);
+          }
         },
       ),
     );
