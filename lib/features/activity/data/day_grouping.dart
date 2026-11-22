@@ -63,7 +63,7 @@ DayGroup _group(DateTime? day, List<Txn> items) {
   var outMinor = 0;
   final currencies = <String>{};
   for (final t in items) {
-    if (t.type == 'income') {
+    if (t.countsAsIncome) {
       inMinor += t.amount.minorUnits;
       currencies.add(t.amount.currency);
     } else if (t.countsAsSpending) {

@@ -206,6 +206,9 @@ class RecentTxn {
   /// An expense in a category that is not spending ("Moving my money").
   bool get notSpending => type == 'expense' && category != null && !categoryIsSpending;
 
+  /// Income in a category that is not income ("Moving my money", "Sent and returned").
+  bool get notIncome => type == 'income' && category != null && !categoryIsSpending;
+
   factory RecentTxn.fromJson(Map<String, dynamic> json) {
     // Newer servers send `category_detail` next to the plain `category` name;
     // some send `category` itself as an object. Older ones send only the name.

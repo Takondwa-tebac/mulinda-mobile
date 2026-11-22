@@ -67,8 +67,9 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final incomeMinor = txns.where((t) => t.isIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
-    // Only real spending: transfers and "moving my money" are left out.
+    // Only real income and spending: transfers, "moving my money" and money
+    // sent and returned are left out.
+    final incomeMinor = txns.where((t) => t.countsAsIncome).fold<int>(0, (s, t) => s + t.amount.minorUnits);
     final expenseMinor = txns.where((t) => t.countsAsSpending).fold<int>(0, (s, t) => s + t.amount.minorUnits);
     final balanceMinor = account.currentBalance.minorUnits;
 

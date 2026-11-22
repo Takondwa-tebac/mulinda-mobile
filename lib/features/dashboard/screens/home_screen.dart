@@ -291,6 +291,7 @@ class _Dashboard extends ConsumerWidget {
       meta: day == null ? t.date : dayHeaderLabel(day),
       needsAttention: t.needsAttention,
       notSpending: t.notSpending,
+      notIncome: t.notIncome,
     );
   }
 }

@@ -100,6 +100,24 @@ void main() {
       expect(find.byIcon(Icons.swap_horiz), findsWidgets);
     });
 
+    testWidgets('income that does not count is neutral and labelled as not income', (tester) async {
+      const data = TransactionTileData(
+        id: 't3',
+        title: 'JOHN BANDA',
+        amount: _amount,
+        type: 'income',
+        categoryName: 'Sent and returned',
+        categoryIcon: 'u_turn_left',
+        notIncome: true,
+      );
+      await tester.pumpWidget(_wrap(const TransactionTile(data: data)));
+
+      expect(find.text('activity2.notIncome'), findsOneWidget);
+      expect(_amountText(tester).data, 'MK 2,500.00'); // no plus sign
+      expect(_amountText(tester).style?.color, AppTheme.light.colorScheme.onSurfaceVariant);
+      expect(find.byIcon(Icons.u_turn_left), findsWidgets);
+    });
+
     testWidgets('an ordinary expense has no "not counted" label', (tester) async {
       await tester.pumpWidget(_wrap(TransactionTile(data: _data())));
       expect(find.byKey(const ValueKey('not-spending-label')), findsNothing);

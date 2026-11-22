@@ -34,7 +34,7 @@ PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised}) {
 
   for (final t in txns) {
     final minor = t.amount.minorUnits.abs();
-    if (t.type == 'income') {
+    if (t.countsAsIncome) {
       inMinor += minor;
     } else if (t.type == 'expense' && t.categoryIsSpending) {
       outMinor += minor;

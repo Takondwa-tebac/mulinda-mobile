@@ -24,6 +24,7 @@ class TransactionTileData {
     this.pending = false,
     this.needsReview = false,
     this.notSpending = false,
+    this.notIncome = false,
   });
 
   final String id;
@@ -52,7 +53,11 @@ class TransactionTileData {
   /// money): drawn in the neutral colour with a "Not counted as spending" label.
   final bool notSpending;
 
-  MoneyDirection get direction => notSpending
+  /// Income in a category that is not income (money from your own other
+  /// account, or sent back to you): neutral, labelled "Not counted as income".
+  final bool notIncome;
+
+  MoneyDirection get direction => notSpending || notIncome
       ? MoneyDirection.neutral
       : switch (type) {
           'income' => MoneyDirection.income,
@@ -171,12 +176,12 @@ class TransactionTile extends StatelessWidget {
                                 ],
                               ),
                       ),
-                      if (d.notSpending)
+                      if (d.notSpending || d.notIncome)
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.xs),
                           child: StatusChip(
                             key: const ValueKey('not-spending-label'),
-                            label: 'activity2.notSpending'.tr(),
+                            label: (d.notIncome ? 'activity2.notIncome' : 'activity2.notSpending').tr(),
                             icon: Icons.swap_horiz,
                           ),
                         ),

@@ -157,6 +157,14 @@ class Txn {
   /// Counts toward money spent (expense in a spending category or none).
   bool get countsAsSpending => type == 'expense' && !notSpending;
 
+  /// Income whose category does not count (money from your own other account,
+  /// or money sent back by the person you sent it to): shown neutrally and
+  /// left out of income totals.
+  bool get notIncome => type == 'income' && categoryId != null && !categoryIsSpending;
+
+  /// Counts toward money received (income in a counting category or none).
+  bool get countsAsIncome => type == 'income' && !notIncome;
+
   /// How the category was decided (absent from older API versions).
   final Categorisation? categorisation;
 

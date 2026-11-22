@@ -98,5 +98,6 @@ TransactionTileData txnTileData(Txn t, {String? meta}) {
     pending: t.pending,
     needsReview: t.needsReview,
     notSpending: t.notSpending,
+    notIncome: t.notIncome,
   );
 }
