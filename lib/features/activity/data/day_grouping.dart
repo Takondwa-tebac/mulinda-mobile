@@ -70,6 +70,12 @@ DayGroup _group(DateTime? day, List<Txn> items) {
       outMinor += t.amount.minorUnits;
       currencies.add(t.amount.currency);
     }
+    // Fees and levies are nested under their transaction but are money spent
+    // too, even when the transaction itself is a move between own accounts.
+    for (final fee in t.children.where((c) => c.countsAsSpending)) {
+      outMinor += fee.amount.minorUnits;
+      currencies.add(fee.amount.currency);
+    }
   }
   return DayGroup(
     day: day,

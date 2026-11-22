@@ -26,13 +26,16 @@ class PeriodSummary {
 /// Totals for [txns]: income in, spending out (transfers and moves between the
 /// user's own money are left out), grouped by category. [uncategorised] names
 /// spending with no category yet.
-PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised}) {
+PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised, String others = 'Everything else'}) {
   final currency = txns.isEmpty ? 'MWK' : txns.first.amount.currency;
   var inMinor = 0;
   var outMinor = 0;
   final byCategory = <String, ({String name, String? icon, String? color, String? id, int minor})>{};
 
-  for (final t in txns) {
+  // Fees and levies arrive nested under their transaction; they are money
+  // spent too, so they count alongside the transactions themselves.
+  final all = [for (final t in txns) ...[t, ...t.children]];
+  for (final t in all) {
     final minor = t.amount.minorUnits.abs();
     if (t.countsAsIncome) {
       inMinor += minor;
@@ -52,11 +55,14 @@ PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised}) {
 
   Money money(int minor) => Money.fromJson(moneyJson(minor / 100, currency));
   final rows = byCategory.values.toList()..sort((a, b) => b.minor.compareTo(a.minor));
+  final fits = rows.length <= PeriodSummary.maxCategories;
+  final shown = rows.take(fits ? rows.length : PeriodSummary.maxCategories - 1).toList();
+  final restMinor = rows.skip(shown.length).fold<int>(0, (s, r) => s + r.minor);
   return PeriodSummary(
     moneyIn: money(inMinor),
     moneyOut: money(outMinor),
     topCategories: [
-      for (final r in rows.take(PeriodSummary.maxCategories))
+      for (final r in shown)
         CategorySpend(
           categoryId: r.id,
           name: r.name,
@@ -65,6 +71,8 @@ PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised}) {
           amount: money(r.minor),
           previousAmount: money(0),
         ),
+      // The rest are grouped so the chart still adds up to all spending.
+      if (restMinor > 0) CategorySpend(name: others, amount: money(restMinor), previousAmount: money(0)),
     ],
   );
 }
@@ -80,5 +88,5 @@ final last30DaysProvider = FutureProvider.autoDispose<PeriodSummary>((ref) async
     txns.addAll(result.items);
     if (!result.hasMore) break;
   }
-  return summarisePeriod(txns, uncategorised: 'home3.noCategory'.tr());
+  return summarisePeriod(txns, uncategorised: 'home3.noCategory'.tr(), others: 'home3.otherCategories'.tr());
 });

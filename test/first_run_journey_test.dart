@@ -264,5 +264,45 @@ void main() {
       expect(summary.topCategories.map((c) => c.name), ['Transport', 'Food', 'No category yet']);
       expect(summary.topCategories[1].amount.minorUnits, 500000);
     });
+
+    test('the 30-day summary counts nested fees as spending', () {
+      final summary = summarisePeriod([
+        Txn.fromJson({
+          'id': '1',
+          'type': 'expense',
+          'amount': _m(10000),
+          'category': {'id': 'food', 'name': 'Food', 'is_spending': true},
+          'children': [
+            {
+              'id': '2',
+              'type': 'expense',
+              'amount': _m(150),
+              'parent_id': '1',
+              'category': {'id': 'fees', 'name': 'Bank charges', 'is_spending': true},
+            },
+          ],
+        }),
+      ], uncategorised: 'No category yet');
+      expect(summary.moneyOut.minorUnits, 1015000);
+      expect(summary.topCategories.map((c) => c.name), ['Food', 'Bank charges']);
+    });
+
+    test('the 30-day summary groups small categories so the chart covers all spending', () {
+      Txn t(String id, int major) => Txn.fromJson({
+        'id': id,
+        'type': 'expense',
+        'amount': _m(major),
+        'category': {'id': id, 'name': id, 'is_spending': true},
+      });
+      final summary = summarisePeriod(
+        [t('A', 500), t('B', 400), t('C', 300), t('D', 200), t('E', 100)],
+        uncategorised: 'No category yet',
+        others: 'Everything else',
+      );
+      expect(summary.topCategories.map((c) => c.name), ['A', 'B', 'C', 'Everything else']);
+      expect(summary.topCategories.last.amount.minorUnits, 30000);
+      final total = summary.topCategories.fold<int>(0, (s, c) => s + c.amount.minorUnits);
+      expect(total, summary.moneyOut.minorUnits);
+    });
   });
 }
