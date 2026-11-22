@@ -392,25 +392,10 @@ class _BreakdownViewState extends ConsumerState<BreakdownView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
-          child: Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    widget.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              ChartTableToggle(
-                showTable: table,
-                onChanged: (v) => ref.read(reportTableViewProvider(widget.reportId).notifier).state = v,
-              ),
-            ],
-          ),
+        ChartSectionHeader(
+          title: widget.title,
+          showTable: table,
+          onChanged: (v) => ref.read(reportTableViewProvider(widget.reportId).notifier).state = v,
         ),
         if (!table) ...[
           Center(

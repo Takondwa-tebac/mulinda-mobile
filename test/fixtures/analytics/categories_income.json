@@ -1,0 +1,17 @@
+{
+  "data": {
+    "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-11-17" },
+    "kind": "income",
+    "total": { "minor_units": 40700000, "currency": "MWK", "amount": 407000, "formatted": "MK 407,000.00", "formatted_whole": "MK 407,000" },
+    "count": 8,
+    "rows": [
+      { "category_id": "c-salary", "name": "Salary", "icon": "payments", "color": "#27AE60", "amount": { "minor_units": 35000000, "currency": "MWK", "amount": 350000, "formatted": "MK 350,000.00", "formatted_whole": "MK 350,000" }, "share_pct": 86, "count": 1, "previous_amount": null, "comparison": null, "needs_category": false },
+      { "category_id": "c-business", "name": "Business", "icon": "store", "color": "#F1C40F", "amount": { "minor_units": 5700000, "currency": "MWK", "amount": 57000, "formatted": "MK 57,000.00", "formatted_whole": "MK 57,000" }, "share_pct": 14, "count": 7, "previous_amount": null, "comparison": null, "needs_category": false }
+    ],
+    "others": null,
+    "not_counted": { "amount": { "minor_units": 8000000, "currency": "MWK", "amount": 80000, "formatted": "MK 80,000.00", "formatted_whole": "MK 80,000" }, "count": 1 },
+    "parties": [ { "name": "FDH Bank", "amount": { "minor_units": 35000000, "currency": "MWK", "amount": 350000, "formatted": "MK 350,000.00", "formatted_whole": "MK 350,000" }, "count": 1 } ],
+    "comparison": { "comparable": false, "reason": "insufficient_history", "previous": null, "difference": null, "direction": null, "pct": null, "show_pct": false },
+    "insights": [ { "key": "mostIncomeFrom", "params": { "source": "Salary", "share_pct": 86 }, "target": null, "priority": 3 } ]
+  }
+}

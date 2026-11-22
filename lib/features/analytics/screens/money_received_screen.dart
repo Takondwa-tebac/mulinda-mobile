@@ -100,6 +100,7 @@ class _MoneyReceivedScreenState extends ConsumerState<MoneyReceivedScreen> {
       BreakdownView(breakdown: b, selection: _period, reportId: 'received', title: 'analytics.bySource'.tr()),
       ?notCountedNote,
       InsightsSection(insights: b.insights, selection: _period, period: b.period, kind: ReportKind.income),
+      NeedMoreHistory(period: b.period, comparison: b.comparison),
       if (b.parties.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.xl),
         SectionHeader('analytics.whoSentIt'.tr()),

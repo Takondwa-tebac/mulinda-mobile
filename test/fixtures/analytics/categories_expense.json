@@ -1,0 +1,36 @@
+{
+  "data": {
+    "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-06-02" },
+    "kind": "expense",
+    "total": { "minor_units": 28540000, "currency": "MWK", "amount": 285400, "formatted": "MK 285,400.00", "formatted_whole": "MK 285,400" },
+    "count": 76,
+    "rows": [
+      { "category_id": "c-food", "name": "Food", "icon": "restaurant", "color": "#E67E22", "amount": { "minor_units": 9860000, "currency": "MWK", "amount": 98600, "formatted": "MK 98,600.00", "formatted_whole": "MK 98,600" }, "share_pct": 35, "count": 23, "previous_amount": { "minor_units": 9120000, "currency": "MWK", "amount": 91200, "formatted": "MK 91,200.00", "formatted_whole": "MK 91,200" }, "comparison": { "comparable": true, "reason": null, "previous": { "from": "2026-09-24", "to": "2026-10-23", "amount": { "minor_units": 9120000, "currency": "MWK", "amount": 91200, "formatted": "MK 91,200.00", "formatted_whole": "MK 91,200" } }, "difference": { "minor_units": 740000, "currency": "MWK", "amount": 7400, "formatted": "MK 7,400.00", "formatted_whole": "MK 7,400" }, "direction": "up", "pct": 8.1, "show_pct": false }, "needs_category": false },
+      { "category_id": "c-rent", "name": "Rent", "icon": "home", "color": "#8E44AD", "amount": { "minor_units": 6000000, "currency": "MWK", "amount": 60000, "formatted": "MK 60,000.00", "formatted_whole": "MK 60,000" }, "share_pct": 21, "count": 1, "previous_amount": null, "comparison": { "comparable": false, "reason": "insufficient_history", "previous": null, "difference": null, "direction": null, "pct": null, "show_pct": false }, "needs_category": false },
+      { "category_id": "c-transport", "name": "Transport", "icon": "directions_bus", "color": "#3498DB", "amount": { "minor_units": 4130000, "currency": "MWK", "amount": 41300, "formatted": "MK 41,300.00", "formatted_whole": "MK 41,300" }, "share_pct": 14, "count": 31, "previous_amount": null, "comparison": null, "needs_category": false },
+      { "category_id": null, "name": null, "icon": null, "color": null, "amount": { "minor_units": 2750000, "currency": "MWK", "amount": 27500, "formatted": "MK 27,500.00", "formatted_whole": "MK 27,500" }, "share_pct": 10, "count": 3, "previous_amount": null, "comparison": null, "needs_category": true }
+    ],
+    "others": {
+      "amount": { "minor_units": 5800000, "currency": "MWK", "amount": 58000, "formatted": "MK 58,000.00", "formatted_whole": "MK 58,000" },
+      "share_pct": 20, "count": 18,
+      "members": [
+        { "category_id": "c-airtime", "name": "Airtime", "icon": "phone_android", "color": "#16A085", "amount": { "minor_units": 1720000, "currency": "MWK", "amount": 17200, "formatted": "MK 17,200.00", "formatted_whole": "MK 17,200" }, "share_pct": 6, "count": 9, "previous_amount": null, "comparison": null, "needs_category": false },
+        { "category_id": "c-bank", "name": "Bank charges", "icon": "account_balance", "color": "#9E9E9E", "amount": { "minor_units": 4080000, "currency": "MWK", "amount": 40800, "formatted": "MK 40,800.00", "formatted_whole": "MK 40,800" }, "share_pct": 14, "count": 9, "previous_amount": null, "comparison": null, "needs_category": false }
+      ]
+    },
+    "not_counted": { "amount": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00", "formatted_whole": "MK 0" }, "count": 0 },
+    "parties": [],
+    "comparison": {
+      "comparable": true, "reason": null,
+      "previous": { "from": "2026-09-24", "to": "2026-10-23", "amount": { "minor_units": 31290000, "currency": "MWK", "amount": 312900, "formatted": "MK 312,900.00", "formatted_whole": "MK 312,900" } },
+      "difference": { "minor_units": 2750000, "currency": "MWK", "amount": 27500, "formatted": "MK 27,500.00", "formatted_whole": "MK 27,500" },
+      "direction": "down", "pct": 8.8, "show_pct": false
+    },
+    "insights": [
+      { "key": "topThreeShare", "params": { "categories": ["Food", "Rent", "Transport"], "share_pct": 70 }, "target": null, "priority": 5 },
+      { "key": "categoryUp", "params": { "category": "Transport", "category_id": "c-transport", "amount": { "minor_units": 4130000, "currency": "MWK", "amount": 41300, "formatted": "MK 41,300.00", "formatted_whole": "MK 41,300" }, "previous": { "minor_units": 3470000, "currency": "MWK", "amount": 34700, "formatted": "MK 34,700.00", "formatted_whole": "MK 34,700" }, "pct": 19.0, "show_pct": true, "days": 30 }, "target": { "type": "category", "id": "c-transport" }, "priority": 2 },
+      { "key": "biggestCategory", "params": { "category": "Food", "category_id": "c-food", "amount": { "minor_units": 9860000, "currency": "MWK", "amount": 98600, "formatted": "MK 98,600.00", "formatted_whole": "MK 98,600" }, "share_pct": 35 }, "target": { "type": "category", "id": "c-food" }, "priority": 3 },
+      { "key": "someFutureKey", "params": {}, "target": null, "priority": 9 }
+    ]
+  }
+}

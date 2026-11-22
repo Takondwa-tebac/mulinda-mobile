@@ -302,25 +302,10 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
-          child: Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    'analytics.cat.byMonth'.tr(namedArgs: {'category': name}),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              ChartTableToggle(
-                showTable: table,
-                onChanged: (v) => ref.read(reportTableViewProvider('category-trend').notifier).state = v,
-              ),
-            ],
-          ),
+        ChartSectionHeader(
+          title: 'analytics.cat.byMonth'.tr(namedArgs: {'category': name}),
+          showTable: table,
+          onChanged: (v) => ref.read(reportTableViewProvider('category-trend').notifier).state = v,
         ),
         if (!table) ...[
           if (story != null)

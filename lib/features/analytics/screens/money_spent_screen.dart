@@ -150,25 +150,10 @@ class _DayByDay extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
-          child: Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    'analytics.dayByDay'.tr(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              ChartTableToggle(
-                showTable: table,
-                onChanged: (v) => ref.read(reportTableViewProvider('spent').notifier).state = v,
-              ),
-            ],
-          ),
+        ChartSectionHeader(
+          title: 'analytics.dayByDay'.tr(),
+          showTable: table,
+          onChanged: (v) => ref.read(reportTableViewProvider('spent').notifier).state = v,
         ),
         if (!table) ...[
           MulindaBarChart(

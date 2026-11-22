@@ -1,0 +1,42 @@
+{
+  "data": {
+    "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-06-02" },
+    "income": { "minor_units": 40700000, "currency": "MWK", "amount": 407000, "formatted": "MK 407,000.00", "formatted_whole": "MK 407,000" },
+    "expense": { "minor_units": 28540000, "currency": "MWK", "amount": 285400, "formatted": "MK 285,400.00", "formatted_whole": "MK 285,400" },
+    "net": { "minor_units": 12160000, "currency": "MWK", "amount": 121600, "formatted": "MK 121,600.00", "formatted_whole": "MK 121,600" },
+    "counts": { "expense": 76, "income": 8, "total": 84 },
+    "average_per_day": { "minor_units": 951300, "currency": "MWK", "amount": 9513, "formatted": "MK 9,513.00", "formatted_whole": "MK 9,513" },
+    "typical_day": { "minor_units": 540000, "currency": "MWK", "amount": 5400, "formatted": "MK 5,400.00", "formatted_whole": "MK 5,400" },
+    "biggest_expense": {
+      "id": "t-rent", "title": "Rent",
+      "category": { "id": "c-rent", "name": "Rent", "icon": "home", "color": "#8E44AD" },
+      "amount": { "minor_units": 6000000, "currency": "MWK", "amount": 60000, "formatted": "MK 60,000.00", "formatted_whole": "MK 60,000" },
+      "occurred_at": "2026-11-01T09:00:00Z"
+    },
+    "comparison": {
+      "expense": {
+        "comparable": true, "reason": null,
+        "previous": { "from": "2026-09-24", "to": "2026-10-23", "amount": { "minor_units": 31290000, "currency": "MWK", "amount": 312900, "formatted": "MK 312,900.00", "formatted_whole": "MK 312,900" } },
+        "difference": { "minor_units": 2750000, "currency": "MWK", "amount": 27500, "formatted": "MK 27,500.00", "formatted_whole": "MK 27,500" },
+        "direction": "down", "pct": 8.8, "show_pct": false
+      },
+      "income": {
+        "comparable": true, "reason": null,
+        "previous": { "from": "2026-09-24", "to": "2026-10-23", "amount": { "minor_units": 37800000, "currency": "MWK", "amount": 378000, "formatted": "MK 378,000.00", "formatted_whole": "MK 378,000" } },
+        "difference": { "minor_units": 2900000, "currency": "MWK", "amount": 29000, "formatted": "MK 29,000.00", "formatted_whole": "MK 29,000" },
+        "direction": "up", "pct": 7.7, "show_pct": false
+      }
+    },
+    "series": [
+      { "date": "2026-11-20", "expense": { "minor_units": 390000, "currency": "MWK", "amount": 3900, "formatted": "MK 3,900.00", "formatted_whole": "MK 3,900" }, "income": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00", "formatted_whole": "MK 0" }, "count": 2, "complete": true },
+      { "date": "2026-11-21", "expense": { "minor_units": 1525000, "currency": "MWK", "amount": 15250, "formatted": "MK 15,250.00", "formatted_whole": "MK 15,250" }, "income": { "minor_units": 800000, "currency": "MWK", "amount": 8000, "formatted": "MK 8,000.00", "formatted_whole": "MK 8,000" }, "count": 3, "complete": true },
+      { "date": "2026-11-22", "expense": { "minor_units": 1250000, "currency": "MWK", "amount": 12500, "formatted": "MK 12,500.00", "formatted_whole": "MK 12,500" }, "income": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00", "formatted_whole": "MK 0" }, "count": 3, "complete": false }
+    ],
+    "top_categories_share": 70,
+    "not_counted": { "amount": { "minor_units": 8000000, "currency": "MWK", "amount": 80000, "formatted": "MK 80,000.00", "formatted_whole": "MK 80,000" }, "count": 1 },
+    "insights": [
+      { "key": "typicalDay", "params": { "median": { "minor_units": 540000, "currency": "MWK", "amount": 5400, "formatted": "MK 5,400.00", "formatted_whole": "MK 5,400" }, "mean": { "minor_units": 951300, "currency": "MWK", "amount": 9513, "formatted": "MK 9,513.00", "formatted_whole": "MK 9,513" } }, "target": null, "priority": 7 },
+      { "key": "biggestDay", "params": { "date": "2026-11-01", "amount": { "minor_units": 6430000, "currency": "MWK", "amount": 64300, "formatted": "MK 64,300.00", "formatted_whole": "MK 64,300" }, "top_category": "Rent" }, "target": { "type": "day", "id": "2026-11-01" }, "priority": 6 }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "data": {
+    "id": "t-shoprite",
+    "type": "expense",
+    "amount": { "minor_units": 1845000, "currency": "MWK", "amount": 18450, "formatted": "MK 18,450.00" },
+    "merchant": "Shoprite City Centre",
+    "category": { "id": "c-food", "name": "Food", "icon": "restaurant", "color": "#E67E22", "is_spending": true },
+    "occurred_at": "2026-11-16T09:42:00Z",
+    "context": {
+      "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-06-02" },
+      "category_total": { "minor_units": 9860000, "currency": "MWK", "amount": 98600, "formatted": "MK 98,600.00", "formatted_whole": "MK 98,600" },
+      "share_of_category_pct": 19,
+      "rank_in_category": 1,
+      "category_count": 23,
+      "merchant": { "name": "Shoprite", "count": 4, "total": { "minor_units": 3820000, "currency": "MWK", "amount": 38200, "formatted": "MK 38,200.00", "formatted_whole": "MK 38,200" } }
+    }
+  }
+}

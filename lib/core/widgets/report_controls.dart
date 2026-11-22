@@ -40,6 +40,48 @@ class ChartTableToggle extends StatelessWidget {
   }
 }
 
+/// A section title with the Chart | Table toggle. The toggle sits beside the
+/// title when there is room and moves under it when there is not.
+class ChartSectionHeader extends StatelessWidget {
+  const ChartSectionHeader({super.key, required this.title, required this.showTable, required this.onChanged});
+
+  final String title;
+  final bool showTable;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
+      child: LayoutBuilder(
+        builder: (context, box) => Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: ChartTableToggle(showTable: showTable, onChanged: onChanged),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// One choice of a [PeriodSwitcher].
 class PeriodSegment {
   const PeriodSegment({required this.label, this.key});

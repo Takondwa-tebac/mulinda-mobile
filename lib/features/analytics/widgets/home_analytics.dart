@@ -93,7 +93,13 @@ class _Hero extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(periodTitle(selection, s.period), style: TextStyle(color: on, fontWeight: FontWeight.w700)),
+                      Flexible(
+                        child: Text(
+                          periodTitle(selection, s.period),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: on, fontWeight: FontWeight.w700),
+                        ),
+                      ),
                       const SizedBox(width: AppSpacing.xs),
                       Icon(Icons.expand_more, size: 18, color: on),
                     ],
