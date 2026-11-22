@@ -19,6 +19,8 @@ import 'package:mulinda_mobile/features/plan/data/plan_models.dart';
 import 'package:mulinda_mobile/features/plan/data/plan_repository.dart';
 import 'package:mulinda_mobile/features/plan/screens/plan_screen.dart';
 import 'package:mulinda_mobile/features/profile/screens/profile_screen.dart';
+import 'package:mulinda_mobile/features/stories/data/stories_repository.dart';
+import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 
 Map<String, dynamic> _m(int major) => {
   'minor_units': major * 100,
@@ -134,6 +136,8 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
         unreadInsightsCountProvider.overrideWith((ref) async => 2),
         pendingCountProvider.overrideWith((ref) => 0),
         currentUserProvider.overrideWith((ref) => _user),
+        homeMonthStoryProvider.overrideWith((ref) async => null),
+        yearStoryStatusProvider.overrideWith((ref) async => null),
       ],
       child: MaterialApp(theme: AppTheme.light, home: screen),
     ),

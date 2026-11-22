@@ -1492,5 +1492,165 @@
     "moreBody": "You've tracked for two weeks. You can now add loans, investments and projects, and see them next to your spending.",
     "openPlan": "Open Plan",
     "notNow": "Not now"
+  },
+  "stories": {
+    "myMonth": "My {month}",
+    "myYear": "My {year}",
+    "and": "and",
+    "in": "In",
+    "out": "Out",
+    "messagesUnit": {
+      "one": "money message",
+      "other": "money messages"
+    },
+    "keptLine": "You kept {percent} of what came in.",
+    "overspentLine": "You spent {percent} more than came in.",
+    "bigDayAmount": "{amount} in one day",
+    "bigDayShare": "{percent} of the month in one day",
+    "changeLess": "less spent.",
+    "changeMore": "more spent.",
+    "changeSame": "About the same as {month}.",
+    "budgetsLine": "You kept {kept} of {total} budgets.",
+    "loadError": "We couldn't load your story.",
+    "notYetTitle": "Your {year} in money is not out yet",
+    "notYetBody": "It arrives soon. Keep recording your money, so it counts.",
+    "notAvailableTitle": "Not enough for a story yet",
+    "notAvailableBody": "A story needs more money messages or entries in that month.",
+    "month": {
+      "introTitle": "Your month in money is here.",
+      "introBody": "Tap to see where it all went.",
+      "messagesLead": "This month Mulinda recorded",
+      "messagesBody": "You typed none of them.",
+      "inOutTitle": "Money came in. Money went out.",
+      "topLead": "Most of your money went to",
+      "bigDayLead": "Your biggest spending day",
+      "styleLead": "Your money style this month",
+      "changeLead": "Next to {month}"
+    },
+    "year": {
+      "introTitle": "Your year in money.",
+      "introBody": "{from} to {to}. Tap to start.",
+      "messagesLead": "This year Mulinda recorded",
+      "perDay": "That is about {count} a day, every day.",
+      "monthsLead": "Your money, month by month",
+      "biggestMonth": "{month} was your biggest month.",
+      "biggestMonthAmount": "{amount} spent in {month}.",
+      "biggestMonthShare": "{percent} of the year's spending.",
+      "topLead": "Your top category of the year",
+      "topAmount": "{amount} on {category} since January.",
+      "topShare": "{percent} of everything you spent.",
+      "then1": "Then {a}.",
+      "then2": "Then {a}, then {b}.",
+      "personLead": "The person you sent money to most",
+      "personTimes": {
+        "one": "Once this year. Somebody is lucky to have you.",
+        "other": "{} times this year. Somebody is lucky to have you."
+      },
+      "placeLead": "Your favourite place to spend",
+      "visits": {
+        "one": "{} visit.",
+        "other": "{} visits."
+      },
+      "weekday": "Most of them on a {day}.",
+      "goalsLead": "Goals you reached",
+      "goalsSaved": "{amount} saved towards them.",
+      "goalsDone": "You saw every one of them through.",
+      "styleLead": "Your money style of {year}",
+      "invite": "Invite a friend to see their year"
+    },
+    "weekday": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "style": {
+      "steady_planner": {
+        "title": "The Steady Planner",
+        "body": "You set budgets and kept to most of them."
+      },
+      "saver": {
+        "title": "The Saver",
+        "body": "You kept a good part of what came in."
+      },
+      "family_builder": {
+        "title": "The Family Builder",
+        "body": "You put the people around you first."
+      },
+      "foodie": {
+        "title": "The Foodie",
+        "body": "Food and groceries came first for you."
+      },
+      "explorer": {
+        "title": "The Explorer",
+        "body": "You were on the move: transport and travel came first."
+      },
+      "everyday_manager": {
+        "title": "The Everyday Manager",
+        "body": "You kept your everyday money moving, one day at a time."
+      }
+    },
+    "card": {
+      "spent": "spent",
+      "cameIn": "came in",
+      "messages": "messages recorded",
+      "topCategory": "top category",
+      "biggestMonth": "biggest month",
+      "goals": "goals reached",
+      "kept": "kept from what came in",
+      "overspent": "more spent than came in",
+      "lessThan": "less than {month}",
+      "moreThan": "more than {month}",
+      "sameAs": "change from {month}",
+      "top": "Top 3: {names}",
+      "tagline": "My money in one place, recorded by Mulinda."
+    },
+    "share": {
+      "showAmounts": "Show amounts",
+      "save": "Save",
+      "share": "Share to status",
+      "note": "The image is sized for WhatsApp status. Your invite link goes in the message, not on the picture.",
+      "saved": "Saved to your photos",
+      "saveDenied": "Mulinda needs permission to save photos. Allow it and try again.",
+      "saveFailed": "Could not save the picture. Please try again.",
+      "shared": "Shared",
+      "shareFailed": "Could not share the picture. Please try again.",
+      "message": "My {period} in money, from Mulinda. See yours: {link}",
+      "messageNoLink": "My {period} in money, from Mulinda."
+    },
+    "home": {
+      "new": "NEW",
+      "monthTitle": "Your {month} in money is ready",
+      "monthBody": "Where your money went, story by story. Takes a minute.",
+      "monthCta": "See my {month}",
+      "comingOn": "Coming {date}",
+      "yearTitle": "Your {year} in money",
+      "daysToGo": {
+        "one": "day to go",
+        "other": "days to go"
+      },
+      "countdownBody": "Every money message Mulinda records this year goes into it. Record your cash spending too, so it counts.",
+      "remindMe": "Remind me",
+      "remindersOn": "Reminders on",
+      "remindFailed": "Could not change reminders. Please try again.",
+      "itsHere": "IT'S HERE",
+      "readyBody": "Your year, story by story. Takes a minute.",
+      "watch": "Watch my year"
+    },
+    "mine": {
+      "title": "My stories",
+      "monthItem": "My {month} {year} in money",
+      "yearItem": "My {year} in money",
+      "subtitle": "Watch again or share"
+    },
+    "player": {
+      "replay": "Replay",
+      "close": "Close",
+      "next": "Next story",
+      "back": "Previous story"
+    }
   }
 }

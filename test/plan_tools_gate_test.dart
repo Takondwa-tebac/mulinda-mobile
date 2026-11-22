@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mulinda_mobile/features/stories/data/stories_repository.dart';
+import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 import 'package:mulinda_mobile/core/theme/app_theme.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/auth/data/user.dart';
@@ -137,6 +139,8 @@ void main() {
             advisoryProvider.overrideWith((ref) async => const AdvisorySummary()),
             reviewTransactionsProvider.overrideWith((ref) async => const []),
             unreadInsightsCountProvider.overrideWith((ref) async => 0),
+            homeMonthStoryProvider.overrideWith((ref) async => null),
+            yearStoryStatusProvider.overrideWith((ref) async => null),
           ],
           child: MaterialApp(theme: AppTheme.light, home: screen),
         ),
