@@ -1387,7 +1387,8 @@
     "stepTodaySub": "Cash counts too",
     "stepBudget": "Set one budget",
     "stepBudgetSub": "See when spending runs ahead",
-    "noCategory": "No category yet"
+    "noCategory": "No category yet",
+    "otherCategories": "Everything else"
   },
   "upgrade": {
     "pricing": {

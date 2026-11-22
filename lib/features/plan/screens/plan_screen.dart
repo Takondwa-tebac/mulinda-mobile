@@ -21,6 +21,7 @@ import '../../dashboard/widgets/spending_chart.dart';
 import '../../subscription/data/subscription_models.dart';
 import '../../subscription/widgets/premium_lock.dart';
 import '../data/budget_pace.dart';
+import '../data/month_budget_total.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
 import '../data/plan_tools_gate.dart';
@@ -218,14 +219,7 @@ class _BudgetsSection extends StatelessWidget {
       );
     }
 
-    // Totals only make sense in one currency; use the most common one.
-    final byCurrency = <String, List<BudgetItem>>{};
-    for (final b in budgets) {
-      byCurrency.putIfAbsent(b.limit.currency, () => []).add(b);
-    }
-    final main = byCurrency.entries.reduce((a, b) => a.value.length >= b.value.length ? a : b);
-    final limit = main.value.fold<int>(0, (s, b) => s + b.limit.minorUnits);
-    final spent = main.value.fold<int>(0, (s, b) => s + b.spent.minorUnits);
+    final total = monthBudgetTotal(budgets);
 
     final sorted = [...budgets]
       ..sort((a, b) {
@@ -236,8 +230,10 @@ class _BudgetsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ThisMonthCard(currency: main.key, limitMinor: limit, spentMinor: spent),
-        const SizedBox(height: AppSpacing.xl),
+        if (total != null) ...[
+          _ThisMonthCard(currency: total.currency, limitMinor: total.limitMinor, spentMinor: total.spentMinor),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         SectionHeader(
           'plan.budgets'.tr(),
           actionLabel: 'home2.seeAll'.tr(),
