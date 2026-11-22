@@ -2,6 +2,7 @@ import 'package:another_telephony/telephony.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../analytics/data/analytics_repository.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/analytics/analytics.dart';
@@ -100,6 +101,7 @@ class _FirstImportScreenState extends ConsumerState<FirstImportScreen> {
     Analytics.track('history_import_completed', {'count': imported, 'surface': 'first_run'});
     ref.invalidate(accountsProvider);
     ref.invalidate(dashboardProvider);
+    invalidateAnalytics(ref.invalidate);
     _goHome(imported: imported);
     // The user has now seen their money: a fair moment to ask about reminders.
     PushService.instance.requestPermission();

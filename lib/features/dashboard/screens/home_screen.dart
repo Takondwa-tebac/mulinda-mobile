@@ -16,7 +16,9 @@ import '../../../core/widgets/transaction_tile.dart';
 import '../../activity/data/activity_feed.dart';
 import '../../activity/widgets/txn_view.dart';
 import '../../auth/providers/auth_controller.dart';
-import '../../activity/data/activity_repository.dart' show reviewCountProvider;
+import '../../activity/data/activity_repository.dart' show accountsProvider, reviewCountProvider;
+import '../../analytics/data/analytics_repository.dart';
+import '../../analytics/widgets/home_analytics.dart';
 import '../../insights/data/insights_repository.dart';
 import '../../onboarding/first_run.dart';
 import '../../plan/data/budget_pace.dart';
@@ -29,16 +31,15 @@ import '../../stories/data/story_visibility.dart';
 import '../../stories/widgets/story_home_cards.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
-import '../data/spending_insight.dart';
 import '../widgets/first_visit_cards.dart';
-import '../widgets/spending_chart.dart';
 import '../../subscription/widgets/top_up_card.dart';
 import '../../subscription/widgets/trial_banner.dart';
 import '../../../shared/plural.dart';
 import '../../../core/theme/app_icons.dart';
 
-/// Home, the command centre: balance, where the money went, what needs
-/// attention, budgets at a glance, recent activity, then health and coach.
+/// Home, the command centre: the period's money in and out (each figure opens
+/// its report), where the money is going, what needs attention, budgets at a
+/// glance, recent activity, then health and coach.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -79,6 +80,7 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(dashboardProvider);
           ref.invalidate(homeMonthStoryProvider);
           ref.invalidate(yearStoryStatusProvider);
+          invalidateAnalytics(ref.invalidate);
           await ref.read(dashboardProvider.future);
         },
         child: async.when(
@@ -117,7 +119,7 @@ class _Dashboard extends ConsumerWidget {
     // three steps that get the budget going.
     final showSteps = data.isFirstRun || (firstRun.firstVisit && firstRun.smsSkipped);
     final needs = data.needsAttention ?? 0;
-    final spending = data.spendingByCategory.where((r) => r.amount.minorUnits > 0).toList();
+    final accounts = ref.watch(accountsProvider).valueOrNull?.where((a) => a.isActive).length;
     // First two weeks: loans and investments wait (see planToolsGate).
     final tools = ref.watch(planToolsGateProvider);
 
@@ -126,7 +128,8 @@ class _Dashboard extends ConsumerWidget {
       children: [
         Text(greeting, style: text.titleMedium?.copyWith(color: scheme.onSurfaceVariant)),
         const SizedBox(height: AppSpacing.lg),
-        _BalanceHero(data: data),
+        // Last 30 days (or the period on its chip): figures that open reports.
+        const HomeAnalyticsHero(),
         const SizedBox(height: AppSpacing.lg),
 
         // Last month's story (first days of the month) and the year countdown.
@@ -139,10 +142,7 @@ class _Dashboard extends ConsumerWidget {
 
         if (tools.showMoreOnPlan) const MoreOnPlanCard(),
 
-        if (imported) ...[
-          const Last30DaysCard(),
-          if (toCheck > 0) ToCheckCard(count: toCheck),
-        ],
+        if (imported && toCheck > 0) ToCheckCard(count: toCheck),
 
         if (showSteps) GetStartedSteps(hasTransactions: data.recent.isNotEmpty, hasBudget: data.budgetsTotal > 0),
 
@@ -151,14 +151,16 @@ class _Dashboard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
 
-        if (spending.isNotEmpty) ...[
-          _WhereMoneyWent(
-            rows: spending,
-            needsAttention: needs,
-            onSortCategories: () => _openNeedsCategory(context, ref),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
+        const HomeWhereCard(),
+        MoneyInAccountsRow(
+          amount: data.netWorth,
+          accounts: accounts,
+          onTap: () {
+            ref.read(activityFilterProvider.notifier).reset();
+            context.go(Routes.activity);
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
 
         _BudgetsAtAGlance(total: data.budgetsTotal),
 
@@ -308,142 +310,6 @@ class _Dashboard extends ConsumerWidget {
       needsAttention: t.needsAttention,
       notSpending: t.notSpending,
       notIncome: t.notIncome,
-    );
-  }
-}
-
-/// Net worth, with this month's money in and out underneath.
-class _BalanceHero extends StatelessWidget {
-  const _BalanceHero({required this.data});
-
-  final DashboardSummary data;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final on = scheme.onPrimary;
-    final month = data.thisMonth;
-    final rate = (month.savingsRate * 100).clamp(-999, 999).toStringAsFixed(0);
-
-    Widget figure(String label, String value) => Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: on.withValues(alpha: 0.85), fontSize: 12)),
-          const SizedBox(height: AppSpacing.xxs),
-          // Shrinks to fit rather than cutting the amount off.
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              style: TextStyle(color: on, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xl - 4),
-      decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(AppRadius.xl)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('home.netWorth'.tr(), style: TextStyle(color: on.withValues(alpha: 0.85))),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            data.netWorth.formatted,
-            style: text.headlineMedium?.copyWith(color: on, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Container(height: 1, color: on.withValues(alpha: 0.15)),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              figure('home2.inThisMonth'.tr(), month.income.formatted),
-              const SizedBox(width: AppSpacing.md),
-              figure('home2.outThisMonth'.tr(), month.expense.formatted),
-              const SizedBox(width: AppSpacing.md),
-              figure('home.savingsRate'.tr(), '$rate%'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WhereMoneyWent extends StatelessWidget {
-  const _WhereMoneyWent({required this.rows, required this.needsAttention, required this.onSortCategories});
-
-  final List<CategorySpend> rows;
-  final int needsAttention;
-  final VoidCallback onSortCategories;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final insight = spendingInsight(rows);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader('home2.whereMoneyWent'.tr(), padding: const EdgeInsets.only(bottom: AppSpacing.xxs)),
-            Text('home2.monthToDate'.tr(), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-            const SizedBox(height: AppSpacing.md),
-            SpendingChart(rows: rows),
-            if (uncategorisedShare(rows) >= 0.4 && needsAttention > 0) ...[
-              const SizedBox(height: AppSpacing.md),
-              Material(
-                color: context.semantic.warningContainer,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  onTap: onSortCategories,
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Row(
-                      children: [
-                        Icon(Icons.category_outlined, size: 18, color: context.semantic.warning),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(child: Text('home2.mostlyUncategorised'.tr(), style: const TextStyle(fontSize: 13))),
-                        Icon(Icons.chevron_right, size: 18, color: context.semantic.warning),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            if (insight != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Icon(
-                    insight.up ? Icons.trending_up : Icons.trending_down,
-                    size: 18,
-                    color: insight.up ? context.semantic.warning : context.semantic.success,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      (insight.up ? 'home2.insightUp' : 'home2.insightDown').tr(
-                        args: [insight.categoryName, '${insight.percent}'],
-                      ),
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
