@@ -57,6 +57,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Plain "open the app" link used by web pages: mulinda://open -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="mulinda" android:host="open"/>
+            </intent-filter>
             <!-- Password-reset deep link: mulinda://reset-password?token=..&email=.. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
