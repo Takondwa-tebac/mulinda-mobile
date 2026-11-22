@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/activity/data/activity_repository.dart';
 import '../../features/capture/data/inbox_repository.dart';
+import '../../features/analytics/data/analytics_models.dart';
+import '../../features/analytics/data/analytics_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/insights/data/insights_repository.dart';
 import '../../features/plan/data/plan_repository.dart';
@@ -146,6 +148,13 @@ class OfflinePrefetcher {
   static List<PrefetchStep> defaultSteps(ProviderContainer c) => [
         PrefetchStep('Dashboard', () => _load(c, dashboardProvider, dashboardProvider.future),
             dependsOn: _everything),
+        // Home's analytics block (last 30 days), so Home opens offline.
+        PrefetchStep('Reports', () async {
+          const p = PeriodSelection.defaultPeriod;
+          await _load(c, analyticsSummaryProvider(p), analyticsSummaryProvider(p).future);
+          final k = (period: p, kind: ReportKind.expense);
+          await _load(c, analyticsCategoriesProvider(k), analyticsCategoriesProvider(k).future);
+        }, dependsOn: {'transactions', 'accounts'}),
         PrefetchStep('Accounts', () => _load(c, accountsProvider, accountsProvider.future),
             dependsOn: {'accounts', 'transactions'}),
         PrefetchStep('Categories', () => _load(c, categoriesProvider, categoriesProvider.future), dependsOn: {}),

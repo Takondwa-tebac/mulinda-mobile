@@ -22,6 +22,8 @@ import 'package:mulinda_mobile/features/profile/screens/profile_screen.dart';
 import 'package:mulinda_mobile/features/stories/data/stories_repository.dart';
 import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 
+import 'support/analytics_fakes.dart';
+
 Map<String, dynamic> _m(int major) => {
   'minor_units': major * 100,
   'currency': 'MWK',
@@ -138,6 +140,7 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
         currentUserProvider.overrideWith((ref) => _user),
         homeMonthStoryProvider.overrideWith((ref) async => null),
         yearStoryStatusProvider.overrideWith((ref) async => null),
+        ...analyticsOverrides(),
       ],
       child: MaterialApp(theme: AppTheme.light, home: screen),
     ),
@@ -153,9 +156,14 @@ void main() {
     await _pump(tester, const HomeScreen());
     expect(tester.takeException(), isNull);
     expect(find.text('home2.needsAttention'), findsOneWidget);
-    expect(find.text('home2.whereMoneyWent'), findsOneWidget);
-    // Transport: 118,000 vs 100,000 → +18%, computed from the numbers given.
-    expect(find.text('home2.insightUp'), findsOneWidget);
+    // The analytics block: hero figures and the compact category card.
+    expect(find.byKey(const ValueKey('home-analytics-hero')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-where-card')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('home-money-in-accounts')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.drag(find.byType(ListView).first, const Offset(0, -1500));
     await tester.pump();
     expect(tester.takeException(), isNull);

@@ -22,15 +22,22 @@ import '../../activity/data/activity_repository.dart';
 import '../../activity/widgets/category_picker.dart';
 import '../../activity/widgets/category_quick_fix.dart';
 import '../../activity/widgets/txn_view.dart';
+import '../../analytics/data/analytics_models.dart';
+import '../../analytics/data/analytics_repository.dart';
+import '../../analytics/widgets/in_context_card.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../../core/theme/app_icons.dart';
 
 /// Robust transaction detail: a share-ready receipt (bank-style), the fee/levy
 /// breakdown, and — for auto-captured transactions — the exact source SMS.
 class TransactionDetailScreen extends ConsumerStatefulWidget {
-  const TransactionDetailScreen({super.key, required this.txnId});
+  const TransactionDetailScreen({super.key, required this.txnId, this.contextPeriod});
 
   final String txnId;
+
+  /// The period of the report this was opened from; adds the "In context"
+  /// block (how big this payment is in its category and with its shop).
+  final PeriodSelection? contextPeriod;
 
   @override
   ConsumerState<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
@@ -85,6 +92,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
       ..invalidate(transactionsProvider)
       ..invalidate(accountsProvider)
       ..invalidate(dashboardProvider);
+    invalidateAnalytics(ref.invalidate);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('activity2.detail.updated'.tr())));
     }
@@ -153,6 +161,8 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
                 rows: _rows(txn),
               ),
             ),
+            if (widget.contextPeriod != null && txn.type != 'transfer')
+              InContextCard(txn: txn, period: widget.contextPeriod!),
             if (txn.type != 'transfer') ...[
               const SizedBox(height: AppSpacing.lg),
               _CategoryCard(
@@ -162,6 +172,7 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
                     ref
                       ..invalidate(transactionsProvider)
                       ..invalidate(accountsProvider);
+                    invalidateAnalytics(ref.invalidate);
                   }
                 }),
               ),

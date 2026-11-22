@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/category_icons.dart';
+import '../../../core/widgets/donut_chart.dart';
 import '../data/dashboard_models.dart';
+
+export '../../../core/widgets/donut_chart.dart' show DonutPainter;
 
 /// Fallback colours for categories the server sent without one (brand-adjacent,
 /// distinguishable, in a fixed order).
@@ -103,43 +106,6 @@ class SpendingChart extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Draws a ring split into arcs proportional to [values].
-class DonutPainter extends CustomPainter {
-  DonutPainter({required this.values, required this.colors, required this.track, this.stroke = 16, this.gap = 0.03});
-
-  final List<double> values;
-  final List<Color> colors;
-  final Color track;
-  final double stroke;
-
-  /// Gap between arcs in radians.
-  final double gap;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(stroke / 2, stroke / 2, size.width - stroke, size.height - stroke);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.butt;
-    canvas.drawArc(rect, 0, math.pi * 2, false, paint..color = track);
-
-    final total = values.fold<double>(0, (s, v) => s + v);
-    if (total <= 0) return;
-    var start = -math.pi / 2;
-    final useGap = values.where((v) => v > 0).length > 1 ? gap : 0.0;
-    for (var i = 0; i < values.length; i++) {
-      final sweep = values[i] / total * math.pi * 2;
-      if (sweep <= 0) continue;
-      canvas.drawArc(rect, start + useGap / 2, math.max(0, sweep - useGap), false, paint..color = colors[i]);
-      start += sweep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant DonutPainter old) => old.values != values || old.colors != colors || old.track != track;
 }
 
 /// A single-value ring (e.g. budget used) with a label in the middle.

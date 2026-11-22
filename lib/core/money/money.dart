@@ -5,12 +5,20 @@ class Money {
     required this.currency,
     required this.amount,
     required this.formatted,
+    this.formattedWhole,
   });
 
   final int minorUnits;
   final String currency;
   final double amount;
   final String formatted;
+
+  /// `MK 285,400`: rounded to whole major units, for headlines, report rows
+  /// and chart labels. Null when the server did not send it.
+  final String? formattedWhole;
+
+  /// [formattedWhole] when the server sent it, otherwise [formatted].
+  String get whole => (formattedWhole?.isNotEmpty ?? false) ? formattedWhole! : formatted;
 
   static const zero = Money(minorUnits: 0, currency: 'MWK', amount: 0, formatted: 'MK 0');
 
@@ -20,8 +28,12 @@ class Money {
       currency: json['currency']?.toString() ?? 'MWK',
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
       formatted: json['formatted']?.toString() ?? '',
+      formattedWhole: json['formatted_whole']?.toString(),
     );
   }
+
+  /// Parse a money map, or null when it is missing.
+  static Money? parseOrNull(dynamic value) => value is Map ? Money.fromJson(value.cast<String, dynamic>()) : null;
 
   /// Parse a money map that might be null, falling back to zero.
   static Money parse(dynamic value) {

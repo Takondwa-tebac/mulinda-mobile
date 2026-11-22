@@ -1653,5 +1653,278 @@
       "next": "Next story",
       "back": "Previous story"
     }
+  },
+  "analytics": {
+    "title": {
+      "where": "Where your money is going",
+      "spent": "Money spent",
+      "received": "Money received"
+    },
+    "period": {
+      "today": "Today",
+      "this_week": "This week",
+      "this_month": "This month",
+      "last_30_days": "Last 30 days",
+      "last_month": "Last month",
+      "custom": "Custom dates"
+    },
+    "periodGroup": "Period",
+    "seg": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "d30": "30 days",
+      "custom": "Custom"
+    },
+    "label": {
+      "todaySoFar": "Today so far",
+      "weekSoFar": "This week so far",
+      "monthSoFar": "This month so far",
+      "last30": "Last 30 days",
+      "weekOf": "Week of {date}",
+      "thirtyDays": "30 days"
+    },
+    "range": {
+      "span": "{from} to {to}",
+      "notOver": "{day}, not over yet",
+      "daysSoFar": "{range}, {elapsed} of {days} days so far"
+    },
+    "when": {
+      "last30": "in the last 30 days",
+      "thisWeek": "this week so far",
+      "thisMonth": "this month so far",
+      "today": "today so far",
+      "range": "from {from} to {to}",
+      "since": "since {date}",
+      "month": "in {month}",
+      "on": "on {date}"
+    },
+    "prev": {
+      "days": "the previous {days} days",
+      "weekSameDays": "the same days of last week",
+      "week": "the previous week",
+      "monthSameDays": "the same days of last month",
+      "month": "the previous month",
+      "day": "the day before"
+    },
+    "cmp": {
+      "less": "{difference} less than {prev} ({previous}).",
+      "more": "{difference} more than {prev} ({previous}).",
+      "same": "The same as {prev} ({previous}).",
+      "lessPct": "{pct}% less than {prev} ({previous}).",
+      "morePct": "{pct}% more than {prev} ({previous}).",
+      "almostTwice": "Almost twice as much as {prev} ({previous}): {difference} more.",
+      "aboutTwice": "About twice as much as {prev} ({previous}): {difference} more.",
+      "moreThanTwice": "More than twice as much as {prev} ({previous}): {difference} more.",
+      "heroLess": "You spent {difference} less than {prev}.",
+      "heroMore": "You spent {difference} more than {prev}.",
+      "heroSame": "You spent the same as {prev}.",
+      "heroLessPct": "You spent {pct}% less than {prev}.",
+      "heroMorePct": "You spent {pct}% more than {prev}.",
+      "notEnoughHistory": "Not enough history to compare with {prev} yet.",
+      "dayInProgress": "Today is not over yet, so we do not compare it with other days."
+    },
+    "youSpent": "You spent",
+    "youReceived": "You received",
+    "paymentCount": {
+      "one": "1 payment",
+      "other": "{count} payments"
+    },
+    "acrossPayments": {
+      "one": "{when}, across 1 payment",
+      "other": "{when}, across {count} payments"
+    },
+    "fromPayments": {
+      "one": "{when}, from 1 payment",
+      "other": "{when}, from {count} payments"
+    },
+    "avgPerDay": "on average {amount} a day",
+    "byCategory": "By category",
+    "bySource": "By source",
+    "dayByDay": "Day by day",
+    "chartView": "Chart",
+    "tableView": "Table",
+    "viewToggle": "Chart or table",
+    "prevPeriod": "Previous period",
+    "nextPeriod": "Next period",
+    "others": "Everything else",
+    "othersSub": {
+      "one": "1 smaller category",
+      "other": "{count} smaller categories"
+    },
+    "othersList": "Everything else: {list}.",
+    "needsCategory": "Needs a category",
+    "uncategorised": "Uncategorised",
+    "whatStandsOut": "What stands out",
+    "seeAll": "See all",
+    "moreCategories": "{count} more",
+    "listAnd": "{a} and {b}",
+    "table": {
+      "category": "Category",
+      "source": "Source",
+      "amount": "Amount",
+      "share": "Share",
+      "total": "Total",
+      "totalWithCount": "Total ({count})",
+      "date": "Date",
+      "spent": "Spent",
+      "payments": "Payments",
+      "month": "Month"
+    },
+    "soFarSuffix": "(so far)",
+    "footnote": {
+      "fees": "Fees and levies are counted in their own category. Money moved between your own accounts is not counted.",
+      "feesShort": "Fees and levies are counted in their own category."
+    },
+    "notCountedSpending": "Not counted: {amount} moved between your own accounts, or sent and returned to you.",
+    "notCountedIncome": "Not counted as income: {amount}",
+    "notCountedIncomeBody": "Money you moved between your own accounts, or money you sent that came back to you.",
+    "coverage": {
+      "one": "We have 1 day of your transactions so far (since {date}), so this may not be the full picture.",
+      "other": "We have {count} days of your transactions so far (since {date}), so this may not be the full picture."
+    },
+    "needMoreHistory": "You need more history before we can spot a pattern",
+    "needMoreHistoryBody": "Rises, falls and comparisons start once we have {days} days of transactions, around {date}.",
+    "needMoreHistoryBodyGeneric": "Rises, falls and comparisons start once your history also covers the period before this one.",
+    "empty": {
+      "todayTitle": "No money out today so far",
+      "periodTitle": "No money out in this period",
+      "body": "Payments from your bank and mobile money SMS appear here on their own. You can also add one yourself.",
+      "add": "Add a transaction",
+      "seeWeek": "See this week",
+      "receivedTitle": "No money in during this period",
+      "receivedBody": "Money that comes in from your bank and mobile money SMS appears here on its own.",
+      "categoryTitle": "Nothing in this category in this period"
+    },
+    "chartNeedsWeek": "The day-by-day chart appears when you choose a week or longer.",
+    "chartSemantics": "Spending per day for {days} days. Use the table view for every value.",
+    "readoutHint": "Tap a bar to see that day",
+    "readoutDay": {
+      "one": "{date}: {amount} · 1 payment",
+      "other": "{date}: {amount} · {count} payments"
+    },
+    "readoutToday": "(today, so far)",
+    "dailyAverage": "Daily average {amount}",
+    "todayNotOver": "Today, not over yet",
+    "whereItWent": "Where it went",
+    "whereItWentSub": "Your top three categories were {pct}% of it",
+    "payments": "Payments",
+    "paymentsIn": "Payments in",
+    "seeAllPayments": {
+      "one": "See 1 payment",
+      "other": "See all {count} payments"
+    },
+    "seeAllCategoryPayments": {
+      "one": "See 1 {category} payment",
+      "other": "See all {count} {category} payments"
+    },
+    "whoSentIt": "Who sent it",
+    "sheet": {
+      "title": "Choose a period",
+      "pickDates": "Pick dates"
+    },
+    "home": {
+      "leftOver": "You have {amount} left from what came in",
+      "spentMore": "You spent more than you received in this period",
+      "nothingYet": "No money in or out in this period yet",
+      "received": "Money received",
+      "spent": "Money spent",
+      "transactions": "Transactions",
+      "outIn": "{out} out, {in} in",
+      "biggestExpense": "Biggest expense",
+      "spentSentence": "You spent {amount} {when}.",
+      "topThree": "Your top three categories are {pct}% of it.",
+      "spentLabel": "spent",
+      "moneyInAccounts": "Money in your accounts",
+      "accounts": {
+        "one": "1 account",
+        "other": "{count} accounts"
+      },
+      "loadError": "We couldn't load this period."
+    },
+    "cat": {
+      "shareOfSpending": "{pct}% of your spending",
+      "shareOfIncome": "{pct}% of your income",
+      "payments": "Payments",
+      "typical": "Typical payment",
+      "halfLess": "Half were less",
+      "average": "Average payment",
+      "highest": "Highest",
+      "lowest": "Lowest",
+      "avgHigher": "Average payment {amount}. It is higher than the typical payment because a few big payments pull it up.",
+      "avgPlain": "Average payment {amount}.",
+      "byMonth": "{category} by month",
+      "steady": "{category} has been steady: between {min} and {max} in each full month since {month}.",
+      "varied": "{category} was highest in {high} ({highAmount}) and lowest in {low} ({lowAmount}).",
+      "soFarLegend": "{month} so far, not complete",
+      "soFarShort": "{month} so far",
+      "readout": {
+        "one": "{month}: {amount} · 1 payment",
+        "other": "{month}: {amount} · {count} payments"
+      },
+      "whereSpent": "Where you spent it",
+      "whoFrom": "Who it came from",
+      "otherPlaces": "Other places",
+      "paymentsTitle": "{category} payments",
+      "statsNeedTwo": "Typical payment, highest and lowest appear once there are 2 or more {category} payments in the period.",
+      "trendNeedsHistory": "The month-by-month trend appears after 3 complete months of history."
+    },
+    "ctx": {
+      "title": "In context",
+      "biggestInCategory": "Your biggest {category} payment in this period.",
+      "biggestInCategoryIncome": "The biggest {category} payment you received in this period.",
+      "shareOfCategory": "{pct}% of your {category} spending ({total}).",
+      "shareOfCategoryIncome": "{pct}% of your {category} income ({total}).",
+      "merchantCount": "One of {count} payments to {merchant}, {total} in total.",
+      "merchantCountIncome": "One of {count} payments from {merchant}, {total} in total.",
+      "merchantOnly": "Your only payment to {merchant} in this period.",
+      "merchantOnlyIncome": "The only payment from {merchant} in this period.",
+      "seeAllFrom": "See all from {merchant}"
+    },
+    "insight": {
+      "seeCategory": "See {category}",
+      "seeDay": "See that day",
+      "biggestCategory": {
+        "title": "{category} is your biggest expense: {pct}% of your spending.",
+        "body": "{amount} in this period."
+      },
+      "topThreeShare": {
+        "title": "{categories} are {pct}% of your spending.",
+        "body": "If you want to spend less, these three are where a change makes the most difference."
+      },
+      "categoryUp": {
+        "title": "You spent more on {category} than in {prev}.",
+        "titlePct": "You spent {pct}% more on {category} than in {prev}.",
+        "titleIncome": "You received more from {category} than in {prev}.",
+        "titleIncomePct": "You received {pct}% more from {category} than in {prev}.",
+        "body": "{amount}, up from {previous}."
+      },
+      "categoryDown": {
+        "title": "You spent less on {category} than in {prev}.",
+        "titlePct": "You spent {pct}% less on {category} than in {prev}.",
+        "titleIncome": "You received less from {category} than in {prev}.",
+        "titleIncomePct": "You received {pct}% less from {category} than in {prev}.",
+        "body": "{amount}, down from {previous}."
+      },
+      "biggestDay": {
+        "title": "{date} was your biggest day: {amount}.",
+        "body": "Most of it was {category}."
+      },
+      "typicalDay": {
+        "title": "On a typical day you spent {median}.",
+        "body": "Half of your days were below this. The average day was {mean}."
+      },
+      "mostIncomeFrom": {
+        "title": "Most of your income ({pct}%) comes from {source}."
+      },
+      "incomeNew": {
+        "title": "You received {amount} from {source}.",
+        "body": "There was none in the previous period."
+      },
+      "aboveTypicalToday": {
+        "title": "So far today you have spent more than on a typical day.",
+        "body": "A typical day for you is {median}."
+      }
+    }
   }
 }

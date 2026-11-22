@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/activity/data/activity_repository.dart';
+import '../../features/analytics/data/analytics_repository.dart';
 import '../../features/capture/data/sms_background_sync.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/plan/data/plan_repository.dart';
@@ -30,6 +31,7 @@ void refreshAfterSync(ProviderContainer container) {
     ..invalidate(dashboardProvider)
     ..invalidate(goalsProvider)
     ..invalidate(loansProvider);
+  invalidateAnalytics(container.invalidate);
 }
 
 /// A change was just queued: try to send it now, and ask the OS to sync it as

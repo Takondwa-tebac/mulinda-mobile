@@ -1,0 +1,18 @@
+{
+  "data": {
+    "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-11-17" },
+    "kind": "expense",
+    "category": null,
+    "total": { "minor_units": 150000, "currency": "MWK", "amount": 1500, "formatted": "MK 1,500.00" },
+    "share_pct": 4, "count": 1,
+    "average": { "minor_units": 150000, "currency": "MWK", "amount": 1500, "formatted": "MK 1,500.00" },
+    "median": null,
+    "highest": null,
+    "lowest": null,
+    "comparison": { "comparable": false, "reason": "insufficient_history", "previous": null, "difference": null, "direction": null, "pct": null, "show_pct": false },
+    "trend": null,
+    "steady": null,
+    "merchants": [],
+    "insights": []
+  }
+}

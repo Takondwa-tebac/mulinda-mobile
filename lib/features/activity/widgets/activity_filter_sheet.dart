@@ -52,6 +52,21 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
     }
   }
 
+  /// The chosen filters. New dates replace a report period the list was
+  /// opened with; a chosen category replaces "Uncategorised".
+  TxnQuery _applied() {
+    final initial = widget.initial;
+    final datesChanged = _from != initial.from || _to != initial.to;
+    final base = datesChanged ? initial.withoutPeriod() : initial;
+    return base.copyWith(
+      categoryId: () => _categoryId,
+      accountId: () => _accountId,
+      from: () => _from,
+      to: () => _to,
+      uncategorised: _categoryId != null ? false : null,
+    );
+  }
+
   void _quickRange(int days) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -134,11 +149,13 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(
-                        widget.initial.copyWith(
+                        widget.initial.withoutPeriod().copyWith(
                           categoryId: () => null,
                           accountId: () => null,
                           from: () => null,
                           to: () => null,
+                          uncategorised: false,
+                          merchant: () => null,
                         ),
                       ),
                       child: Text('activity2.clear'.tr()),
@@ -148,12 +165,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                   Expanded(
                     child: FilledButton(
                       onPressed: () => Navigator.of(context).pop(
-                        widget.initial.copyWith(
-                          categoryId: () => _categoryId,
-                          accountId: () => _accountId,
-                          from: () => _from,
-                          to: () => _to,
-                        ),
+                        _applied(),
                       ),
                       child: Text('activity2.apply'.tr()),
                     ),

@@ -1653,5 +1653,278 @@
       "next": "Nkhani yotsatira",
       "back": "Nkhani yapita"
     }
+  },
+  "analytics": {
+    "title": {
+      "where": "Kumene ndalama zanu zikupita",
+      "spent": "Ndalama zomwe mwagwiritsa",
+      "received": "Ndalama zomwe mwalandira"
+    },
+    "period": {
+      "today": "Lero",
+      "this_week": "Sabata ino",
+      "this_month": "Mwezi uno",
+      "last_30_days": "Masiku 30 apitawa",
+      "last_month": "Mwezi watha",
+      "custom": "Masiku osankha"
+    },
+    "periodGroup": "Nthawi",
+    "seg": {
+      "day": "Tsiku",
+      "week": "Sabata",
+      "month": "Mwezi",
+      "d30": "Masiku 30",
+      "custom": "Sankhani"
+    },
+    "label": {
+      "todaySoFar": "Lero mpaka pano",
+      "weekSoFar": "Sabata ino mpaka pano",
+      "monthSoFar": "Mwezi uno mpaka pano",
+      "last30": "Masiku 30 apitawa",
+      "weekOf": "Sabata ya {date}",
+      "thirtyDays": "Masiku 30"
+    },
+    "range": {
+      "span": "{from} mpaka {to}",
+      "notOver": "{day}, silinathe",
+      "daysSoFar": "{range}, masiku {elapsed} mwa {days} mpaka pano"
+    },
+    "when": {
+      "last30": "m'masiku 30 apitawa",
+      "thisWeek": "sabata ino mpaka pano",
+      "thisMonth": "mwezi uno mpaka pano",
+      "today": "lero mpaka pano",
+      "range": "kuyambira {from} mpaka {to}",
+      "since": "kuyambira {date}",
+      "month": "mu {month}",
+      "on": "pa {date}"
+    },
+    "prev": {
+      "days": "masiku {days} apitawo",
+      "weekSameDays": "masiku omwewo a sabata yatha",
+      "week": "sabata yatha",
+      "monthSameDays": "masiku omwewo a mwezi watha",
+      "month": "mwezi watha",
+      "day": "dzulo lake"
+    },
+    "cmp": {
+      "less": "{difference} zochepa kuposa {prev} ({previous}).",
+      "more": "{difference} zochuluka kuposa {prev} ({previous}).",
+      "same": "Zofanana ndi {prev} ({previous}).",
+      "lessPct": "{pct}% zochepa kuposa {prev} ({previous}).",
+      "morePct": "{pct}% zochuluka kuposa {prev} ({previous}).",
+      "almostTwice": "Pafupifupi kuwirikiza {prev} ({previous}): {difference} zochuluka.",
+      "aboutTwice": "Kuwirikiza {prev} ({previous}): {difference} zochuluka.",
+      "moreThanTwice": "Zoposa kuwirikiza {prev} ({previous}): {difference} zochuluka.",
+      "heroLess": "Mwagwiritsa {difference} zochepa kuposa {prev}.",
+      "heroMore": "Mwagwiritsa {difference} zochuluka kuposa {prev}.",
+      "heroSame": "Mwagwiritsa zofanana ndi {prev}.",
+      "heroLessPct": "Mwagwiritsa {pct}% zochepa kuposa {prev}.",
+      "heroMorePct": "Mwagwiritsa {pct}% zochuluka kuposa {prev}.",
+      "notEnoughHistory": "Palibe mbiri yokwanira yoyerekeza ndi {prev} pakadali pano.",
+      "dayInProgress": "Lero silinathe, choncho sitiliyerekeza ndi masiku ena."
+    },
+    "youSpent": "Mwagwiritsa",
+    "youReceived": "Mwalandira",
+    "paymentCount": {
+      "one": "Malipiro 1",
+      "other": "Malipiro {count}"
+    },
+    "acrossPayments": {
+      "one": "{when}, pa malipiro 1",
+      "other": "{when}, pa malipiro {count}"
+    },
+    "fromPayments": {
+      "one": "{when}, kuchokera ku malipiro 1",
+      "other": "{when}, kuchokera ku malipiro {count}"
+    },
+    "avgPerDay": "pafupifupi {amount} pa tsiku",
+    "byCategory": "Mwa gulu",
+    "bySource": "Mwa kumene zachokera",
+    "dayByDay": "Tsiku ndi tsiku",
+    "chartView": "Chithunzi",
+    "tableView": "Tebulo",
+    "viewToggle": "Chithunzi kapena tebulo",
+    "prevPeriod": "Nthawi yapitayo",
+    "nextPeriod": "Nthawi yotsatira",
+    "others": "Zina zonse",
+    "othersSub": {
+      "one": "Gulu limodzi laling'ono",
+      "other": "Magulu {count} ang'onoang'ono"
+    },
+    "othersList": "Zina zonse: {list}.",
+    "needsCategory": "Ikufunika gulu",
+    "uncategorised": "Zopanda gulu",
+    "whatStandsOut": "Zomwe zikuonekera",
+    "seeAll": "Onani zonse",
+    "moreCategories": "Zina {count}",
+    "listAnd": "{a} ndi {b}",
+    "table": {
+      "category": "Gulu",
+      "source": "Kochokera",
+      "amount": "Ndalama",
+      "share": "Gawo",
+      "total": "Zonse",
+      "totalWithCount": "Zonse ({count})",
+      "date": "Tsiku",
+      "spent": "Zogwiritsa",
+      "payments": "Malipiro",
+      "month": "Mwezi"
+    },
+    "soFarSuffix": "(mpaka pano)",
+    "footnote": {
+      "fees": "Ndalama za chindapusa ndi msonkho zimawerengedwa mu gulu lawo. Ndalama zomwe mwasuntha pakati pa maakaunti anu siziwerengedwa.",
+      "feesShort": "Ndalama za chindapusa ndi msonkho zimawerengedwa mu gulu lawo."
+    },
+    "notCountedSpending": "Sizinawerengedwe: {amount} zomwe mwasuntha pakati pa maakaunti anu, kapena zomwe munatumiza ndipo zabwezedwa kwa inu.",
+    "notCountedIncome": "Sizinawerengedwe ngati ndalama zolowa: {amount}",
+    "notCountedIncomeBody": "Ndalama zomwe mwasuntha pakati pa maakaunti anu, kapena zomwe munatumiza ndipo zabwerera kwa inu.",
+    "coverage": {
+      "one": "Tili ndi tsiku limodzi la zochitika zanu mpaka pano (kuyambira {date}), choncho izi sizingakhale chithunzi chonse.",
+      "other": "Tili ndi masiku {count} a zochitika zanu mpaka pano (kuyambira {date}), choncho izi sizingakhale chithunzi chonse."
+    },
+    "needMoreHistory": "Mukufunika mbiri yochuluka tisanaone ndondomeko",
+    "needMoreHistoryBody": "Kukwera, kutsika ndi kuyerekeza kumayamba tikakhala ndi masiku {days} a zochitika, pafupifupi {date}.",
+    "needMoreHistoryBodyGeneric": "Kukwera, kutsika ndi kuyerekeza kumayamba mbiri yanu ikafikanso nthawi yapitayo.",
+    "empty": {
+      "todayTitle": "Palibe ndalama zotuluka lero mpaka pano",
+      "periodTitle": "Palibe ndalama zotuluka nthawi imeneyi",
+      "body": "Malipiro ochokera mu SMS za banki ndi mobile money amaonekera pano okha. Mukhozanso kuwonjezera nokha.",
+      "add": "Onjezani zochitika",
+      "seeWeek": "Onani sabata ino",
+      "receivedTitle": "Palibe ndalama zolowa nthawi imeneyi",
+      "receivedBody": "Ndalama zolowa kuchokera mu SMS za banki ndi mobile money zimaonekera pano zokha.",
+      "categoryTitle": "Palibe kanthu mu gulu ili nthawi imeneyi"
+    },
+    "chartNeedsWeek": "Chithunzi cha tsiku ndi tsiku chimaonekera mukasankha sabata kapena nthawi yayitali.",
+    "chartSemantics": "Zogwiritsa pa tsiku kwa masiku {days}. Gwiritsani tebulo kuti muone zonse.",
+    "readoutHint": "Dinani mzati kuti muone tsikulo",
+    "readoutDay": {
+      "one": "{date}: {amount} · malipiro 1",
+      "other": "{date}: {amount} · malipiro {count}"
+    },
+    "readoutToday": "(lero, mpaka pano)",
+    "dailyAverage": "Pafupifupi pa tsiku {amount}",
+    "todayNotOver": "Lero, silinathe",
+    "whereItWent": "Kumene zinapita",
+    "whereItWentSub": "Magulu anu atatu akuluakulu anali {pct}% ya ndalamazi",
+    "payments": "Malipiro",
+    "paymentsIn": "Malipiro olowa",
+    "seeAllPayments": {
+      "one": "Onani malipiro 1",
+      "other": "Onani malipiro onse {count}"
+    },
+    "seeAllCategoryPayments": {
+      "one": "Onani malipiro 1 a {category}",
+      "other": "Onani malipiro onse {count} a {category}"
+    },
+    "whoSentIt": "Amene anatumiza",
+    "sheet": {
+      "title": "Sankhani nthawi",
+      "pickDates": "Sankhani masiku"
+    },
+    "home": {
+      "leftOver": "Kwatsala {amount} pa ndalama zomwe zinalowa",
+      "spentMore": "Mwagwiritsa ntchito zoposa zomwe munalandira nthawi imeneyi",
+      "nothingYet": "Palibe ndalama zolowa kapena zotuluka nthawi imeneyi pakadali pano",
+      "received": "Zomwe mwalandira",
+      "spent": "Zomwe mwagwiritsa",
+      "transactions": "Zochitika",
+      "outIn": "{out} zotuluka, {in} zolowa",
+      "biggestExpense": "Ndalama yaikulu kwambiri",
+      "spentSentence": "Mwagwiritsa {amount} {when}.",
+      "topThree": "Magulu anu atatu akuluakulu ndi {pct}% ya ndalamazi.",
+      "spentLabel": "zogwiritsa",
+      "moneyInAccounts": "Ndalama m'maakaunti anu",
+      "accounts": {
+        "one": "Akaunti 1",
+        "other": "Maakaunti {count}"
+      },
+      "loadError": "Sitinathe kutsegula nthawi imeneyi."
+    },
+    "cat": {
+      "shareOfSpending": "{pct}% ya ndalama zomwe mwagwiritsa",
+      "shareOfIncome": "{pct}% ya ndalama zomwe mwalandira",
+      "payments": "Malipiro",
+      "typical": "Malipiro ofala",
+      "halfLess": "Theka linali lochepera",
+      "average": "Malipiro apakati",
+      "highest": "Okwera kwambiri",
+      "lowest": "Otsika kwambiri",
+      "avgHigher": "Malipiro apakati ndi {amount}. Ndi okwera kuposa malipiro ofala chifukwa malipiro ochepa akuluakulu amawakweza.",
+      "avgPlain": "Malipiro apakati ndi {amount}.",
+      "byMonth": "{category} mwezi ndi mwezi",
+      "steady": "{category} sizinasinthe kwambiri: pakati pa {min} ndi {max} mwezi uliwonse wathunthu kuyambira {month}.",
+      "varied": "{category} inali yokwera kwambiri mu {high} ({highAmount}) ndi yotsika kwambiri mu {low} ({lowAmount}).",
+      "soFarLegend": "{month} mpaka pano, osati wathunthu",
+      "soFarShort": "{month} mpaka pano",
+      "readout": {
+        "one": "{month}: {amount} · malipiro 1",
+        "other": "{month}: {amount} · malipiro {count}"
+      },
+      "whereSpent": "Kumene munagwiritsa",
+      "whoFrom": "Kumene zinachokera",
+      "otherPlaces": "Malo ena",
+      "paymentsTitle": "Malipiro a {category}",
+      "statsNeedTwo": "Malipiro ofala, okwera kwambiri ndi otsika kwambiri amaonekera pakakhala malipiro 2 kapena kuposa a {category} nthawi imeneyi.",
+      "trendNeedsHistory": "Kusintha kwa mwezi ndi mwezi kumaonekera patatha miyezi itatu yathunthu ya mbiri."
+    },
+    "ctx": {
+      "title": "Poyerekeza",
+      "biggestInCategory": "Malipiro anu aakulu kwambiri a {category} nthawi imeneyi.",
+      "biggestInCategoryIncome": "Malipiro aakulu kwambiri a {category} omwe mwalandira nthawi imeneyi.",
+      "shareOfCategory": "{pct}% ya ndalama zanu za {category} ({total}).",
+      "shareOfCategoryIncome": "{pct}% ya ndalama zolowa za {category} ({total}).",
+      "merchantCount": "Imodzi mwa malipiro {count} kwa {merchant}, {total} zonse pamodzi.",
+      "merchantCountIncome": "Imodzi mwa malipiro {count} ochokera kwa {merchant}, {total} zonse pamodzi.",
+      "merchantOnly": "Malipiro anu okhawo kwa {merchant} nthawi imeneyi.",
+      "merchantOnlyIncome": "Malipiro okhawo ochokera kwa {merchant} nthawi imeneyi.",
+      "seeAllFrom": "Onani zonse za {merchant}"
+    },
+    "insight": {
+      "seeCategory": "Onani {category}",
+      "seeDay": "Onani tsikulo",
+      "biggestCategory": {
+        "title": "{category} ndi gulu lomwe mumagwiritsa kwambiri: {pct}% ya ndalama zanu.",
+        "body": "{amount} nthawi imeneyi."
+      },
+      "topThreeShare": {
+        "title": "{categories} ndi {pct}% ya ndalama zomwe mwagwiritsa.",
+        "body": "Ngati mukufuna kuchepetsa, magulu atatuwa ndi kumene kusintha kungathandize kwambiri."
+      },
+      "categoryUp": {
+        "title": "Mwagwiritsa zochuluka pa {category} kuposa {prev}.",
+        "titlePct": "Mwagwiritsa {pct}% zochuluka pa {category} kuposa {prev}.",
+        "titleIncome": "Mwalandira zochuluka kuchokera ku {category} kuposa {prev}.",
+        "titleIncomePct": "Mwalandira {pct}% zochuluka kuchokera ku {category} kuposa {prev}.",
+        "body": "{amount}, kuchoka pa {previous}."
+      },
+      "categoryDown": {
+        "title": "Mwagwiritsa zochepa pa {category} kuposa {prev}.",
+        "titlePct": "Mwagwiritsa {pct}% zochepa pa {category} kuposa {prev}.",
+        "titleIncome": "Mwalandira zochepa kuchokera ku {category} kuposa {prev}.",
+        "titleIncomePct": "Mwalandira {pct}% zochepa kuchokera ku {category} kuposa {prev}.",
+        "body": "{amount}, kuchoka pa {previous}."
+      },
+      "biggestDay": {
+        "title": "{date} linali tsiku lanu lalikulu kwambiri: {amount}.",
+        "body": "Zambiri zinali {category}."
+      },
+      "typicalDay": {
+        "title": "Pa tsiku lofala munagwiritsa {median}.",
+        "body": "Theka la masiku anu linali pansi pa izi. Tsiku lapakati linali {mean}."
+      },
+      "mostIncomeFrom": {
+        "title": "Ndalama zanu zambiri zolowa ({pct}%) zimachokera ku {source}."
+      },
+      "incomeNew": {
+        "title": "Mwalandira {amount} kuchokera ku {source}.",
+        "body": "Panalibe nthawi yapitayo."
+      },
+      "aboveTypicalToday": {
+        "title": "Lero mpaka pano mwagwiritsa zoposa tsiku lofala.",
+        "body": "Tsiku lofala kwa inu ndi {median}."
+      }
+    }
   }
 }

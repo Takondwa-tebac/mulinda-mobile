@@ -1,0 +1,32 @@
+{
+  "data": {
+    "period": { "key": "last_30_days", "from": "2026-10-24", "to": "2026-11-22", "days": 30, "elapsed_days": 30, "in_progress": true, "coverage_from": "2026-06-02" },
+    "kind": "expense",
+    "category": { "id": "c-food", "name": "Food", "icon": "restaurant", "color": "#E67E22" },
+    "total": { "minor_units": 9860000, "currency": "MWK", "amount": 98600, "formatted": "MK 98,600.00", "formatted_whole": "MK 98,600" },
+    "share_pct": 35, "count": 23,
+    "average": { "minor_units": 428700, "currency": "MWK", "amount": 4287, "formatted": "MK 4,287.00", "formatted_whole": "MK 4,287" },
+    "median": { "minor_units": 280000, "currency": "MWK", "amount": 2800, "formatted": "MK 2,800.00", "formatted_whole": "MK 2,800" },
+    "highest": { "id": "t-shoprite", "title": "Shoprite City Centre", "amount": { "minor_units": 1845000, "currency": "MWK", "amount": 18450, "formatted": "MK 18,450.00", "formatted_whole": "MK 18,450" }, "occurred_at": "2026-11-16T09:42:00Z" },
+    "lowest": { "id": "t-market", "title": "Market (cash)", "amount": { "minor_units": 50000, "currency": "MWK", "amount": 500, "formatted": "MK 500.00", "formatted_whole": "MK 500" }, "occurred_at": "2026-11-03T08:00:00Z" },
+    "comparison": {
+      "comparable": true, "reason": null,
+      "previous": { "from": "2026-09-24", "to": "2026-10-23", "amount": { "minor_units": 9120000, "currency": "MWK", "amount": 91200, "formatted": "MK 91,200.00", "formatted_whole": "MK 91,200" } },
+      "difference": { "minor_units": 740000, "currency": "MWK", "amount": 7400, "formatted": "MK 7,400.00", "formatted_whole": "MK 7,400" },
+      "direction": "up", "pct": 8.1, "show_pct": false
+    },
+    "trend": { "unit": "month", "points": [
+      { "start": "2026-07-01", "amount": { "minor_units": 8890000, "currency": "MWK", "amount": 88900, "formatted": "MK 88,900.00", "formatted_whole": "MK 88,900" }, "count": 22, "complete": true },
+      { "start": "2026-08-01", "amount": { "minor_units": 9510000, "currency": "MWK", "amount": 95100, "formatted": "MK 95,100.00", "formatted_whole": "MK 95,100" }, "count": 25, "complete": true },
+      { "start": "2026-09-01", "amount": { "minor_units": 9040000, "currency": "MWK", "amount": 90400, "formatted": "MK 90,400.00", "formatted_whole": "MK 90,400" }, "count": 22, "complete": true },
+      { "start": "2026-10-01", "amount": { "minor_units": 9680000, "currency": "MWK", "amount": 96800, "formatted": "MK 96,800.00", "formatted_whole": "MK 96,800" }, "count": 24, "complete": true },
+      { "start": "2026-11-01", "amount": { "minor_units": 7120000, "currency": "MWK", "amount": 71200, "formatted": "MK 71,200.00", "formatted_whole": "MK 71,200" }, "count": 16, "complete": false }
+    ] },
+    "steady": true,
+    "merchants": [
+      { "name": "Shoprite", "amount": { "minor_units": 3820000, "currency": "MWK", "amount": 38200, "formatted": "MK 38,200.00", "formatted_whole": "MK 38,200" }, "count": 4, "share_pct": 39 },
+      { "name": null, "amount": { "minor_units": 6040000, "currency": "MWK", "amount": 60400, "formatted": "MK 60,400.00", "formatted_whole": "MK 60,400" }, "count": 19, "share_pct": 61 }
+    ],
+    "insights": []
+  }
+}

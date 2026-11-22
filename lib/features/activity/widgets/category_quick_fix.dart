@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../analytics/data/analytics_repository.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -261,6 +262,7 @@ Future<Txn?> openCategoryQuickFix(
       ..invalidate(reviewTransactionsProvider)
       ..invalidate(transactionDetailProvider(txn.id))
       ..invalidate(budgetsProvider);
+    invalidateAnalytics(ref.invalidate);
     // Other rows changed on the server too: reload the list.
     if (similar > 0) ref.invalidate(transactionsProvider);
 

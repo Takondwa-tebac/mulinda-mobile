@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activity/screens/activity_screen.dart';
+import '../../features/analytics/data/analytics_models.dart' show PeriodSelection, ReportKind;
+import '../../features/analytics/screens/category_detail_screen.dart';
+import '../../features/analytics/screens/money_received_screen.dart';
+import '../../features/analytics/screens/money_spent_screen.dart';
+import '../../features/analytics/screens/where_money_goes_screen.dart';
 import '../../features/activity/data/activity_models.dart';
 import '../../features/activity/screens/account_detail_screen.dart';
 import '../../features/activity/screens/add_account_screen.dart';
@@ -176,6 +181,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => ReviewScreen(highlightId: s.uri.queryParameters['highlight']),
       ),
       GoRoute(path: Routes.exports, builder: (_, _) => const ExportScreen()),
+      // Analytics reports; the period comes in the query (see PeriodSelection).
+      GoRoute(
+        path: Routes.analyticsSpending,
+        builder: (_, s) => WhereMoneyGoesScreen(initial: PeriodSelection.fromParams(s.uri.queryParameters)),
+      ),
+      GoRoute(
+        path: Routes.analyticsSpent,
+        builder: (_, s) => MoneySpentScreen(initial: PeriodSelection.fromParams(s.uri.queryParameters)),
+      ),
+      GoRoute(
+        path: Routes.analyticsReceived,
+        builder: (_, s) => MoneyReceivedScreen(initial: PeriodSelection.fromParams(s.uri.queryParameters)),
+      ),
+      GoRoute(
+        path: Routes.analyticsCategoryPath,
+        builder: (_, s) => CategoryDetailScreen(
+          categoryId: s.pathParameters['id']!,
+          kind: ReportKind.fromApi(s.uri.queryParameters['kind']),
+          initial: PeriodSelection.fromParams(s.uri.queryParameters),
+        ),
+      ),
       GoRoute(path: Routes.dailySummaries, builder: (_, _) => const DailySummariesScreen()),
       GoRoute(path: Routes.goals, builder: (_, _) => const GoalsListScreen()),
       GoRoute(path: Routes.budgets, builder: (_, _) => const BudgetsListScreen()),

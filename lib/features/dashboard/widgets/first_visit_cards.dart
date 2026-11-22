@@ -6,13 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
-import '../../../core/widgets/amount_text.dart';
-import '../../../core/widgets/section_header.dart';
-import '../../../core/widgets/skeleton.dart';
 import '../../capture/data/sms_auto_capture.dart';
 import '../../onboarding/first_run.dart';
-import '../data/last_30_days.dart';
-import 'spending_chart.dart';
 
 /// The Home greeting. On the first visit there is no "Welcome back": it is
 /// "Hi {name}", or just "Hi" while no name is known (signup no longer asks).
@@ -20,76 +15,6 @@ String homeGreeting({String? firstName, required bool firstVisit}) {
   final name = firstName?.trim() ?? '';
   if (firstVisit) return name.isEmpty ? 'home.hi'.tr() : 'home.hiName'.tr(args: [name]);
   return name.isEmpty ? 'home.greeting'.tr() : '${'home.greeting'.tr()}, $name';
-}
-
-/// After the first-run import: money in and out over the last 30 days and
-/// where the spending went.
-class Last30DaysCard extends ConsumerWidget {
-  const Last30DaysCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(last30DaysProvider);
-    final scheme = Theme.of(context).colorScheme;
-
-    Widget figure(String label, Widget amount) => Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-          const SizedBox(height: AppSpacing.xxs),
-          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: amount),
-        ],
-      ),
-    );
-
-    return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.only(bottom: AppSpacing.lg),
-        child: SkeletonBox(height: 160),
-      ),
-      // Optional extra: the rest of Home still shows the month.
-      error: (_, _) => const SizedBox.shrink(),
-      data: (summary) {
-        if (summary.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: Card(
-            key: const ValueKey('home-last-30'),
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeader('home3.last30'.tr()),
-                  Row(
-                    children: [
-                      figure(
-                        'home3.moneyIn'.tr(),
-                        AmountText(summary.moneyIn, direction: MoneyDirection.income, style: const TextStyle(fontSize: 18)),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      figure(
-                        'home3.moneyOut'.tr(),
-                        AmountText(summary.moneyOut, direction: MoneyDirection.expense, style: const TextStyle(fontSize: 18)),
-                      ),
-                    ],
-                  ),
-                  if (summary.topCategories.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    Text('home3.whereItWent'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: AppSpacing.md),
-                    SpendingChart(rows: summary.topCategories),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 /// "{n} to check": what the import recorded, waiting for the user's look.

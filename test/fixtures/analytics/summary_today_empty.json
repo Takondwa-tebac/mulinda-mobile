@@ -1,0 +1,20 @@
+{
+  "data": {
+    "period": { "key": "today", "from": "2026-11-22", "to": "2026-11-22", "days": 1, "elapsed_days": 1, "in_progress": true, "coverage_from": null },
+    "income": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00" },
+    "expense": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00" },
+    "net": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00" },
+    "counts": { "expense": 0, "income": 0, "total": 0 },
+    "average_per_day": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00" },
+    "typical_day": null,
+    "biggest_expense": null,
+    "comparison": {
+      "expense": { "comparable": false, "reason": "in_progress_day", "previous": null, "difference": null, "direction": null, "pct": null, "show_pct": false },
+      "income": { "comparable": false, "reason": "in_progress_day", "previous": null, "difference": null, "direction": null, "pct": null, "show_pct": false }
+    },
+    "series": null,
+    "top_categories_share": null,
+    "not_counted": { "amount": { "minor_units": 0, "currency": "MWK", "amount": 0, "formatted": "MK 0.00" }, "count": 0 },
+    "insights": []
+  }
+}

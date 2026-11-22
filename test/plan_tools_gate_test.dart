@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mulinda_mobile/features/stories/data/stories_repository.dart';
 import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 import 'package:mulinda_mobile/core/theme/app_theme.dart';
+import 'package:mulinda_mobile/features/activity/data/activity_models.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/auth/data/user.dart';
 import 'package:mulinda_mobile/features/auth/providers/auth_controller.dart';
@@ -17,6 +18,8 @@ import 'package:mulinda_mobile/features/plan/data/plan_tools_gate.dart';
 import 'package:mulinda_mobile/features/plan/screens/plan_screen.dart';
 import 'package:mulinda_mobile/shared/clock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/analytics_fakes.dart';
 
 Map<String, dynamic> _m(int major) => {
   'minor_units': major * 100,
@@ -141,6 +144,8 @@ void main() {
             unreadInsightsCountProvider.overrideWith((ref) async => 0),
             homeMonthStoryProvider.overrideWith((ref) async => null),
             yearStoryStatusProvider.overrideWith((ref) async => null),
+            accountsProvider.overrideWith((ref) async => const <Account>[]),
+            ...analyticsOverrides(),
           ],
           child: MaterialApp(theme: AppTheme.light, home: screen),
         ),

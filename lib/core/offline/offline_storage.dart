@@ -31,6 +31,7 @@ class StorageBreakdown {
   /// under "Other".
   static const _labels = <String, String>{
     'dashboard': 'Dashboard',
+    'analytics': 'Reports',
     'accounts': 'Accounts',
     'categories': 'Categories',
     'transactions': 'Transactions',
