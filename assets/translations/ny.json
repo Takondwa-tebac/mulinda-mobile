@@ -1482,5 +1482,15 @@
     "qrShareFailed": "Sitinathe kugawana khodi ya QR. Chonde yesaninso.",
     "shareFallback": "Ndimagwiritsa ntchito Mulinda kuti ndione ndalama zanga zonse za Airtel Money, Mpamba ndi banki (National Bank, Standard Bank, NBS, FDH, First Capital ndi Centenary) pamalo amodzi. Lowani kudzera pa ulalo wanga ndipo tonse tilandira masiku {days} a Premium: {link}",
     "shareFallbackNoDays": "Ndimagwiritsa ntchito Mulinda kuti ndione ndalama zanga zonse za Airtel Money, Mpamba ndi banki (National Bank, Standard Bank, NBS, FDH, First Capital ndi Centenary) pamalo amodzi. Lowani kudzera pa ulalo wanga ndipo tonse tilandira masiku a Premium aulere: {link}"
+  },
+  "planTools": {
+    "moreFrom": "Zina zambiri kuyambira {}",
+    "moreSoon": "Zina zambiri posachedwa",
+    "lockedBody": "Ngongole, ndalama zoyikidwa ndi mapulojekiti. M'masabata awiri oyambirira, Plan imakhala ndi bajeti ndi zolinga zokha, kuti kuyamba kukhale kosavuta.",
+    "showNow": "Ziwonetseni tsopano",
+    "moreTitle": "Zina zambiri pa Plan yanu",
+    "moreBody": "Mwalemba ndalama zanu kwa masabata awiri. Tsopano mutha kuwonjezera ngongole, ndalama zoyikidwa ndi mapulojekiti, ndikuziwona pamodzi ndi zomwe mumawononga.",
+    "openPlan": "Tsegulani Plan",
+    "notNow": "Osati pano"
   }
 }
