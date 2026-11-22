@@ -24,6 +24,8 @@ import '../data/budget_pace.dart';
 import '../data/month_budget_total.dart';
 import '../data/plan_models.dart';
 import '../data/plan_repository.dart';
+import '../data/plan_tools_gate.dart';
+import '../widgets/plan_tools_cards.dart';
 import 'plan_forms.dart';
 
 /// Plan as a dashboard: this month's budgets at a glance, each budget's pace,
@@ -50,6 +52,8 @@ class PlanScreen extends ConsumerWidget {
     final dashboard = ref.watch(dashboardProvider).valueOrNull;
     // Advisory (savings-rule / creditworthiness / investing) is premium.
     final canSeeAdvisory = ref.watch(currentUserProvider)?.can(Entitlements.advancedInsights) ?? false;
+    // First two weeks: Plan keeps to budgets and goals (see planToolsGate).
+    final tools = ref.watch(planToolsGateProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -64,9 +68,11 @@ class PlanScreen extends ConsumerWidget {
               for (final (route, icon, label) in [
                 (Routes.budgetForm, Icons.pie_chart_outline, 'plan2.newBudget'),
                 (Routes.goalForm, Icons.flag_outlined, 'plan2.newGoal'),
-                (Routes.loanForm, Icons.account_balance_outlined, 'plan2.newLoan'),
-                (Routes.investmentForm, Icons.trending_up, 'plan2.newInvestment'),
-                (Routes.projectForm, Icons.home_work_outlined, 'plan2.newProject'),
+                if (!tools.hideCommitments) ...[
+                  (Routes.loanForm, Icons.account_balance_outlined, 'plan2.newLoan'),
+                  (Routes.investmentForm, Icons.trending_up, 'plan2.newInvestment'),
+                  (Routes.projectForm, Icons.home_work_outlined, 'plan2.newProject'),
+                ],
               ])
                 PopupMenuItem<String>(
                   value: route,
@@ -123,8 +129,12 @@ class PlanScreen extends ConsumerWidget {
                     ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            SectionHeader('plan2.commitments'.tr()),
-            _CommitmentTiles(data: dashboard),
+            if (tools.hideCommitments)
+              MoreToolsBox(unlockDay: tools.unlockDay)
+            else ...[
+              SectionHeader('plan2.commitments'.tr()),
+              _CommitmentTiles(data: dashboard),
+            ],
             const SizedBox(height: AppSpacing.xl),
             SectionHeader('plan.advisory'.tr()),
             if (!canSeeAdvisory)

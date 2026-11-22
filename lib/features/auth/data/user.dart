@@ -24,6 +24,7 @@ class User {
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
     this.smsCaptureCount = 0,
+    this.createdAt,
   });
 
   final String id;
@@ -50,6 +51,10 @@ class User {
   final String? termsCurrentVersion; // latest published version
   final List<String> roles;
   final int smsCaptureCount;
+
+  /// When the account was created (`created_at`); null from servers or cached
+  /// users that do not carry it.
+  final DateTime? createdAt;
 
   /// True when the published Terms are newer than what the user accepted (or
   /// they never accepted), so they should be re-prompted.
@@ -93,6 +98,7 @@ class User {
             )
           : const SubscriptionInfo.none(),
       smsCaptureCount: (json['sms_capture_count'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
   }
 }

@@ -1483,5 +1483,15 @@
     "qrShareFailed": "Could not share the QR code. Please try again.",
     "shareFallback": "I use Mulinda to see all my Airtel Money, Mpamba and bank payments (National Bank, Standard Bank, NBS, FDH, First Capital and Centenary) in one place. Join with my link and we both get {days} days of Premium: {link}",
     "shareFallbackNoDays": "I use Mulinda to see all my Airtel Money, Mpamba and bank payments (National Bank, Standard Bank, NBS, FDH, First Capital and Centenary) in one place. Join with my link and we both get free Premium days: {link}"
+  },
+  "planTools": {
+    "moreFrom": "More tools from {}",
+    "moreSoon": "More tools soon",
+    "lockedBody": "Loans, investments and projects. For your first two weeks we keep Plan to budgets and goals, so getting started stays simple.",
+    "showNow": "Show them now",
+    "moreTitle": "More on your Plan",
+    "moreBody": "You've tracked for two weeks. You can now add loans, investments and projects, and see them next to your spending.",
+    "openPlan": "Open Plan",
+    "notNow": "Not now"
   }
 }

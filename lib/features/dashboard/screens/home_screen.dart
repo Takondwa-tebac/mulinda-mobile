@@ -22,6 +22,8 @@ import '../../onboarding/first_run.dart';
 import '../../plan/data/budget_pace.dart';
 import '../../plan/data/plan_models.dart';
 import '../../plan/data/plan_repository.dart';
+import '../../plan/data/plan_tools_gate.dart';
+import '../../plan/widgets/plan_tools_cards.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import '../data/spending_insight.dart';
@@ -111,6 +113,8 @@ class _Dashboard extends ConsumerWidget {
     final showSteps = data.isFirstRun || (firstRun.firstVisit && firstRun.smsSkipped);
     final needs = data.needsAttention ?? 0;
     final spending = data.spendingByCategory.where((r) => r.amount.minorUnits > 0).toList();
+    // First two weeks: loans and investments wait (see planToolsGate).
+    final tools = ref.watch(planToolsGateProvider);
 
     return ListView(
       padding: AppSpacing.screenPadding,
@@ -124,6 +128,8 @@ class _Dashboard extends ConsumerWidget {
         const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
         // Renders nothing unless a paid Day pass can be topped up to a week.
         const TopUpCard(surface: 'home', margin: EdgeInsets.only(bottom: AppSpacing.lg)),
+
+        if (tools.showMoreOnPlan) const MoreOnPlanCard(),
 
         if (imported) ...[
           const Last30DaysCard(),
@@ -246,31 +252,33 @@ class _Dashboard extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  label: 'home.loans'.tr(),
-                  value: data.loansOutstanding.formatted,
-                  icon: Icons.account_balance_outlined,
-                  onTap: () => context.push(Routes.loans),
+        if (!tools.hideCommitments) ...[
+          const SizedBox(height: AppSpacing.md),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: StatCard(
+                    label: 'home.loans'.tr(),
+                    value: data.loansOutstanding.formatted,
+                    icon: Icons.account_balance_outlined,
+                    onTap: () => context.push(Routes.loans),
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: StatCard(
-                  label: 'home.investments'.tr(),
-                  value: data.investmentsValue.formatted,
-                  icon: Icons.trending_up,
-                  onTap: () => context.push(Routes.investments),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: StatCard(
+                    label: 'home.investments'.tr(),
+                    value: data.investmentsValue.formatted,
+                    icon: Icons.trending_up,
+                    onTap: () => context.push(Routes.investments),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
