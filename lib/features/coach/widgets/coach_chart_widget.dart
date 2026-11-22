@@ -158,7 +158,7 @@ class _SpendingSummaryChart extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   label: 'Savings rate',
-                  value: '${savingsRate.toStringAsFixed(1)}%',
+                  value: _percent(savingsRate, 1),
                   color: scheme.primary,
                   icon: Icons.savings_outlined,
                 ),
@@ -209,7 +209,7 @@ class _SavingsRuleChart extends StatelessWidget {
                   color: ringColor,
                 ),
                 Text(
-                  '${currentRate.toStringAsFixed(0)}%',
+                  _percent(currentRate, 0),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -226,18 +226,18 @@ class _SavingsRuleChart extends StatelessWidget {
               children: [
                 _StatRow(
                   label: 'Current',
-                  value: '${currentRate.toStringAsFixed(1)}%',
+                  value: _percent(currentRate, 1),
                   color: ringColor,
                 ),
                 _StatRow(
                   label: 'Target',
-                  value: '${targetRate.toStringAsFixed(1)}%',
+                  value: _percent(targetRate, 0),
                   color: scheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: 6),
                 _StatRow(
                   label: 'Emergency fund',
-                  value: '${coverage.toStringAsFixed(1)} mo',
+                  value: '${_percent(coverage, 0)} of goal',
                   color: efOnTrack ? Colors.green.shade600 : scheme.error,
                 ),
               ],
@@ -508,3 +508,6 @@ String _fmt(int minorUnits, String currency) {
   }
   return '$prefix$currency ${major.toStringAsFixed(0)}';
 }
+
+/// The API sends rates and ratios as fractions (0.25 is 25%).
+String _percent(double fraction, int digits) => '${(fraction * 100).toStringAsFixed(digits)}%';
