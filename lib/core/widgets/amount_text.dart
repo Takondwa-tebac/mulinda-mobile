@@ -16,6 +16,7 @@ class AmountText extends StatelessWidget {
     this.style,
     this.signed = true,
     this.textAlign,
+    this.whole = false,
   });
 
   final Money money;
@@ -23,6 +24,10 @@ class AmountText extends StatelessWidget {
   final TextStyle? style;
   final bool signed;
   final TextAlign? textAlign;
+
+  /// Whole major units (`MK 285,400`) for headlines, report rows and charts;
+  /// transaction amounts keep the exact figure.
+  final bool whole;
 
   /// The colour an amount of [direction] is drawn in.
   static Color colorFor(BuildContext context, MoneyDirection direction) {
@@ -36,17 +41,18 @@ class AmountText extends StatelessWidget {
   }
 
   /// `+MK 1,000.00`, `-MK 1,000.00` or `MK 1,000.00`.
-  static String label(Money money, MoneyDirection direction, {bool signed = true}) {
-    if (!signed || direction == MoneyDirection.neutral) return money.formatted;
+  static String label(Money money, MoneyDirection direction, {bool signed = true, bool whole = false}) {
+    final text = whole ? money.whole : money.formatted;
+    if (!signed || direction == MoneyDirection.neutral) return text;
     // The formatted string is unsigned for a positive amount; avoid "--".
-    final raw = money.formatted.startsWith('-') ? money.formatted.substring(1) : money.formatted;
+    final raw = text.startsWith('-') ? text.substring(1) : text;
     return '${direction == MoneyDirection.income ? '+' : '-'}$raw';
   }
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      label(money, direction, signed: signed),
+      label(money, direction, signed: signed, whole: whole),
       maxLines: 1,
       textAlign: textAlign,
       style: const TextStyle(
