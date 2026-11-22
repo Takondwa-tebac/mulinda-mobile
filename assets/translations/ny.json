@@ -1926,5 +1926,22 @@
         "body": "Tsiku lofala kwa inu ndi {median}."
       }
     }
+  },
+  "homeWidget": {
+    "title": "Lero",
+    "noAllowance": "Ikani bajeti kuti mupeze malire a tsiku",
+    "budgetUsedUp": "Bajeti yatha mwezi uno",
+    "challengeNoSpend": "Musagulenso kanthu lero",
+    "left": "{amount} zatsala",
+    "over": "{amount} mwadutsa",
+    "overBy": "Mwadutsa ndi {amount}",
+    "onTrack": "Mukuyenda bwino",
+    "challengeLabel": "Mpikisano wa lero",
+    "challengeStayUnder": "Musapitirire {amount}",
+    "challengeLog": "Lembani zonse zomwe mwagula lero",
+    "loggedCount": "Zalembedwa {count}",
+    "noTransactions": "Palibe zochitika",
+    "transaction": "Zochitika",
+    "signedOut": "Tsegulani Mulinda kuti muwone za lero"
   }
 }

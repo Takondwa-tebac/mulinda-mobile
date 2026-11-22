@@ -16,6 +16,9 @@ plugins {
     id("com.google.firebase.crashlytics")
     // END: FlutterFire Configuration
     id("kotlin-android")
+    // Jetpack Compose compiler for the Glance home-screen widget. Its version is
+    // set in settings.gradle.kts and must match the Kotlin plugin.
+    id("org.jetbrains.kotlin.plugin.compose")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -80,6 +83,16 @@ android {
         checkReleaseBuilds = false
         abortOnError = false
     }
+    buildFeatures {
+        compose = true
+    }
+
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 kotlin {
@@ -93,5 +106,6 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.glance:glance-appwidget:1.2.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
