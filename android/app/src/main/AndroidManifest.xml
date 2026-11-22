@@ -102,6 +102,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- "Lero / Today" home-screen widget (Jetpack Glance). Generated from
+             home_widget/mulinda_today.dart by home_widget_cli. -->
+        <receiver
+            android:name=".MulindaTodayHomeWidgetReceiver"
+            android:label="@string/home_widget_mulinda_today_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mulinda_today_home_widget" />
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
