@@ -386,10 +386,16 @@ class _ActiveFilters extends ConsumerWidget {
     final categoryId = query.categoryId;
     final from = query.from;
     final to = query.to;
-    if (categoryId == null && from == null && to == null) return const SizedBox.shrink();
+    final period = query.period;
+    final merchant = query.merchant;
+    if (categoryId == null && from == null && to == null && period == null && !query.uncategorised && merchant == null) {
+      return const SizedBox.shrink();
+    }
     final categories = categoryId == null ? null : ref.watch(categoriesProvider).valueOrNull;
     final category = categories?.where((c) => c.id == categoryId).firstOrNull;
-    final dates = [if (from != null) formatDay(from), if (to != null) formatDay(to)].join(' – ');
+    final dates = period != null
+        ? (query.periodLabel ?? 'analytics.period.${period == 'custom' ? 'custom' : period}'.tr())
+        : [if (from != null) formatDay(from), if (to != null) formatDay(to)].join(' to ');
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -405,12 +411,28 @@ class _ActiveFilters extends ConsumerWidget {
               onDeleted: () => onChanged(query.copyWith(categoryId: () => null)),
               deleteButtonTooltipMessage: 'common.clear'.tr(),
             ),
+          if (query.uncategorised)
+            InputChip(
+              key: const ValueKey('active-filter-uncategorised'),
+              avatar: const Icon(Icons.label_off_outlined, size: 18),
+              label: Text('analytics.uncategorised'.tr()),
+              onDeleted: () => onChanged(query.copyWith(uncategorised: false)),
+              deleteButtonTooltipMessage: 'common.clear'.tr(),
+            ),
+          if (merchant != null)
+            InputChip(
+              key: const ValueKey('active-filter-merchant'),
+              avatar: const Icon(Icons.storefront_outlined, size: 18),
+              label: Text(merchant),
+              onDeleted: () => onChanged(query.copyWith(merchant: () => null)),
+              deleteButtonTooltipMessage: 'common.clear'.tr(),
+            ),
           if (dates.isNotEmpty)
             InputChip(
               key: const ValueKey('active-filter-dates'),
               avatar: const Icon(Icons.date_range_outlined, size: 18),
               label: Text(dates),
-              onDeleted: () => onChanged(query.copyWith(from: () => null, to: () => null)),
+              onDeleted: () => onChanged(query.withoutPeriod().copyWith(from: () => null, to: () => null)),
               deleteButtonTooltipMessage: 'common.clear'.tr(),
             ),
         ],

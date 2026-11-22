@@ -310,6 +310,11 @@ class TxnQuery {
     this.from,
     this.to,
     this.needsCategory = false,
+    this.period,
+    this.offset = 0,
+    this.uncategorised = false,
+    this.merchant,
+    this.periodLabel,
   });
 
   final String search;
@@ -319,10 +324,28 @@ class TxnQuery {
   final String? categoryId;
   final String? accountId;
 
-  /// Inclusive local dates.
+  /// Inclusive local dates. With [period] `custom` they are the custom range.
   final DateTime? from;
   final DateTime? to;
   final bool needsCategory;
+
+  /// A report period key (`last_30_days`, `this_month`...), so the list sums
+  /// to the report figure it was opened from. Overrides [from]/[to] on the
+  /// server, except for `custom`, which uses them as its range.
+  final String? period;
+
+  /// Whole periods back from [period] (0 or negative).
+  final int offset;
+
+  /// Only rows with no category.
+  final bool uncategorised;
+
+  /// Only rows from this shop or person (normalised merchant/counterparty).
+  final String? merchant;
+
+  /// How the chip names [period] ("Last 30 days, 24 Oct to 22 Nov"). Display
+  /// only: not sent and not part of equality.
+  final String? periodLabel;
 
   static const none = TxnQuery();
 
@@ -333,10 +356,14 @@ class TxnQuery {
       accountId == null &&
       from == null &&
       to == null &&
-      !needsCategory;
+      !needsCategory &&
+      period == null &&
+      !uncategorised &&
+      merchant == null;
 
   /// How many filters from the filter sheet (category, account, dates) are set.
-  int get sheetFilterCount => [categoryId, accountId, from ?? to].where((e) => e != null).length;
+  int get sheetFilterCount =>
+      [categoryId ?? (uncategorised ? 'none' : null), accountId, from ?? to ?? period].where((e) => e != null).length;
 
   TxnQuery copyWith({
     String? search,
@@ -346,6 +373,11 @@ class TxnQuery {
     DateTime? Function()? from,
     DateTime? Function()? to,
     bool? needsCategory,
+    String? Function()? period,
+    int? offset,
+    bool? uncategorised,
+    String? Function()? merchant,
+    String? Function()? periodLabel,
   }) => TxnQuery(
     search: search ?? this.search,
     type: type == null ? this.type : type(),
@@ -354,6 +386,24 @@ class TxnQuery {
     from: from == null ? this.from : from(),
     to: to == null ? this.to : to(),
     needsCategory: needsCategory ?? this.needsCategory,
+    period: period == null ? this.period : period(),
+    offset: offset ?? this.offset,
+    uncategorised: uncategorised ?? this.uncategorised,
+    merchant: merchant == null ? this.merchant : merchant(),
+    periodLabel: periodLabel == null ? this.periodLabel : periodLabel(),
+  );
+
+  /// The same filters without the report period (and its custom dates).
+  TxnQuery withoutPeriod() => TxnQuery(
+    search: search,
+    type: type,
+    categoryId: categoryId,
+    accountId: accountId,
+    needsCategory: needsCategory,
+    uncategorised: uncategorised,
+    merchant: merchant,
+    from: period == null ? from : null,
+    to: period == null ? to : null,
   );
 
   static String _day(DateTime d) =>
@@ -365,9 +415,18 @@ class TxnQuery {
     'type': ?type,
     'category_id': ?categoryId,
     'financial_account_id': ?accountId,
-    if (from != null) 'from': _day(from!),
-    if (to != null) 'to': '${_day(to!)}T23:59:59',
+    if (period != null) ...{
+      'period': period,
+      if (offset != 0) 'offset': offset,
+      if (period == 'custom' && from != null) 'from': _day(from!),
+      if (period == 'custom' && to != null) 'to': _day(to!),
+    } else ...{
+      if (from != null) 'from': _day(from!),
+      if (to != null) 'to': '${_day(to!)}T23:59:59',
+    },
     if (needsCategory) 'needs_category': 1,
+    if (uncategorised) 'uncategorised': 1,
+    if (merchant != null && merchant!.trim().isNotEmpty) 'merchant': merchant!.trim(),
   };
 
   @override
@@ -379,10 +438,15 @@ class TxnQuery {
       other.accountId == accountId &&
       other.from == from &&
       other.to == to &&
-      other.needsCategory == needsCategory;
+      other.needsCategory == needsCategory &&
+      other.period == period &&
+      other.offset == offset &&
+      other.uncategorised == uncategorised &&
+      other.merchant == merchant;
 
   @override
-  int get hashCode => Object.hash(search, type, categoryId, accountId, from, to, needsCategory);
+  int get hashCode =>
+      Object.hash(search, type, categoryId, accountId, from, to, needsCategory, period, offset, uncategorised, merchant);
 }
 
 /// The result of `POST /v1/transactions/{id}/category`.
