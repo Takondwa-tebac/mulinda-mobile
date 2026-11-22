@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/analytics/data/analytics_models.dart';
 import '../../features/plan/data/bill_models.dart';
 import '../../features/plan/data/plan_models.dart';
 import '../../features/plan/data/plan_repository.dart';
@@ -78,6 +79,12 @@ List<GoRoute> idDetailRoutes() => [
   ),
   GoRoute(
     path: Routes.transactionByIdPath,
-    builder: (_, s) => TransactionDetailScreen(txnId: s.pathParameters['id']!),
+    // `?context_period=last_30_days` (from a report) adds the "In context" block.
+    builder: (_, s) => TransactionDetailScreen(
+      txnId: s.pathParameters['id']!,
+      contextPeriod: s.uri.queryParameters['context_period'] == null
+          ? null
+          : PeriodSelection.fromParams(s.uri.queryParameters, prefix: 'context_'),
+    ),
   ),
 ];

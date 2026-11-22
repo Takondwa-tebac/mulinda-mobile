@@ -52,6 +52,16 @@ abstract class Routes {
   static const investments = '/investments';
   static const projects = '/projects';
 
+  // Analytics reports. Each takes the period as query parameters
+  // (`?period=last_30_days&offset=-1`, or `period=custom&from=&to=`).
+  static const analyticsSpending = '/analytics/spending';
+  static const analyticsSpent = '/analytics/spent';
+  static const analyticsReceived = '/analytics/received';
+  static const analyticsCategoryPath = '/analytics/categories/:id';
+
+  /// [id] is a category id or `uncategorised`.
+  static String analyticsCategory(String id) => '/analytics/categories/${Uri.encodeComponent(id)}';
+
   // Transaction detail
   static const transactionDetail = '/transaction-detail';
 
