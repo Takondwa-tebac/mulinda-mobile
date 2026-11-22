@@ -4,19 +4,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/analytics/analytics.dart';
 import '../../../core/network/api_exception.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/security/screenshot_protection.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../data/referral_repository.dart';
+import '../invite_message.dart';
+import '../widgets/referral_qr_panel.dart';
 
 /// Invite friends: the score (signed up, days earned), the invite link and
 /// code to copy, how rewards work, a QR code and the share sheet. Every
@@ -29,22 +31,25 @@ class ReferralScreen extends ConsumerWidget {
     final infoAsync = ref.watch(referralInfoProvider);
     final info = infoAsync.valueOrNull;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('referral.title'.tr())),
-      body: infoAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: ErrorRetry(
-            message: e is ApiException ? e.displayMessage : null,
-            onRetry: () => ref.invalidate(referralInfoProvider),
+    // Nothing here is private, and people like to screenshot their QR code.
+    return ScreenshotsAllowed(
+      child: Scaffold(
+        appBar: AppBar(title: Text('referral.title'.tr())),
+        body: infoAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: ErrorRetry(
+              message: e is ApiException ? e.displayMessage : null,
+              onRetry: () => ref.invalidate(referralInfoProvider),
+            ),
+          ),
+          data: (info) => RefreshIndicator(
+            onRefresh: () => ref.refresh(referralInfoProvider.future),
+            child: ReferralBody(info: info),
           ),
         ),
-        data: (info) => RefreshIndicator(
-          onRefresh: () => ref.refresh(referralInfoProvider.future),
-          child: ReferralBody(info: info),
-        ),
+        bottomNavigationBar: info == null ? null : _InviteActions(info: info),
       ),
-      bottomNavigationBar: info == null ? null : _InviteActions(info: info),
     );
   }
 }
@@ -284,25 +289,36 @@ class _CopyRowState extends State<_CopyRow> {
           size: 20,
           color: _copied ? brand : scheme.onSurfaceVariant,
         ),
-        child: Row(
-          children: [
-            Text(widget.label, style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                widget.value,
-                textAlign: TextAlign.end,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: widget.spaced ? 15 : 14,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: widget.spaced ? 1 : null,
-                  color: brand,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: [
+              // At most half the row, so large text never pushes the value out.
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  widget.value,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: widget.spaced ? 15 : 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: widget.spaced ? 1 : null,
+                    color: brand,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -349,37 +365,27 @@ class _HowSteps extends StatelessWidget {
   }
 }
 
-/// A bottom sheet with a title, [body] and "Done".
+/// A bottom sheet with a title, [body] and "Done" pinned at the bottom.
 Future<void> _showInfoSheet(BuildContext context, {required String title, required Widget body, bool centered = false}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (sheet) => SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            title,
-            textAlign: centered ? TextAlign.center : TextAlign.start,
-            style: Theme.of(sheet).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          body,
-          const SizedBox(height: AppSpacing.xl),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.of(sheet).pop(),
-              child: Text('referral.done'.tr()),
-            ),
-          ),
-        ],
-      ),
+  return showAppSheet<void>(
+    context,
+    builder: (sheet) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          textAlign: centered ? TextAlign.center : TextAlign.start,
+          style: Theme.of(sheet).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        body,
+      ],
+    ),
+    footer: (sheet) => FilledButton(
+      key: const ValueKey('referral-sheet-done'),
+      onPressed: () => Navigator.of(sheet).pop(),
+      child: Text('referral.done'.tr()),
     ),
   );
 }
@@ -396,31 +402,13 @@ class _InviteActions extends StatelessWidget {
       context,
       title: 'referral.qrTitle'.tr(),
       centered: true,
-      body: Column(
-        children: [
-          // Dark on white in both themes so any camera can read it.
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(AppRadius.xl)),
-            child: QrImageView(
-              data: info.link,
-              size: 200,
-              backgroundColor: AppColors.white,
-              eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.ink),
-              dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: AppColors.ink),
-              semanticsLabel: 'referral.qrLabel'.tr(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('referral.qrBody'.tr(), textAlign: TextAlign.center, style: _sheetBody(context)),
-        ],
-      ),
+      body: ReferralQrPanel(info: info),
     );
   }
 
   Future<void> _share(BuildContext context) async {
     Analytics.track('referral_share_opened', const {});
-    await Share.share(info.shareMessage(context.locale.languageCode));
+    await Share.share(inviteMessage(info, context.locale.languageCode));
   }
 
   @override

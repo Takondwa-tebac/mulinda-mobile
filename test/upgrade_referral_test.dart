@@ -204,6 +204,35 @@ void main() {
       expect(info.shareMessage('fr'), 'Join me');
     });
 
+    test('without share_text the app falls back to its own invite copy', () {
+      final bare = ReferralInfo.fromJson({'code': 'CHSM27', 'link': 'https://x/i/CHSM27'});
+      expect(bare.shareMessageOrNull('ny'), isNull);
+      expect(bare.shareMessage('ny'), 'https://x/i/CHSM27');
+    });
+
+    test('the fallback invite names mobile money and every supported bank', () {
+      for (final lang in ['en', 'ny']) {
+        final strings = jsonDecode(File('assets/translations/$lang.json').readAsStringSync()) as Map<String, dynamic>;
+        final referral = (strings['referral'] as Map).cast<String, dynamic>();
+        for (final key in ['shareFallback', 'shareFallbackNoDays']) {
+          final text = referral[key] as String;
+          for (final name in [
+            'Airtel Money',
+            'Mpamba',
+            'National Bank',
+            'Standard Bank',
+            'NBS',
+            'FDH',
+            'First Capital',
+            'Centenary',
+            '{link}',
+          ]) {
+            expect(text, contains(name), reason: '$lang $key');
+          }
+        }
+      }
+    });
+
     for (final dark in [false, true]) {
       testWidgets('shows the score, link and code (${dark ? 'dark' : 'light'})', (tester) async {
         await tester.pumpWidget(

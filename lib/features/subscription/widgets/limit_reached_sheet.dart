@@ -6,6 +6,7 @@ import '../../../core/analytics/analytics.dart';
 import '../../../core/money/money_json.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/semantic_colors.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../../capture/data/sms_outbox.dart';
@@ -29,12 +30,8 @@ final waitingSmsCountProvider = FutureProvider.autoDispose<int>((ref) async {
 /// The free SMS allowance is used up: offer a Day pass for the waiting
 /// messages, or all passes. Returns true when the person paid.
 Future<bool> showLimitReachedSheet(BuildContext context, {String surface = 'unknown'}) async {
-  final paid = await showModalBottomSheet<bool>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
+  final paid = await showAppSheetWith<bool>(
+    context,
     builder: (_) => LimitReachedSheet(surface: surface),
   );
   return paid ?? false;
@@ -94,9 +91,8 @@ class _LimitReachedSheetState extends ConsumerState<LimitReachedSheet> {
     final day = dayPassPlan(plans);
     final locale = context.locale.languageCode;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
-      child: Column(
+    return AppSheet(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -119,7 +115,12 @@ class _LimitReachedSheetState extends ConsumerState<LimitReachedSheet> {
           _Benefit('upgrade.limit.benefitCapture'.tr()),
           const SizedBox(height: AppSpacing.sm),
           _Benefit('upgrade.limit.benefitCoach'.tr()),
-          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
           if (day != null) ...[
             FilledButton(
               key: const ValueKey('limit-sheet-day'),

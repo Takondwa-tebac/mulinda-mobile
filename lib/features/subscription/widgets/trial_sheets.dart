@@ -2,24 +2,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../paywall_prompt.dart';
 
 /// "Premium is on for N days": shown once, right after a premium tap started
 /// the free trial, before the person carries on into the feature.
 Future<void> showTrialStartedSheet(BuildContext context, {int? days}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
+  return showAppSheetWith<void>(
+    context,
     builder: (sheet) {
       final scheme = Theme.of(sheet).colorScheme;
       final text = Theme.of(sheet).textTheme;
-      return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
-        child: Column(
+      return AppSheet(
+        body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -44,12 +40,12 @@ Future<void> showTrialStartedSheet(BuildContext context, {int? days}) {
               'upgrade.trial.startedBody'.tr(),
               style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton(
-              onPressed: () => Navigator.of(sheet).pop(),
-              child: Text('upgrade.trial.continue'.tr()),
-            ),
           ],
+        ),
+        footer: FilledButton(
+          key: const ValueKey('trial-started-continue'),
+          onPressed: () => Navigator.of(sheet).pop(),
+          child: Text('upgrade.trial.continue'.tr()),
         ),
       );
     },
@@ -62,18 +58,13 @@ enum TrialOfferChoice { start, pricing }
 /// Offer the free trial without starting it. Used when the app, not a tap,
 /// ran into a premium wall (a 402 while loading), so nothing starts unasked.
 Future<TrialOfferChoice?> showTrialOfferSheet(BuildContext context, {int? days, String? entitlement}) {
-  return showModalBottomSheet<TrialOfferChoice>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
+  return showAppSheetWith<TrialOfferChoice>(
+    context,
     builder: (sheet) {
       final scheme = Theme.of(sheet).colorScheme;
       final text = Theme.of(sheet).textTheme;
-      return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
-        child: Column(
+      return AppSheet(
+        body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -93,7 +84,12 @@ Future<TrialOfferChoice?> showTrialOfferSheet(BuildContext context, {int? days, 
               'upgrade.trial.offerBody'.tr(),
               style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
             ),
-            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+        footer: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             FilledButton(
               key: const ValueKey('trial-offer-start'),
               style: BottomActionBar.ctaButtonStyle(sheet),

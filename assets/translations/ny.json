@@ -1346,7 +1346,7 @@
     "title": "Lolani Mulinda iwerenge mauthenga anu a ndalama?",
     "body": "Umu ndi m'mene bajeti yanu imadzipangira yokha. Android ikufunsani kenako.",
     "readTitle": "Timawerenga",
-    "readBody": "Mauthenga a Airtel Money, TNM Mpamba, NBM, FDH ndi Centenary omwe akuonetsa ndalama.",
+    "readBody": "Mauthenga a Airtel Money, TNM Mpamba, National Bank, Standard Bank, NBS, FDH, First Capital ndi Centenary omwe akuonetsa ndalama.",
     "neverTitle": "Sitiwerenga",
     "neverBody": "Macheza ndi anthu, ma khodi a nthawi imodzi, kapena mauthenga ochokera kwa wina aliyense. Sachoka pa foni yanu.",
     "allow": "Lolani ndipo pitirizani",
@@ -1471,6 +1471,15 @@
     "qrBody": "Mnzanu amajambula iyi ndi kamera ya foni yake. Imatsegula tsamba lanu loitanira lomwe lili ndi ulalo wa Play Store.",
     "qrButton": "Khodi ya QR",
     "shareButton": "Itanani anzanu",
-    "done": "Zatheka"
+    "done": "Zatheka",
+    "qrSave": "Sungani chithunzi",
+    "qrShare": "Gawanani chithunzi",
+    "qrSaved": "Khodi ya QR yasungidwa pazithunzi zanu",
+    "qrSaveDenied": "Mulinda ikufunika chilolezo chosungira zithunzi. Ilolezeni ndipo yesaninso.",
+    "qrSaveFailed": "Sitinathe kusunga khodi ya QR. Chonde yesaninso.",
+    "qrShared": "Khodi ya QR yagawidwa",
+    "qrShareFailed": "Sitinathe kugawana khodi ya QR. Chonde yesaninso.",
+    "shareFallback": "Ndimagwiritsa ntchito Mulinda kuti ndione ndalama zanga zonse za Airtel Money, Mpamba ndi banki (National Bank, Standard Bank, NBS, FDH, First Capital ndi Centenary) pamalo amodzi. Lowani kudzera pa ulalo wanga ndipo tonse tilandira masiku {days} a Premium: {link}",
+    "shareFallbackNoDays": "Ndimagwiritsa ntchito Mulinda kuti ndione ndalama zanga zonse za Airtel Money, Mpamba ndi banki (National Bank, Standard Bank, NBS, FDH, First Capital ndi Centenary) pamalo amodzi. Lowani kudzera pa ulalo wanga ndipo tonse tilandira masiku a Premium aulere: {link}"
   }
 }

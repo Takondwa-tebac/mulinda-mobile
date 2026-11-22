@@ -39,7 +39,10 @@ class ReferralInfo {
   }
 
   /// The invite message in [languageCode], else English, else just the link.
-  String shareMessage(String languageCode) => shareText[languageCode] ?? shareText['en'] ?? link;
+  String shareMessage(String languageCode) => shareMessageOrNull(languageCode) ?? link;
+
+  /// The API's invite message in [languageCode], else English, else null.
+  String? shareMessageOrNull(String languageCode) => shareText[languageCode] ?? shareText['en'];
 
   factory ReferralInfo.fromJson(Map<String, dynamic> json) {
     int asInt(Object? v) => int.tryParse(v?.toString() ?? '') ?? 0;
