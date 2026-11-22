@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activity/screens/activity_screen.dart';
-import '../../features/analytics/data/analytics_models.dart';
+import '../../features/analytics/data/analytics_models.dart' show PeriodSelection, ReportKind;
 import '../../features/analytics/screens/category_detail_screen.dart';
 import '../../features/analytics/screens/money_received_screen.dart';
 import '../../features/analytics/screens/money_spent_screen.dart';

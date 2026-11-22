@@ -299,7 +299,6 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       'month': p.complete ? fmtMonthShort(p.start) : 'analytics.cat.soFarShort'.tr(namedArgs: {'month': fmtMonthShort(p.start)}),
       'amount': moneyWords(p.amount),
     });
-    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
