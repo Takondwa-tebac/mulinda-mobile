@@ -1776,7 +1776,7 @@
       "fees": "Fees and levies are counted in their own category. Money moved between your own accounts is not counted.",
       "feesShort": "Fees and levies are counted in their own category."
     },
-    "notCountedSpending": "Not counted: {amount} moved between your own accounts or sent back to you.",
+    "notCountedSpending": "Not counted: {amount} moved between your own accounts, or sent and returned to you.",
     "notCountedIncome": "Not counted as income: {amount}",
     "notCountedIncomeBody": "Money you moved between your own accounts, or money you sent that came back to you.",
     "coverage": {

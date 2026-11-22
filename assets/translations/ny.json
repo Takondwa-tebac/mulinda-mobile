@@ -1776,7 +1776,7 @@
       "fees": "Ndalama za chindapusa ndi msonkho zimawerengedwa mu gulu lawo. Ndalama zomwe mwasuntha pakati pa maakaunti anu siziwerengedwa.",
       "feesShort": "Ndalama za chindapusa ndi msonkho zimawerengedwa mu gulu lawo."
     },
-    "notCountedSpending": "Sizinawerengedwe: {amount} zomwe mwasuntha pakati pa maakaunti anu kapena zomwe zabwezedwa kwa inu.",
+    "notCountedSpending": "Sizinawerengedwe: {amount} zomwe mwasuntha pakati pa maakaunti anu, kapena zomwe munatumiza ndipo zabwezedwa kwa inu.",
     "notCountedIncome": "Sizinawerengedwe ngati ndalama zolowa: {amount}",
     "notCountedIncomeBody": "Ndalama zomwe mwasuntha pakati pa maakaunti anu, kapena zomwe munatumiza ndipo zabwerera kwa inu.",
     "coverage": {

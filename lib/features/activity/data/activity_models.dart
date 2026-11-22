@@ -315,6 +315,7 @@ class TxnQuery {
     this.uncategorised = false,
     this.merchant,
     this.periodLabel,
+    this.counted = false,
   });
 
   final String search;
@@ -343,6 +344,10 @@ class TxnQuery {
   /// Only rows from this shop or person (normalised merchant/counterparty).
   final String? merchant;
 
+  /// Only rows that count in report totals (no own transfers or "Sent and
+  /// returned"), so a list opened from a report sums to its figure.
+  final bool counted;
+
   /// How the chip names [period] ("Last 30 days, 24 Oct to 22 Nov"). Display
   /// only: not sent and not part of equality.
   final String? periodLabel;
@@ -359,7 +364,8 @@ class TxnQuery {
       !needsCategory &&
       period == null &&
       !uncategorised &&
-      merchant == null;
+      merchant == null &&
+      !counted;
 
   /// How many filters from the filter sheet (category, account, dates) are set.
   int get sheetFilterCount =>
@@ -378,6 +384,7 @@ class TxnQuery {
     bool? uncategorised,
     String? Function()? merchant,
     String? Function()? periodLabel,
+    bool? counted,
   }) => TxnQuery(
     search: search ?? this.search,
     type: type == null ? this.type : type(),
@@ -391,9 +398,11 @@ class TxnQuery {
     uncategorised: uncategorised ?? this.uncategorised,
     merchant: merchant == null ? this.merchant : merchant(),
     periodLabel: periodLabel == null ? this.periodLabel : periodLabel(),
+    counted: counted ?? this.counted,
   );
 
-  /// The same filters without the report period (and its custom dates).
+  /// The same filters without the report period (its custom dates and the
+  /// report-only "counted" flag).
   TxnQuery withoutPeriod() => TxnQuery(
     search: search,
     type: type,
@@ -427,6 +436,7 @@ class TxnQuery {
     if (needsCategory) 'needs_category': 1,
     if (uncategorised) 'uncategorised': 1,
     if (merchant != null && merchant!.trim().isNotEmpty) 'merchant': merchant!.trim(),
+    if (counted) 'counted': 1,
   };
 
   @override
@@ -442,11 +452,12 @@ class TxnQuery {
       other.period == period &&
       other.offset == offset &&
       other.uncategorised == uncategorised &&
-      other.merchant == merchant;
+      other.merchant == merchant &&
+      other.counted == counted;
 
   @override
   int get hashCode =>
-      Object.hash(search, type, categoryId, accountId, from, to, needsCategory, period, offset, uncategorised, merchant);
+      Object.hash(search, type, categoryId, accountId, from, to, needsCategory, period, offset, uncategorised, merchant, counted);
 }
 
 /// The result of `POST /v1/transactions/{id}/category`.

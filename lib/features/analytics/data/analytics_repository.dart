@@ -29,10 +29,8 @@ class AnalyticsRepository {
 
   /// The `context` block of a transaction for [period], or null when the
   /// server did not send one.
-  ///
-  /// The contract names only `context_period`; the offset and custom dates are
-  /// sent with the same names as the other report endpoints so a report for an
-  /// earlier period gets matching context.
+  /// `context_period` takes the same `offset` (and `from`/`to` for custom) as
+  /// the report endpoints.
   Future<TxnContext?> transactionContext(String id, PeriodSelection period) async {
     final p = period.toParams();
     final data = await _get('/v1/transactions/$id', {

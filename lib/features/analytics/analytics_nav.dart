@@ -52,6 +52,7 @@ abstract class AnalyticsNav {
     categoryId: categoryId,
     uncategorised: uncategorised,
     merchant: merchant,
+    counted: true,
     periodLabel: periodChipLabel(p, period),
   );
 
