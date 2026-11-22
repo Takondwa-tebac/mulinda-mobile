@@ -69,16 +69,31 @@ PeriodSummary summarisePeriod(List<Txn> txns, {required String uncategorised}) {
   );
 }
 
-/// The last 30 days, from the transaction list (a few pages at most).
-final last30DaysProvider = FutureProvider.autoDispose<PeriodSummary>((ref) async {
-  final repo = ref.read(activityRepositoryProvider);
-  final now = DateTime.now();
-  final query = TxnQuery(from: now.subtract(const Duration(days: 30)), to: now);
+/// Every transaction between [from] and [to] (inclusive local dates), read a
+/// page at a time, at most [maxPages] pages of 100.
+Future<List<Txn>> transactionsBetween(
+  ActivityRepository repo, {
+  required DateTime from,
+  required DateTime to,
+  int maxPages = 5,
+}) async {
+  final query = TxnQuery(from: from, to: to);
   final txns = <Txn>[];
-  for (var page = 1; page <= 5; page++) {
+  for (var page = 1; page <= maxPages; page++) {
     final result = await repo.transactionsPage(query, page: page, perPage: 100);
     txns.addAll(result.items);
     if (!result.hasMore) break;
   }
+  return txns;
+}
+
+/// The last 30 days, from the transaction list (a few pages at most).
+final last30DaysProvider = FutureProvider.autoDispose<PeriodSummary>((ref) async {
+  final now = DateTime.now();
+  final txns = await transactionsBetween(
+    ref.read(activityRepositoryProvider),
+    from: now.subtract(const Duration(days: 30)),
+    to: now,
+  );
   return summarisePeriod(txns, uncategorised: 'home3.noCategory'.tr());
 });
