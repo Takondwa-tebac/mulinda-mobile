@@ -1493,5 +1493,165 @@
     "moreBody": "Mwalemba ndalama zanu kwa masabata awiri. Tsopano mutha kuwonjezera ngongole, ndalama zoyikidwa ndi mapulojekiti, ndikuziwona pamodzi ndi zomwe mumawononga.",
     "openPlan": "Tsegulani Plan",
     "notNow": "Osati pano"
+  },
+  "stories": {
+    "myMonth": "{month} wanga",
+    "myYear": "Chaka changa {year}",
+    "and": "ndi",
+    "in": "Zolowa",
+    "out": "Zotuluka",
+    "messagesUnit": {
+      "one": "uthenga wa ndalama",
+      "other": "mauthenga a ndalama"
+    },
+    "keptLine": "Munasunga {percent} ya ndalama zomwe zinalowa.",
+    "overspentLine": "Munawononga {percent} kuposa zomwe zinalowa.",
+    "bigDayAmount": "{amount} pa tsiku limodzi",
+    "bigDayShare": "{percent} ya mwezi wonse pa tsiku limodzi",
+    "changeLess": "munawononga zochepa.",
+    "changeMore": "munawononga zambiri.",
+    "changeSame": "Munawononga mofanana ndi {month}.",
+    "budgetsLine": "Munasunga bajeti {kept} mwa {total}.",
+    "loadError": "Sitinathe kutsegula nkhani yanu.",
+    "notYetTitle": "Chaka chanu cha {year} pa ndalama sichinafike",
+    "notYetBody": "Chikubwera posachedwa. Pitirizani kulemba ndalama zanu kuti ziwerengedwe.",
+    "notAvailableTitle": "Sizinakwane nkhani pakali pano",
+    "notAvailableBody": "Nkhani imafuna mauthenga a ndalama kapena zolemba zambiri mu mwezi umenewo.",
+    "month": {
+      "introTitle": "Mwezi wanu pa ndalama wafika.",
+      "introBody": "Dinani kuti muone kumene ndalama zinapita.",
+      "messagesLead": "Mwezi uno Mulinda inalemba",
+      "messagesBody": "Simunalembe nokha ngakhale umodzi.",
+      "inOutTitle": "Ndalama zinalowa. Ndalama zinatuluka.",
+      "topLead": "Ndalama zanu zambiri zinapita ku",
+      "bigDayLead": "Tsiku limene munawononga kwambiri",
+      "styleLead": "Kagwiritsidwe kanu ka ndalama mwezi uno",
+      "changeLead": "Poyerekeza ndi {month}"
+    },
+    "year": {
+      "introTitle": "Chaka chanu pa ndalama.",
+      "introBody": "{from} mpaka {to}. Dinani kuti muyambe.",
+      "messagesLead": "Chaka chino Mulinda inalemba",
+      "perDay": "Ndiye pafupifupi {count} pa tsiku, tsiku lililonse.",
+      "monthsLead": "Ndalama zanu, mwezi ndi mwezi",
+      "biggestMonth": "{month} unali mwezi wanu waukulu.",
+      "biggestMonthAmount": "Munawononga {amount} mu {month}.",
+      "biggestMonthShare": "{percent} ya zonse zomwe munawononga chaka chino.",
+      "topLead": "Gulu lanu lalikulu la chaka",
+      "topAmount": "{amount} pa {category} kuyambira Januwale.",
+      "topShare": "{percent} ya zonse zomwe munawononga.",
+      "then1": "Kenako {a}.",
+      "then2": "Kenako {a}, kenako {b}.",
+      "personLead": "Munthu amene munamutumizira ndalama kwambiri",
+      "personTimes": {
+        "one": "Kamodzi chaka chino. Ali ndi mwayi kukhala nanu.",
+        "other": "Maulendo {} chaka chino. Ali ndi mwayi kukhala nanu."
+      },
+      "placeLead": "Malo amene mumakonda kugula",
+      "visits": {
+        "one": "Ulendo {}.",
+        "other": "Maulendo {}."
+      },
+      "weekday": "Ambiri anali pa {day}.",
+      "goalsLead": "Zolinga zomwe munakwaniritsa",
+      "goalsSaved": "Munasunga {amount} pa zolingazi.",
+      "goalsDone": "Munazikwaniritsa zonse.",
+      "styleLead": "Kagwiritsidwe kanu ka ndalama mu {year}",
+      "invite": "Itanani mnzanu kuti aone chaka chake"
+    },
+    "weekday": {
+      "monday": "Lolemba",
+      "tuesday": "Lachiwiri",
+      "wednesday": "Lachitatu",
+      "thursday": "Lachinayi",
+      "friday": "Lachisanu",
+      "saturday": "Loweruka",
+      "sunday": "Lamlungu"
+    },
+    "style": {
+      "steady_planner": {
+        "title": "Wokonzekera Mosasunthika",
+        "body": "Munakhazikitsa bajeti ndipo munasunga zambiri mwa izo."
+      },
+      "saver": {
+        "title": "Wosunga",
+        "body": "Munasunga gawo labwino la zomwe zinalowa."
+      },
+      "family_builder": {
+        "title": "Womanga Banja",
+        "body": "Munaika anthu ozungulira inu patsogolo."
+      },
+      "foodie": {
+        "title": "Wokonda Chakudya",
+        "body": "Chakudya ndi zogula zapakhomo zinali patsogolo kwa inu."
+      },
+      "explorer": {
+        "title": "Woyendayenda",
+        "body": "Munali paulendo: mayendedwe ndi maulendo anali patsogolo."
+      },
+      "everyday_manager": {
+        "title": "Woyang'anira wa Tsiku ndi Tsiku",
+        "body": "Munayendetsa bwino ndalama za tsiku ndi tsiku."
+      }
+    },
+    "card": {
+      "spent": "zowonongedwa",
+      "cameIn": "zolowa",
+      "messages": "mauthenga olembedwa",
+      "topCategory": "gulu lalikulu",
+      "biggestMonth": "mwezi waukulu",
+      "goals": "zolinga zokwaniritsidwa",
+      "kept": "zosungidwa pa zolowa",
+      "overspent": "zowonongedwa kuposa zolowa",
+      "lessThan": "zochepa kuposa {month}",
+      "moreThan": "zambiri kuposa {month}",
+      "sameAs": "kusintha kuchokera {month}",
+      "top": "Atatu apamwamba: {names}",
+      "tagline": "Ndalama zanga pamalo amodzi, zolembedwa ndi Mulinda."
+    },
+    "share": {
+      "showAmounts": "Onetsani ndalama",
+      "save": "Sungani",
+      "share": "Gawanani pa status",
+      "note": "Chithunzichi n'choyenera WhatsApp status. Ulalo wanu woitanira umapita mu uthenga, osati pa chithunzi.",
+      "saved": "Chasungidwa ku zithunzi zanu",
+      "saveDenied": "Mulinda ikufuna chilolezo kuti isunge zithunzi. Lolani ndipo yesaninso.",
+      "saveFailed": "Sitinathe kusunga chithunzi. Yesaninso.",
+      "shared": "Mwagawana",
+      "shareFailed": "Sitinathe kugawana chithunzi. Yesaninso.",
+      "message": "{period} yanga pa ndalama, kuchokera ku Mulinda. Onani yanu: {link}",
+      "messageNoLink": "{period} yanga pa ndalama, kuchokera ku Mulinda."
+    },
+    "home": {
+      "new": "ZATSOPANO",
+      "monthTitle": "{month} wanu pa ndalama wakonzeka",
+      "monthBody": "Kumene ndalama zanu zinapita, nkhani ndi nkhani. Zimatenga mphindi imodzi.",
+      "monthCta": "Onani {month} wanga",
+      "comingOn": "Zikubwera pa {date}",
+      "yearTitle": "Chaka chanu cha {year} pa ndalama",
+      "daysToGo": {
+        "one": "tsiku latsala",
+        "other": "masiku atsala"
+      },
+      "countdownBody": "Uthenga uliwonse wa ndalama umene Mulinda imalemba chaka chino ulowamo. Lembaninso ndalama za cash zomwe mumawononga, kuti ziwerengedwe.",
+      "remindMe": "Ndikumbutseni",
+      "remindersOn": "Zikumbutso zayatsidwa",
+      "remindFailed": "Sitinathe kusintha zikumbutso. Yesaninso.",
+      "itsHere": "CHAFIKA",
+      "readyBody": "Chaka chanu, nkhani ndi nkhani. Zimatenga mphindi imodzi.",
+      "watch": "Onerani chaka changa"
+    },
+    "mine": {
+      "title": "Nkhani zanga",
+      "monthItem": "{month} {year} wanga pa ndalama",
+      "yearItem": "Chaka changa cha {year} pa ndalama",
+      "subtitle": "Oneraninso kapena gawanani"
+    },
+    "player": {
+      "replay": "Yambitsaninso",
+      "close": "Tsekani",
+      "next": "Nkhani yotsatira",
+      "back": "Nkhani yapita"
+    }
   }
 }

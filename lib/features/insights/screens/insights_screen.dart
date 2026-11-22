@@ -10,6 +10,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_retry.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../stories/data/story_visibility.dart';
+import '../../stories/widgets/my_stories_section.dart';
 import '../data/insights_repository.dart';
 import '../widgets/notification_card.dart';
 
@@ -36,7 +38,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   Future<void> _refresh() async {
     ref
       ..invalidate(insightsProvider)
-      ..invalidate(unreadInsightsCountProvider);
+      ..invalidate(unreadInsightsCountProvider)
+      ..invalidate(myStoriesProvider);
     await ref.read(insightsProvider.future);
     if (mounted) {
       setState(() {
@@ -103,6 +106,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            // "My stories": the latest month and the year, when there are any.
+            const SliverToBoxAdapter(child: MyStoriesSection()),
             SliverToBoxAdapter(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

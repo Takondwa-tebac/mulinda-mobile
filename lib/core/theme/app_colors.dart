@@ -46,4 +46,9 @@ abstract class AppColors {
   static const tealInk = Color(0xFF00736A); // ~5.4:1 on white
   static const warningInk = Color(0xFF8A5A00); // ~6:1 on white
   static const successInk = Color(0xFF07693F);
+
+  // Story player ("My month in money", "My year in money"): always dark teal,
+  // one background per slide (onTeal, onTealPale, onOrange and this deepest
+  // teal for the share slide).
+  static const tealDeep = Color(0xFF001F1C);
 }

@@ -31,6 +31,14 @@ class Analytics {
     'upgrade_prompt_viewed',
     'paywall_plan_selected',
     'paywall_dismissed',
+    'referral_qr_saved',
+    'referral_qr_shared',
+    'story_shown',
+    'story_opened',
+    'story_completed',
+    'story_shared',
+    'story_saved',
+    'story_reminders_toggled',
   };
 
   /// Property keys the server keeps (see ProductAnalytics::CLIENT_PROPERTIES).
@@ -47,6 +55,9 @@ class Analytics {
     'trial_active',
     'plans_shown',
     'locale',
+    'story',
+    'key',
+    'enabled',
   };
 
   static const queueKey = 'analytics_queue_v1';

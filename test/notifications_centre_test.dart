@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mulinda_mobile/core/router/routes.dart';
 import 'package:mulinda_mobile/features/insights/data/insights_repository.dart';
@@ -132,6 +133,7 @@ void main() {
           overrides: [
             insightsProvider.overrideWith((ref) async => items),
             unreadInsightsCountProvider.overrideWith((ref) async => 0),
+            myStoriesProvider.overrideWith((ref) async => const MyStories()),
             insightsRepositoryProvider.overrideWithValue(InsightsRepository(Dio()..httpClientAdapter = server)),
           ],
           child: MaterialApp.router(routerConfig: router),

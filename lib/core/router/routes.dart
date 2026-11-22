@@ -1,3 +1,5 @@
+import '../../features/stories/data/story_models.dart';
+
 /// Centralised route paths.
 abstract class Routes {
   static const splash = '/splash';
@@ -88,6 +90,10 @@ abstract class Routes {
   static const subscription = '/subscription';
   static const receipt = '/receipt';
   static const referral = '/referral';
+
+  // "My month in money" (/stories/month/2026-10), "My year in money" (/stories/year/2026)
+  static const storyPath = '/stories/:story/:key';
+  static String storyFor(StoryKind story, String key) => '/stories/${story.name}/$key';
 
   // Admin (visible only to admin / super-admin users)
   static const admin = '/admin';

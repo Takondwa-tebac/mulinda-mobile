@@ -7,6 +7,7 @@ import '../../features/activity/data/activity_feed.dart';
 import '../../features/activity/data/activity_models.dart';
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/insights/data/insights_repository.dart';
+import '../../features/stories/data/story_models.dart';
 import '../router/app_router.dart';
 import '../router/routes.dart';
 
@@ -52,6 +53,8 @@ TxnQuery activityQueryFrom(Map<String, dynamic> data) {
 /// Maps push or notification data to a screen. Uses `target`/`target_id`
 /// (round-3 API) and falls back to the older `type` keys for older servers.
 NotificationDestination destinationFor(Map<String, dynamic> data) {
+  // Story pushes also carry `target: home` for older apps; open the story.
+  if (_str(data['type']) == 'story') return _byType(data);
   final target = _str(data['target']);
   final id = _str(data['target_id']);
   if (target != null) {
@@ -141,6 +144,13 @@ NotificationDestination _byType(Map<String, dynamic> data) {
       return NotificationDestination(goalId == null ? Routes.goals : Routes.goalById(goalId));
     case 'summary':
       return const NotificationDestination(Routes.dailySummaries);
+    case 'story':
+      // {type: story, story: month|year, key: 2026-10|2026}
+      final story = StoryKind.fromName(_str(data['story']));
+      final key = _str(data['key']);
+      return story != null && key != null && isValidStoryKey(story, key)
+          ? NotificationDestination(Routes.storyFor(story, key))
+          : const NotificationDestination(Routes.insights);
     case 'announcement':
       return NotificationDestination(insightId == null ? Routes.insights : Routes.notificationDetailFor(insightId));
   }

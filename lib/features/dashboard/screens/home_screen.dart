@@ -24,6 +24,9 @@ import '../../plan/data/plan_models.dart';
 import '../../plan/data/plan_repository.dart';
 import '../../plan/data/plan_tools_gate.dart';
 import '../../plan/widgets/plan_tools_cards.dart';
+import '../../stories/data/stories_repository.dart';
+import '../../stories/data/story_visibility.dart';
+import '../../stories/widgets/story_home_cards.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import '../data/spending_insight.dart';
@@ -74,6 +77,8 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(budgetsProvider);
           ref.invalidate(dashboardProvider);
+          ref.invalidate(homeMonthStoryProvider);
+          ref.invalidate(yearStoryStatusProvider);
           await ref.read(dashboardProvider.future);
         },
         child: async.when(
@@ -123,6 +128,9 @@ class _Dashboard extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         _BalanceHero(data: data),
         const SizedBox(height: AppSpacing.lg),
+
+        // Last month's story (first days of the month) and the year countdown.
+        const StoryHomeCards(),
 
         // Renders nothing unless a free trial is running.
         const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
