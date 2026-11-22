@@ -40,6 +40,27 @@ void main() {
       expect(today.currency, 'MWK');
     });
 
+    test('counts fees nested under a transaction as money out, even under an own transfer', () {
+      Map<String, dynamic> fee(String id, int minor) =>
+          {'id': id, 'type': 'expense', 'amount': _money(minor), 'parent_id': 'p', 'occurred_at': '2026-11-04T10:00:00'};
+      final send = Txn.fromJson({
+        'id': 'p',
+        'type': 'expense',
+        'amount': _money(10000),
+        'occurred_at': '2026-11-04T10:00:00',
+        'children': [fee('f1', 500), fee('f2', 50)],
+      });
+      final move = Txn.fromJson({
+        'id': 'm',
+        'type': 'expense',
+        'amount': _money(20000),
+        'occurred_at': '2026-11-04T09:00:00',
+        'category': {'id': 'own', 'name': 'Moving my money', 'is_spending': false},
+        'children': [fee('f3', 300)],
+      });
+      expect(groupByDay([send, move]).single.outMinor, 10000 + 500 + 50 + 300);
+    });
+
     test('does not add up a day that mixes currencies', () {
       final usd = Txn.fromJson({
         'id': 'u',
