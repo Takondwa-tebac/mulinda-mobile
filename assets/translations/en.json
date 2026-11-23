@@ -1641,7 +1641,11 @@
       "remindFailed": "Could not change reminders. Please try again.",
       "itsHere": "IT'S HERE",
       "readyBody": "Your year, story by story. Takes a minute.",
-      "watch": "Watch my year"
+      "watch": "Watch my year",
+      "remindSet": "Reminder set. We will let you know on {date}.",
+      "remindSetNoDate": "Reminder set. We will let you know when it is out.",
+      "remindOff": "Reminders off. Your story still arrives on {date}.",
+      "remindOffNoDate": "Reminders off. Your story still arrives when it is out."
     },
     "mine": {
       "title": "My stories",

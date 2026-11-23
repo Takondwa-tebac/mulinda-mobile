@@ -1641,7 +1641,11 @@
       "remindFailed": "Sitinathe kusintha zikumbutso. Yesaninso.",
       "itsHere": "CHAFIKA",
       "readyBody": "Chaka chanu, nkhani ndi nkhani. Zimatenga mphindi imodzi.",
-      "watch": "Onerani chaka changa"
+      "watch": "Onerani chaka changa",
+      "remindSet": "Chikumbutso chakonzedwa. Tidzakudziwitsani pa {date}.",
+      "remindSetNoDate": "Chikumbutso chakonzedwa. Tidzakudziwitsani ikatuluka.",
+      "remindOff": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe pa {date}.",
+      "remindOffNoDate": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe ikatuluka."
     },
     "mine": {
       "title": "Nkhani zanga",

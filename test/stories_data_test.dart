@@ -218,6 +218,9 @@ void main() {
 
     test('nothing without a status, or in another year', () {
       expect(yearCardFor(now: DateTime(2026, 11, 20), status: null), YearCard.none);
+      // The reminder button was used: no countdown, but "It's here" on release.
+      expect(yearCardFor(now: DateTime(2026, 11, 20), status: status(), reminderTapped: true), YearCard.none);
+      expect(yearCardFor(now: DateTime(2026, 11, 25, 9), status: status(ready: true), reminderTapped: true), YearCard.ready);
       expect(yearCardFor(now: DateTime(2027, 1, 2), status: status(ready: true)), YearCard.none);
     });
   });

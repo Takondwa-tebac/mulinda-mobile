@@ -8,6 +8,7 @@ import 'package:mulinda_mobile/core/theme/app_theme.dart';
 import 'package:mulinda_mobile/features/auth/providers/auth_controller.dart';
 import 'package:mulinda_mobile/features/stories/data/stories_repository.dart';
 import 'package:mulinda_mobile/features/stories/data/story_models.dart';
+import 'package:mulinda_mobile/features/stories/data/story_visibility.dart';
 import 'package:mulinda_mobile/features/stories/screens/story_screen.dart';
 import 'package:mulinda_mobile/features/stories/widgets/story_motion.dart';
 import 'package:mulinda_mobile/features/stories/widgets/story_player.dart';
@@ -390,7 +391,37 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(repo.reminders, [true]);
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+      // The choice is made: the countdown steps aside, with a confirmation.
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsNothing);
+      expect(find.text('stories.home.remindSet'), findsOneWidget);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(YearReminderStore.key(null, 2026)), isTrue);
+    });
+
+    testWidgets('"Reminders on" (the server default) also puts the countdown away', (tester) async {
+      final repo = await pumpCards(tester, DateTime(2026, 11, 20));
       expect(find.text('stories.home.remindersOn'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('story-remind')));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+      expect(repo.reminders, [false]);
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsNothing);
+    });
+
+    testWidgets('a used reminder button keeps the countdown away', (tester) async {
+      SharedPreferences.setMockInitialValues({YearReminderStore.key(null, 2026): true});
+      await pumpCards(tester, DateTime(2026, 11, 21));
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsNothing);
+    });
+
+    testWidgets('release day shows the ready card even after the reminder button was used', (tester) async {
+      SharedPreferences.setMockInitialValues({YearReminderStore.key(null, 2026): true});
+      await pumpCards(tester, DateTime(2026, 11, 25, 10), status: {...statusJson, 'ready': true, 'days_left': 0});
+      expect(find.byKey(const ValueKey('story-year-ready')), findsOneWidget);
     });
   });
 }
