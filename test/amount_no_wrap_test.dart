@@ -68,7 +68,7 @@ void main() {
   });
 
   test('AmountText never breaks between the currency and the number', () {
-    expect(AmountText.unbreakable('MK -371,239.24'), 'MK${_nb}-371,239.24');
+    expect(AmountText.unbreakable('MK -371,239.24'), 'MK$_nb-371,239.24');
     expect(AmountText.unbreakable('MK -371,239.24').contains(' '), isFalse);
   });
 
@@ -86,7 +86,7 @@ void main() {
       await _pump(tester, MoneyInAccountsRow(amount: _negative, accounts: 4, onTap: () {}), dark: dark);
       expect(tester.takeException(), isNull);
       // The whole kwacha figure, number included, not just "MK".
-      final finder = find.text('MK${_nb}-371,239');
+      final finder = find.text('MK$_nb-371,239');
       expect(finder, findsOneWidget);
       final rendered = tester.renderObject<RenderParagraph>(
         find.descendant(of: find.byType(AmountText), matching: find.byType(RichText)),
