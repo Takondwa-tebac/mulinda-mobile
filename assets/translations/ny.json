@@ -624,7 +624,8 @@
     "trialBanner": {
       "title": "Nthawi yoyesa yaulere: yatsala pafupifupi maola {hours}",
       "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha.",
-      "titleDays": "Kuyesa kwaulere: masiku {days} atsala"
+      "titleDays": "Kuyesa kwaulere: masiku {days} atsala",
+      "close": "Bisani chikumbutso cha kuyesa"
     },
     "sms": {
       "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
@@ -1428,7 +1429,8 @@
     "topUp": {
       "title": "Isandutseni sabata ndi {amount} yokha",
       "body": "Zomwe mwalipira pa pasi ya lero zikuwerengedwa ku sabata.",
-      "cta": "Isandutseni sabata, {amount}"
+      "cta": "Isandutseni sabata, {amount}",
+      "close": "Bisani mwayi uwu"
     },
     "done": {
       "title": "Premium ili yoyaka mpaka {date}",

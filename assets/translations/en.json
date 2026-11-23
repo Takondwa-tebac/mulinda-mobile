@@ -624,7 +624,8 @@
     "trialBanner": {
       "title": "Free trial: about {hours} h left",
       "body": "Premium features are on. Your records stay free after it ends.",
-      "titleDays": "Free trial: {days} days left"
+      "titleDays": "Free trial: {days} days left",
+      "close": "Hide the trial reminder"
     },
     "sms": {
       "remaining": "{remaining} of {limit} free SMS captures left this month",
@@ -1428,7 +1429,8 @@
     "topUp": {
       "title": "Make it a week for {amount} more",
       "body": "What you paid for today's Day pass counts toward the week.",
-      "cta": "Make it a week, {amount}"
+      "cta": "Make it a week, {amount}",
+      "close": "Hide this offer"
     },
     "done": {
       "title": "Premium is on until {date}",

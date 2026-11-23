@@ -8,11 +8,13 @@ import 'package:mulinda_mobile/core/network/api_exception.dart';
 import 'package:mulinda_mobile/features/auth/data/user.dart';
 import 'package:mulinda_mobile/features/auth/providers/auth_controller.dart';
 import 'package:mulinda_mobile/features/subscription/checkout_flow.dart';
+import 'package:mulinda_mobile/features/subscription/data/home_alert_dismissals.dart';
 import 'package:mulinda_mobile/features/subscription/data/subscription_models.dart';
 import 'package:mulinda_mobile/features/subscription/paywall_prompt.dart';
 import 'package:mulinda_mobile/features/subscription/widgets/paywall_sheet.dart';
 import 'package:mulinda_mobile/features/subscription/widgets/subscription_status_tile.dart';
 import 'package:mulinda_mobile/features/subscription/widgets/trial_banner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 User _user(SubscriptionInfo sub) => User(
   id: 'u1',
@@ -375,7 +377,9 @@ void main() {
           endsAt: DateTime.now().add(const Duration(hours: 3)),
         ),
       );
+      SharedPreferences.setMockInitialValues({});
       await tester.pumpWidget(_host(const TrialBanner(), user: onTrial));
+      await tester.pump();
       expect(find.byKey(const ValueKey('trial-banner')), findsOneWidget);
 
       final paid = _user(
@@ -389,6 +393,69 @@ void main() {
       expect(find.byKey(const ValueKey('trial-banner')), findsNothing);
 
       await tester.pumpWidget(_host(const TrialBanner()));
+      expect(find.byKey(const ValueKey('trial-banner')), findsNothing);
+    });
+  });
+
+  group('trial banner close', () {
+    test('closed early it returns once for the last 48 hours, then never', () {
+      expect(trialBannerVisible(hoursLeft: 120, dismissal: AlertDismissal.none), isTrue);
+      // Closed with 5 days left: away until the final stretch.
+      final first = trialDismissalFor(120, AlertDismissal.none);
+      expect(first, AlertDismissal.early);
+      expect(trialBannerVisible(hoursLeft: 49, dismissal: first), isFalse);
+      expect(trialBannerVisible(hoursLeft: 48, dismissal: first), isTrue);
+      // Closed again in the final stretch: gone for this trial.
+      final second = trialDismissalFor(30, first);
+      expect(second, AlertDismissal.done);
+      expect(trialBannerVisible(hoursLeft: 2, dismissal: second), isFalse);
+      // Closed for the first time inside the final stretch: gone for good.
+      expect(trialDismissalFor(40, AlertDismissal.none), AlertDismissal.done);
+    });
+
+    test('the flag is per user and per trial', () {
+      final ends = DateTime.utc(2026, 12, 1, 10);
+      expect(trialBannerDismissedKey('u1', ends), 'trial_banner_dismissed_u1_2026-12-01T10:00:00.000Z');
+      expect(trialBannerDismissedKey('u2', ends), isNot(trialBannerDismissedKey('u1', ends)));
+      expect(
+        trialBannerDismissedKey('u1', ends.add(const Duration(days: 7))),
+        isNot(trialBannerDismissedKey('u1', ends)),
+      );
+    });
+
+    testWidgets('the close button hides it and stores the choice', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final ends = DateTime.now().add(const Duration(days: 5));
+      final user = _user(SubscriptionInfo(active: true, isTrial: true, endsAt: ends));
+      await tester.pumpWidget(_host(const TrialBanner(), user: user));
+      await tester.pump();
+      final close = find.byKey(const ValueKey('trial-banner-close'));
+      expect(close, findsOneWidget);
+      expect(tester.getSize(close).height, greaterThanOrEqualTo(44));
+      expect(tester.widget<IconButton>(close).tooltip, isNotEmpty);
+
+      await tester.tap(close);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('trial-banner')), findsNothing);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(trialBannerDismissedKey('u1', ends)), AlertDismissal.early.index);
+    });
+
+    testWidgets('closed early, it is back in the last 48 hours', (tester) async {
+      final ends = DateTime.now().add(const Duration(hours: 20));
+      SharedPreferences.setMockInitialValues({trialBannerDismissedKey('u1', ends): AlertDismissal.early.index});
+      final user = _user(SubscriptionInfo(active: true, isTrial: true, endsAt: ends));
+      await tester.pumpWidget(_host(const TrialBanner(), user: user));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('trial-banner')), findsOneWidget);
+    });
+
+    testWidgets('closed in the last 48 hours, it stays away', (tester) async {
+      final ends = DateTime.now().add(const Duration(hours: 20));
+      SharedPreferences.setMockInitialValues({trialBannerDismissedKey('u1', ends): AlertDismissal.done.index});
+      final user = _user(SubscriptionInfo(active: true, isTrial: true, endsAt: ends));
+      await tester.pumpWidget(_host(const TrialBanner(), user: user));
+      await tester.pump();
       expect(find.byKey(const ValueKey('trial-banner')), findsNothing);
     });
   });
