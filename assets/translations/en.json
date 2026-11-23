@@ -794,7 +794,21 @@
       "three_day": "3 days",
       "week": "1 week",
       "month": "1 month"
-    }
+    },
+    "screenshotsSection": "App security",
+    "screenshotsTitle": "Allow screenshots",
+    "screenshotsOn": "On. {} can take screenshots and record the screen in Mulinda.",
+    "screenshotsOff": "Off (default). Screenshots and screen recording are blocked for {}.",
+    "screenshotsAllowTitle": "Allow screenshots for {}?",
+    "screenshotsAllowBody": "{} will be able to take screenshots and record the screen in Mulinda, on every phone they sign in on. It applies the next time they open or return to the app.",
+    "screenshotsBlockTitle": "Block screenshots for {}?",
+    "screenshotsBlockBody": "Screenshots and screen recording will be blocked again for {} from the next time they open or return to the app.",
+    "screenshotsNote": "Saved to the audit trail. Android only: iPhones do not let apps block screenshots.",
+    "screenshotsAllow": "Allow screenshots",
+    "screenshotsBlock": "Block screenshots",
+    "screenshotsAllowed": "Screenshots allowed for {}",
+    "screenshotsBlocked": "Screenshots blocked for {}",
+    "screenshotsFailed": "Could not change screenshots. Try again."
   },
   "budgetSpend": {
     "recordSpend": "Record spend",
@@ -1141,7 +1155,7 @@
     "personalData": "Personal data & privacy",
     "personalDataSub": "Export, summaries, delete account, legal",
     "blockScreenshots": "Block screenshots",
-    "blockScreenshotsSub": "Stops screenshots and screen recording in the app for your account. Only super-admins can turn this off.",
+    "blockScreenshotsSub": "Stops screenshots and screen recording in the app for your account, on every phone. Super-admins can change this for anyone in User Details.",
     "help": "Help & support",
     "askCoach": "Ask Mulinda",
     "askCoachSub": "Questions about your money or the app",

@@ -230,6 +230,10 @@ class _MulindaAppState extends ConsumerState<MulindaApp> with WidgetsBindingObse
       _flushOutbox();
       _refreshOfflineData();
       ref.read(todayWidgetSyncProvider).schedule();
+      // Settings an admin changed meanwhile (screenshots, entitlements).
+      if (ref.read(currentUserProvider) != null) {
+        unawaited(ref.read(authControllerProvider.notifier).refresh());
+      }
     }
   }
 

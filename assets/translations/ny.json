@@ -794,7 +794,21 @@
       "three_day": "Masiku atatu",
       "week": "Sabata limodzi",
       "month": "Mwezi umodzi"
-    }
+    },
+    "screenshotsSection": "Chitetezo cha pulogalamu",
+    "screenshotsTitle": "Lolani kujambula sikirini",
+    "screenshotsOn": "Kwayatsidwa. {} akhoza kujambula sikirini ndi kujambula kanema wa sikirini mu Mulinda.",
+    "screenshotsOff": "Kwazimitsidwa (mwachisawawa). Kujambula sikirini ndi kanema wa sikirini ndikoletsedwa kwa {}.",
+    "screenshotsAllowTitle": "Mulole {} kujambula sikirini?",
+    "screenshotsAllowBody": "{} azitha kujambula sikirini ndi kanema wa sikirini mu Mulinda, pa foni iliyonse yomwe alowapo. Zidzayamba akadzatsegula kapena kubwerera ku pulogalamu.",
+    "screenshotsBlockTitle": "Muletse {} kujambula sikirini?",
+    "screenshotsBlockBody": "Kujambula sikirini ndi kanema wa sikirini kudzaletsedwanso kwa {} kuyambira akadzatsegula kapena kubwerera ku pulogalamu.",
+    "screenshotsNote": "Zalembedwa mu mbiri ya zochitika. Pa Android yokha: ma iPhone salola mapulogalamu kuletsa kujambula sikirini.",
+    "screenshotsAllow": "Lolani kujambula",
+    "screenshotsBlock": "Letsani kujambula",
+    "screenshotsAllowed": "{} waloledwa kujambula sikirini",
+    "screenshotsBlocked": "{} waletsedwa kujambula sikirini",
+    "screenshotsFailed": "Sitinathe kusintha. Yesaninso."
   },
   "budgetSpend": {
     "recordSpend": "Lembani zomwe mwawononga",
@@ -1141,7 +1155,7 @@
     "personalData": "Zambiri zanu ndi zachinsinsi",
     "personalDataSub": "Kutulutsa, chidule, kufufuta akaunti, malamulo",
     "blockScreenshots": "Letsani kujambula sikirini",
-    "blockScreenshotsSub": "Imaletsa kujambula ndi kujambula kanema wa sikirini mu pulogalamu pa akaunti yanu. Ndi akuluakulu okha amene angazimitse.",
+    "blockScreenshotsSub": "Imaletsa kujambula sikirini ndi kanema wa sikirini mu pulogalamu pa akaunti yanu, pa foni iliyonse. Ma super-admin angasinthe izi kwa aliyense mu User Details.",
     "help": "Thandizo",
     "askCoach": "Funsani Mulinda",
     "askCoachSub": "Mafunso okhudza ndalama zanu kapena pulogalamu",

@@ -1,38 +1,35 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../features/admin/data/admin_repository.dart';
 import '../../features/auth/providers/auth_controller.dart';
 
 /// Whether screenshots and screen recording are blocked in the app.
 ///
-/// Blocked for everyone by default. Only a super-admin can switch it off, and
-/// the choice is stored per account on this device, so it never affects
-/// other users who sign in on the same phone. State is `true` while protected.
+/// Blocked for everyone by default. A super-admin can allow it for any
+/// account (admin User Details, or Profile for their own). The setting lives
+/// on the server, so it follows the account to every phone and never affects
+/// other people who sign in on the same phone. The app picks up a change when
+/// it next loads the profile (on start and on returning to the app). State
+/// is `true` while protected.
 class ScreenshotProtection extends Notifier<bool> {
-  static String _key(String userId) => 'screenshots_allowed_$userId';
-
   @override
-  bool build() {
-    final user = ref.watch(currentUserProvider);
-    if (user != null && user.isSuperAdmin) _load(user.id);
-    // Secure by default until the stored choice is read.
-    return true;
-  }
+  bool build() => !(ref.watch(currentUserProvider)?.screenshotsAllowed ?? false);
 
-  Future<void> _load(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    state = !(prefs.getBool(_key(userId)) ?? false);
-  }
-
-  /// Turn protection on/off for the signed-in super-admin. Ignored for anyone else.
+  /// The signed-in super-admin's own switch in Profile: the same server
+  /// setting as their row in User Details. Ignored for anyone else. Applied
+  /// at once; put back if the server refuses.
   Future<void> setProtected(bool value) async {
     final user = ref.read(currentUserProvider);
     if (user == null || !user.isSuperAdmin) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key(user.id), !value);
     state = value;
+    try {
+      await ref.read(adminRepositoryProvider).setScreenshotsAllowed(user.id, allowed: !value);
+      await ref.read(authControllerProvider.notifier).refresh();
+    } catch (_) {
+      state = !(ref.read(currentUserProvider)?.screenshotsAllowed ?? false);
+      rethrow;
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
+import '../../auth/providers/auth_controller.dart';
 import '../data/admin_repository.dart';
 
 class UserDetailScreen extends ConsumerStatefulWidget {
@@ -248,6 +249,12 @@ class _UserDetailContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
+
+        // Screenshots in the app: super-admins only (the API checks too).
+        if (ref.watch(currentUserProvider)?.isSuperAdmin == true) ...[
+          _ScreenshotsSection(user: user),
+          const SizedBox(height: 16),
+        ],
 
         // Danger zone
         _Section(
@@ -554,6 +561,114 @@ class _ConfirmDeleteSheet extends StatelessWidget {
             minimumSize: const Size.fromHeight(48),
           ),
           child: Text('admin.deleteAction'.tr()),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('form.cancel'.tr()),
+        ),
+      ],
+    );
+  }
+}
+
+/// App security: allow or block screenshots and screen recording for this
+/// user, after a confirmation. Saved on the server and audited; the user's
+/// app applies it when it next loads their profile.
+class _ScreenshotsSection extends ConsumerStatefulWidget {
+  const _ScreenshotsSection({required this.user});
+
+  final Map<String, dynamic> user;
+
+  @override
+  ConsumerState<_ScreenshotsSection> createState() => _ScreenshotsSectionState();
+}
+
+class _ScreenshotsSectionState extends ConsumerState<_ScreenshotsSection> {
+  bool _saving = false;
+
+  String get _id => widget.user['id'].toString();
+
+  String get _name {
+    final full = widget.user['full_name']?.toString().trim() ?? '';
+    if (full.isNotEmpty) return full.split(RegExp(r'\s+')).first;
+    return widget.user['username']?.toString() ?? '';
+  }
+
+  Future<void> _change(bool allow) async {
+    final confirmed = await _showUserSheet<bool>(
+      context,
+      (sheetContext) => _ScreenshotsSheet(name: _name, allow: allow),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(adminRepositoryProvider).setScreenshotsAllowed(_id, allowed: allow);
+      // Changing your own: apply it on this phone now.
+      if (ref.read(currentUserProvider)?.id == _id) {
+        await ref.read(authControllerProvider.notifier).refresh();
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text((allow ? 'admin.screenshotsAllowed' : 'admin.screenshotsBlocked').tr(args: [_name])),
+      ));
+      ref.invalidate(_userDetailProvider(_id));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e is ApiException ? e.displayMessage : 'admin.screenshotsFailed'.tr()),
+      ));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final allowed = widget.user['screenshots_allowed'] == true;
+    return _Section(
+      title: 'admin.screenshotsSection'.tr(),
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.screenshot_monitor_outlined),
+          title: Text('admin.screenshotsTitle'.tr()),
+          subtitle: Text((allowed ? 'admin.screenshotsOn' : 'admin.screenshotsOff').tr(args: [_name])),
+          value: allowed,
+          onChanged: _saving ? null : _change,
+        ),
+      ],
+    );
+  }
+}
+
+class _ScreenshotsSheet extends StatelessWidget {
+  const _ScreenshotsSheet({required this.name, required this.allow});
+
+  final String name;
+  final bool allow;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SheetTitle((allow ? 'admin.screenshotsAllowTitle' : 'admin.screenshotsBlockTitle').tr(args: [name])),
+        Text(
+          (allow ? 'admin.screenshotsAllowBody' : 'admin.screenshotsBlockBody').tr(args: [name]),
+          style: textTheme.bodyMedium?.copyWith(color: muted),
+        ),
+        const SizedBox(height: 12),
+        Text('admin.screenshotsNote'.tr(), style: textTheme.bodySmall?.copyWith(color: muted)),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          child: Text((allow ? 'admin.screenshotsAllow' : 'admin.screenshotsBlock').tr()),
         ),
         const SizedBox(height: 8),
         TextButton(
