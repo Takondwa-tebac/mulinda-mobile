@@ -1,10 +1,30 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/network/api_exception.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/error_retry.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../data/admin_repository.dart';
+import '../data/admin_user.dart';
+import '../widgets/user_access_section.dart';
+import '../widgets/user_activity_section.dart';
+import '../widgets/user_detail_header.dart';
+import '../widgets/user_detail_sections.dart';
+import '../widgets/user_detail_sheets.dart';
+import 'push_notification_screen.dart';
 
+/// One user as the admin user detail endpoint returns it.
+final userDetailProvider = FutureProvider.autoDispose.family<AdminUser, String>(
+  (ref, userId) async =>
+      AdminUser.fromJson({'id': userId, ...await ref.read(adminRepositoryProvider).getUserDetail(userId)}),
+);
+
+/// Admin view of one user: header with status chips, quick actions, key
+/// figures, and Overview / Plan / Access / Activity tabs.
 class UserDetailScreen extends ConsumerStatefulWidget {
   const UserDetailScreen({super.key, required this.userId});
 
@@ -15,745 +35,179 @@ class UserDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
+  UserDetailTab _tab = UserDetailTab.overview;
+
+  void _reload() => ref.invalidate(userDetailProvider(widget.userId));
+
+  void _snack(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  String _errorText(Object e, String fallbackKey) => e is ApiException ? e.displayMessage : fallbackKey.tr();
+
+  Future<void> _gift(AdminUser user) async {
+    final gift = await showUserDetailSheet<GiftChoice>(context, const GiftSheet());
+    if (gift == null || !mounted) return;
+    try {
+      await ref.read(adminRepositoryProvider).grantCredit(userId: user.id, period: gift.period, reason: gift.reason);
+      if (!mounted) return;
+      _snack('admin.giftDone'.tr());
+      _reload();
+    } catch (e) {
+      if (mounted) _snack(_errorText(e, 'admin.giftFailed'));
+    }
+  }
+
+  Future<void> _editRoles(AdminUser user) async {
+    final selected = await showUserDetailSheet<List<String>>(context, RolesSheet(initialRoles: user.roles));
+    if (selected == null || !mounted) return;
+    try {
+      await ref.read(adminRepositoryProvider).updateUserRoles(user.id, selected);
+      if (!mounted) return;
+      _snack('admin.rolesDone'.tr());
+      _reload();
+    } catch (e) {
+      if (mounted) _snack(_errorText(e, 'admin.rolesFailed'));
+    }
+  }
+
+  Future<void> _delete(AdminUser user) async {
+    final ok = await showUserDetailSheet<bool>(context, ConfirmDeleteSheet(name: user.displayName));
+    if (ok != true || !mounted) return;
+    try {
+      await ref.read(adminRepositoryProvider).deleteUser(user.id);
+      if (!mounted) return;
+      _snack('admin.deleted'.tr());
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) _snack(_errorText(e, 'admin.deleteFailed'));
+    }
+  }
+
+  void _notify(AdminUser user) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => PushNotificationScreen(initialRecipients: {user.id: user.displayName})),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final async = ref.watch(userDetailProvider(widget.userId));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('User Details'),
+        title: Text('admin.user.title'.tr()),
         actions: [
           IconButton(
+            key: const ValueKey('user-refresh'),
+            tooltip: 'admin.user.refresh'.tr(),
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(_userDetailProvider(widget.userId)),
+            onPressed: _reload,
           ),
         ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () =>
-              ref.refresh(_userDetailProvider(widget.userId).future),
-          child: Consumer(
-            builder: (context, ref, _) {
-              final async = ref.watch(_userDetailProvider(widget.userId));
-              return async.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48),
-                      const SizedBox(height: 12),
-                      Text(
-                        e is ApiException ? e.displayMessage : e.toString(),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () =>
-                            ref.invalidate(_userDetailProvider(widget.userId)),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-                data: (data) => _UserDetailContent(user: data),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _UserDetailContent extends ConsumerWidget {
-  const _UserDetailContent({required this.user});
-
-  final Map<String, dynamic> user;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-
-    // Extract subscription data
-    final subscription = user['subscription'] as Map<String, dynamic>?;
-    final isSubscribed = subscription != null && subscription['active'] == true;
-
-    // Extract roles
-    final roles =
-        (user['roles'] as List?)
-            ?.map(
-              (r) => r is Map ? (r['name']?.toString() ?? '') : r.toString(),
-            )
-            .where((r) => r.isNotEmpty)
-            .toList() ??
-        <String>[];
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Profile Header
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
+          onRefresh: () => ref.refresh(userDetailProvider(widget.userId).future),
+          child: async.when(
+            loading: () => const _UserDetailSkeleton(),
+            error: (e, _) => ListView(
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: scheme.primaryContainer,
-                  foregroundColor: scheme.onPrimaryContainer,
-                  child: Text(
-                    _initials(
-                      user['full_name']?.toString() ??
-                          user['username']?.toString() ??
-                          '?',
-                    ),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user['full_name']?.toString() ??
-                            user['username']?.toString() ??
-                            '',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user['email']?.toString() ?? '',
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user['username']?.toString() ?? '',
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+                ScrollFill(
+                  child: ErrorRetry(message: _errorText(e, 'admin.user.loadError'), onRetry: _reload),
                 ),
               ],
             ),
+            data: _content,
           ),
         ),
-        const SizedBox(height: 16),
+      ),
+    );
+  }
 
-        // Account Information
-        _Section(
-          title: 'Account Information',
-          children: [
-            _InfoRow('Joined', _formatDate(user['created_at'])),
-            _InfoRow('Last Active', _formatDate(user['last_active_at'])),
-            _InfoRow(
-              'Phone',
-              user['phone_number']?.toString() ?? 'Not provided',
-            ),
-            _InfoRow(
-              'Income Bracket',
-              user['declared_income_bracket']?.toString() ?? 'Not set',
-            ),
-          ],
+  Widget _content(AdminUser user) {
+    final me = ref.watch(currentUserProvider);
+    final isSuper = me?.isSuperAdmin == true;
+    const gap = SizedBox(height: AppSpacing.md);
+    return ListView(
+      key: const ValueKey('user-detail-list'),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+      children: [
+        UserHeaderCard(user: user, showScreenshots: isSuper),
+        gap,
+        UserQuickActions(
+          onGift: () => _gift(user),
+          onRoles: () => _editRoles(user),
+          onNotify: () => _notify(user),
+          onActivity: () => setState(() => _tab = UserDetailTab.activity),
         ),
-        const SizedBox(height: 16),
+        gap,
+        UserStatTiles(user: user),
+        gap,
+        UserTabSwitcher(selected: _tab, onSelected: (tab) => setState(() => _tab = tab)),
+        gap,
+        switch (_tab) {
+          UserDetailTab.overview => UserOverviewSection(
+            user: user,
+            showSecurity: isSuper,
+            onOpenTab: (tab) => setState(() => _tab = tab),
+          ),
+          UserDetailTab.plan => UserPlanSection(user: user, onGift: () => _gift(user)),
+          UserDetailTab.access => UserAccessSection(
+            user: user,
+            isMe: me?.id == user.id,
+            showSecurity: isSuper,
+            onEditRoles: () => _editRoles(user),
+            onDelete: () => _delete(user),
+            onScreenshotsChanged: _reload,
+          ),
+          UserDetailTab.activity => UserActivitySection(user: user),
+        },
+      ],
+    );
+  }
+}
 
-        // Subscription Status
-        _Section(
-          title: 'Subscription',
-          children: [
-            _InfoRow(
-              'Status',
-              isSubscribed ? 'Active' : 'Free Tier',
-              status: isSubscribed ? 'active' : 'inactive',
-            ),
-            if (isSubscribed) ...[
-              _InfoRow(
-                'Plan',
-                subscription['plan_label']?.toString() ?? 'Unknown',
-              ),
-              _InfoRow(
-                'Source',
-                subscription['source']?.toString() ?? 'Unknown',
-              ),
-              _InfoRow('Ends', _formatDate(subscription['ends_at'])),
-              if (subscription['is_trial'] == true) _InfoRow('Type', 'Trial'),
-            ],
-            if (!isSubscribed) ...[
-              _InfoRow('SMS Capture Used', '${user['sms_capture_count'] ?? 0}'),
-            ],
-          ],
-        ),
-        const SizedBox(height: 16),
+/// Placeholder in the shape of the page while the user loads.
+class _UserDetailSkeleton extends StatelessWidget {
+  const _UserDetailSkeleton();
 
-        // Roles
-        _Section(
-          title: 'Roles',
-          children: [
-            if (roles.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('No roles assigned'),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: roles
-                    .map(
-                      (role) => Chip(
-                        label: Text(role),
-                        backgroundColor: scheme.primaryContainer,
-                        labelStyle: TextStyle(color: scheme.onPrimaryContainer),
-                      ),
-                    )
-                    .toList(),
-              ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _editRoles(context, ref, roles),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('Edit Roles'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Subscription Actions
-        _Section(
-          title: 'Subscription Actions',
-          children: [
-            OutlinedButton.icon(
-              onPressed: () => _giftSubscription(context, ref),
-              icon: const Icon(Icons.card_giftcard_outlined, size: 18),
-              label: const Text('Gift Subscription'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Screenshots in the app: super-admins only (the API checks too).
-        if (ref.watch(currentUserProvider)?.isSuperAdmin == true) ...[
-          _ScreenshotsSection(user: user),
-          const SizedBox(height: 16),
-        ],
-
-        // Danger zone
-        _Section(
-          title: 'Danger Zone',
-          children: [
-            OutlinedButton.icon(
-              onPressed: () => _deleteUser(context, ref),
-              icon: const Icon(Icons.delete_outline, size: 18),
-              label: const Text('Delete User'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-                foregroundColor: scheme.error,
-                side: BorderSide(color: scheme.error),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // SMS Capture Stats (for free tier)
-        if (!isSubscribed)
-          _Section(
-            title: 'SMS Capture',
+  @override
+  Widget build(BuildContext context) {
+    const gap = SizedBox(height: AppSpacing.md);
+    const row = SizedBox(width: AppSpacing.sm);
+    return Shimmer(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+        children: const [
+          SkeletonBox(height: 150, radius: AppRadius.xl),
+          gap,
+          Row(
             children: [
-              _InfoRow('Free captures used this month', '${user['sms_capture_count'] ?? 0}'),
+              Expanded(child: SkeletonBox(height: 64, radius: AppRadius.lg)),
+              row,
+              Expanded(child: SkeletonBox(height: 64, radius: AppRadius.lg)),
+              row,
+              Expanded(child: SkeletonBox(height: 64, radius: AppRadius.lg)),
+              row,
+              Expanded(child: SkeletonBox(height: 64, radius: AppRadius.lg)),
             ],
           ),
-      ],
-    );
-  }
-
-  String _initials(String name) {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return (parts.first[0] + parts.last[0]).toUpperCase();
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return 'Not set';
-    try {
-      final dateTime = DateTime.parse(date.toString());
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } catch (_) {
-      return 'Invalid date';
-    }
-  }
-
-  Future<void> _deleteUser(BuildContext context, WidgetRef ref) async {
-    final name = (user['full_name'] ?? user['email'] ?? '').toString();
-    final ok = await _showUserSheet<bool>(
-      context,
-      (sheetContext) => _ConfirmDeleteSheet(name: name),
-    );
-    if (ok != true || !context.mounted) return;
-
-    try {
-      await ref.read(adminRepositoryProvider).deleteUser(user['id'].toString());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('admin.deleted'.tr())),
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e is ApiException ? e.displayMessage : 'admin.deleteFailed'.tr(),
-            ),
+          gap,
+          Row(
+            children: [
+              Expanded(child: SkeletonBox(height: 96, radius: AppRadius.lg)),
+              row,
+              Expanded(child: SkeletonBox(height: 96, radius: AppRadius.lg)),
+            ],
           ),
-        );
-      }
-    }
-  }
-
-  Future<void> _editRoles(BuildContext context, WidgetRef ref, List<String> currentRoles) async {
-    final selected = await _showUserSheet<List<String>>(
-      context,
-      (sheetContext) => _RolesSheet(initialRoles: currentRoles),
-    );
-    if (selected == null || !context.mounted) return;
-
-    try {
-      await ref.read(adminRepositoryProvider).updateUserRoles(user['id'].toString(), selected);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('admin.rolesDone'.tr())),
-        );
-        ref.invalidate(_userDetailProvider(user['id'].toString()));
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e is ApiException ? e.displayMessage : 'admin.rolesFailed'.tr(),
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _giftSubscription(BuildContext context, WidgetRef ref) async {
-    final gift = await _showUserSheet<({String period, String? reason})>(
-      context,
-      (sheetContext) => const _GiftSheet(),
-    );
-    if (gift == null || !context.mounted) return;
-
-    try {
-      await ref.read(adminRepositoryProvider).grantCredit(
-        userId: user['id'].toString(),
-        period: gift.period,
-        reason: gift.reason,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('admin.giftDone'.tr())),
-        );
-        ref.invalidate(_userDetailProvider(user['id'].toString()));
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e is ApiException ? e.displayMessage : 'admin.giftFailed'.tr(),
-            ),
-          ),
-        );
-      }
-    }
-  }
-}
-
-/// Modal bottom sheet that stays inside the safe area, scrolls when the form is
-/// taller than the space left, and lifts above the keyboard.
-Future<T?> _showUserSheet<T>(BuildContext context, WidgetBuilder builder) {
-  return showModalBottomSheet<T>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (sheetContext) => SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          4,
-          20,
-          MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-        ),
-        child: builder(sheetContext),
-      ),
-    ),
-  );
-}
-
-class _SheetTitle extends StatelessWidget {
-  const _SheetTitle(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Text(text, style: Theme.of(context).textTheme.titleLarge),
-      );
-}
-
-class _GiftSheet extends StatefulWidget {
-  const _GiftSheet();
-
-  @override
-  State<_GiftSheet> createState() => _GiftSheetState();
-}
-
-class _GiftSheetState extends State<_GiftSheet> {
-  static const _periods = ['day', 'three_day', 'week', 'month'];
-
-  final _reason = TextEditingController();
-  String _period = 'month';
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _SheetTitle('admin.giftTitle'.tr()),
-        Text('admin.giftPeriod'.tr(), style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final p in _periods)
-              ChoiceChip(
-                label: Text('admin.period.$p'.tr()),
-                selected: _period == p,
-                onSelected: (_) => setState(() => _period = p),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _reason,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            labelText: 'admin.giftReason'.tr(),
-            hintText: 'admin.giftReasonHint'.tr(),
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: () {
-            final reason = _reason.text.trim();
-            Navigator.pop(context, (period: _period, reason: reason.isEmpty ? null : reason));
-          },
-          icon: const Icon(Icons.card_giftcard_outlined, size: 18),
-          label: Text('admin.giftAction'.tr()),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-        ),
-      ],
-    );
-  }
-}
-
-class _RolesSheet extends StatefulWidget {
-  const _RolesSheet({required this.initialRoles});
-  final List<String> initialRoles;
-
-  @override
-  State<_RolesSheet> createState() => _RolesSheetState();
-}
-
-class _RolesSheetState extends State<_RolesSheet> {
-  static const _allRoles = ['user', 'admin', 'super-admin'];
-
-  late final Set<String> _selected = {...widget.initialRoles};
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _SheetTitle('admin.rolesTitle'.tr()),
-        for (final role in _allRoles)
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(role),
-            value: _selected.contains(role),
-            onChanged: (checked) => setState(() {
-              if (checked == true) {
-                _selected.add(role);
-              } else {
-                _selected.remove(role);
-              }
-            }),
-          ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _selected.toList()),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-          child: Text('admin.rolesSave'.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-class _ConfirmDeleteSheet extends StatelessWidget {
-  const _ConfirmDeleteSheet({required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _SheetTitle('admin.deleteTitle'.tr()),
-        Text('admin.deleteBody'.tr(args: [name])),
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: FilledButton.styleFrom(
-            backgroundColor: scheme.error,
-            foregroundColor: scheme.onError,
-            minimumSize: const Size.fromHeight(48),
-          ),
-          child: Text('admin.deleteAction'.tr()),
-        ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text('form.cancel'.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-/// App security: allow or block screenshots and screen recording for this
-/// user, after a confirmation. Saved on the server and audited; the user's
-/// app applies it when it next loads their profile.
-class _ScreenshotsSection extends ConsumerStatefulWidget {
-  const _ScreenshotsSection({required this.user});
-
-  final Map<String, dynamic> user;
-
-  @override
-  ConsumerState<_ScreenshotsSection> createState() => _ScreenshotsSectionState();
-}
-
-class _ScreenshotsSectionState extends ConsumerState<_ScreenshotsSection> {
-  bool _saving = false;
-
-  String get _id => widget.user['id'].toString();
-
-  String get _name {
-    final full = widget.user['full_name']?.toString().trim() ?? '';
-    if (full.isNotEmpty) return full.split(RegExp(r'\s+')).first;
-    return widget.user['username']?.toString() ?? '';
-  }
-
-  Future<void> _change(bool allow) async {
-    final confirmed = await _showUserSheet<bool>(
-      context,
-      (sheetContext) => _ScreenshotsSheet(name: _name, allow: allow),
-    );
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _saving = true);
-    try {
-      await ref.read(adminRepositoryProvider).setScreenshotsAllowed(_id, allowed: allow);
-      // Changing your own: apply it on this phone now.
-      if (ref.read(currentUserProvider)?.id == _id) {
-        await ref.read(authControllerProvider.notifier).refresh();
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text((allow ? 'admin.screenshotsAllowed' : 'admin.screenshotsBlocked').tr(args: [_name])),
-      ));
-      ref.invalidate(_userDetailProvider(_id));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e is ApiException ? e.displayMessage : 'admin.screenshotsFailed'.tr()),
-      ));
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final allowed = widget.user['screenshots_allowed'] == true;
-    return _Section(
-      title: 'admin.screenshotsSection'.tr(),
-      children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          secondary: const Icon(Icons.screenshot_monitor_outlined),
-          title: Text('admin.screenshotsTitle'.tr()),
-          subtitle: Text((allowed ? 'admin.screenshotsOn' : 'admin.screenshotsOff').tr(args: [_name])),
-          value: allowed,
-          onChanged: _saving ? null : _change,
-        ),
-      ],
-    );
-  }
-}
-
-class _ScreenshotsSheet extends StatelessWidget {
-  const _ScreenshotsSheet({required this.name, required this.allow});
-
-  final String name;
-  final bool allow;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _SheetTitle((allow ? 'admin.screenshotsAllowTitle' : 'admin.screenshotsBlockTitle').tr(args: [name])),
-        Text(
-          (allow ? 'admin.screenshotsAllowBody' : 'admin.screenshotsBlockBody').tr(args: [name]),
-          style: textTheme.bodyMedium?.copyWith(color: muted),
-        ),
-        const SizedBox(height: 12),
-        Text('admin.screenshotsNote'.tr(), style: textTheme.bodySmall?.copyWith(color: muted)),
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-          child: Text((allow ? 'admin.screenshotsAllow' : 'admin.screenshotsBlock').tr()),
-        ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text('form.cancel'.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow(this.label, this.value, {this.status = 'normal'});
-
-  final String label;
-  final String value;
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    Color valueColor = scheme.onSurface;
-
-    if (status == 'active') {
-      valueColor = scheme.primary;
-    } else if (status == 'inactive') {
-      valueColor = scheme.onSurfaceVariant;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          gap,
+          SkeletonBox(height: AppSpacing.minTouch, radius: AppRadius.pill),
+          gap,
+          SkeletonBox(height: 280, radius: AppRadius.lg),
         ],
       ),
     );
   }
 }
-
-// Provider for user detail data
-final _userDetailProvider = FutureProvider.family<Map<String, dynamic>, String>(
-  (ref, userId) async {
-    return ref.read(adminRepositoryProvider).getUserDetail(userId);
-  },
-);

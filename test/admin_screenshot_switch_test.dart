@@ -55,10 +55,18 @@ Future<_FakeAdmin> _pump(WidgetTester tester, List<String> myRoles) async {
   return fake;
 }
 
+/// The switch lives on the Access tab.
+Future<void> _openAccess(WidgetTester tester) async {
+  await tester.scrollUntilVisible(find.byKey(const ValueKey('user-tab-access')), 200);
+  await tester.tap(find.byKey(const ValueKey('user-tab-access')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('a super-admin sees the switch, confirms, and the API is told', (tester) async {
     final fake = await _pump(tester, ['super-admin']);
 
+    await _openAccess(tester);
     await tester.scrollUntilVisible(find.byType(SwitchListTile), 200);
     expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
 
@@ -76,6 +84,7 @@ void main() {
   testWidgets('cancelling the confirmation changes nothing', (tester) async {
     final fake = await _pump(tester, ['super-admin']);
 
+    await _openAccess(tester);
     await tester.scrollUntilVisible(find.byType(SwitchListTile), 200);
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
@@ -88,6 +97,7 @@ void main() {
 
   testWidgets('an ordinary admin does not see the switch', (tester) async {
     await _pump(tester, ['admin']);
+    await _openAccess(tester);
 
     expect(find.byType(SwitchListTile, skipOffstage: false), findsNothing);
   });

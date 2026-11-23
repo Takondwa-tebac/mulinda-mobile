@@ -808,7 +808,106 @@
     "screenshotsBlock": "Letsani kujambula",
     "screenshotsAllowed": "{} waloledwa kujambula sikirini",
     "screenshotsBlocked": "{} waletsedwa kujambula sikirini",
-    "screenshotsFailed": "Sitinathe kusintha. Yesaninso."
+    "screenshotsFailed": "Sitinathe kusintha. Yesaninso.",
+    "user": {
+      "title": "Zambiri za wogwiritsa ntchito",
+      "refresh": "Tsitsimutsani",
+      "loadError": "Sitinathe kutsegula zambiri za munthuyu. Onani intaneti yanu ndipo yesaninso.",
+      "tab": {
+        "overview": "Chidule",
+        "plan": "Umembala",
+        "access": "Maudindo",
+        "activity": "Zochitika"
+      },
+      "qa": {
+        "gift": "Patsani",
+        "roles": "Maudindo",
+        "notify": "Tumizani uthenga",
+        "activity": "Zochitika"
+      },
+      "joinedOn": "Analembetsa pa {}",
+      "joined": "Analembetsa",
+      "lastActive": "Komaliza kugwiritsa ntchito",
+      "planEnds": "Umembala utha",
+      "trialEnds": "Kuyesa kutha",
+      "freeCaptures": "Mauthenga aulere",
+      "thisMonth": "Mwezi uno",
+      "never": "Sanagwiritsebe ntchito",
+      "notSet": "Sizinalembedwe",
+      "justNow": "Pompano",
+      "minutesAgo": "Mphindi {} zapitazo",
+      "hoursAgo": "Maola {} apitawo",
+      "daysAgo": {
+        "one": "Tsiku 1 lapitalo",
+        "other": "Masiku {} apitawo"
+      },
+      "monthsAgo": {
+        "one": "Mwezi 1 wapitawo",
+        "other": "Miyezi {} yapitayo"
+      },
+      "endsToday": "Utha lero",
+      "daysLeft": {
+        "one": "Latsala tsiku 1",
+        "other": "Atsala masiku {}"
+      },
+      "freePlan": "Umembala waulere",
+      "trialPlan": "Kuyesa · {}",
+      "screenshotsChip": "Kujambula sikirini kwaloledwa",
+      "role": {
+        "user": "Wogwiritsa ntchito",
+        "admin": "Woyang'anira",
+        "superAdmin": "Woyang'anira wamkulu"
+      },
+      "roleHelp": {
+        "user": "Amagwiritsa ntchito pulogalamu. Aliyense ali nawo.",
+        "admin": "Amaona gawo la oyang'anira, ogwiritsa ntchito ndi mbiri ya zochitika.",
+        "superAdmin": "Zonse, kuphatikizapo chitetezo cha pulogalamu."
+      },
+      "superWarn": "Oyang'anira akuluakulu akhoza kusintha chilichonse, kuphatikizapo kujambula sikirini, ndipo sangachotsedwe pano.",
+      "account": "Akaunti",
+      "phone": "Foni",
+      "email": "Imelo",
+      "username": "Dzina lolowera",
+      "income": "Gulu la ndalama zomwe amapeza",
+      "copyPhone": "Koperani nambala ya foni",
+      "copyEmail": "Koperani imelo",
+      "copied": "Zakopedwa",
+      "endsOn": "Utha pa {}",
+      "freeCapturesLine": "Mauthenga aulere {} agwiritsidwa ntchito mwezi uno",
+      "details": "Onani",
+      "shotsAllowedLine": "Kujambula sikirini kwaloledwa",
+      "shotsBlockedLine": "Kujambula sikirini kwaletsedwa",
+      "securityHint": "Chitetezo cha pulogalamu, oyang'anira akuluakulu okha",
+      "manage": "Sinthani",
+      "subscription": "Umembala",
+      "status": {
+        "label": "Mkhalidwe",
+        "active": "Ukugwira ntchito",
+        "trial": "Kuyesa",
+        "free": "Ulere"
+      },
+      "plan": "Mtundu",
+      "source": {
+        "label": "Momwe anaupezera",
+        "payment": "Analipira",
+        "credit": "Mphatso yochokera kwa woyang'anira",
+        "trial": "Kuyesa kwaulere"
+      },
+      "ends": "Utha pa",
+      "freeCapturesMonth": "Mauthenga aulere mwezi uno",
+      "roles": "Maudindo",
+      "noRoles": "Palibe udindo",
+      "dangerZone": "Malo owopsa",
+      "deleteHint": "Ichotsa akaunti ndi zonse zake kwamuyaya.",
+      "deleteSuper": "Akaunti ya woyang'anira wamkulu siingachotsedwe pano. Chotsani kaye udindo wa woyang'anira wamkulu.",
+      "deleteSelf": "Simungachotse akaunti yanu pano.",
+      "doneBy": "Zochitidwa ndi {}",
+      "doneByHint": "Zomwe munthuyu wachita posachedwa, kuchokera mu mbiri ya zochitika.",
+      "activityEmpty": "Palibe pakadali pano",
+      "activityEmptyBody": "{} sanachite chilichonse cholembedwa mu mbiri ya zochitika.",
+      "activityError": "Sitinathe kutsegula zochitika.",
+      "openAudit": "Tsegulani mbiri ya zochitika"
+    }
   },
   "budgetSpend": {
     "recordSpend": "Lembani zomwe mwawononga",
