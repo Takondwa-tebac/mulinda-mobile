@@ -24,6 +24,7 @@ class User {
     this.roles = const [],
     this.subscription = const SubscriptionInfo.none(),
     this.smsCaptureCount = 0,
+    this.screenshotsAllowed = false,
     this.createdAt,
   });
 
@@ -51,6 +52,10 @@ class User {
   final String? termsCurrentVersion; // latest published version
   final List<String> roles;
   final int smsCaptureCount;
+
+  /// Whether the app lets this person take screenshots and record the
+  /// screen. Blocked by default; a super-admin allows it per account.
+  final bool screenshotsAllowed;
 
   /// When the account was created (`created_at`); null from servers or cached
   /// users that do not carry it.
@@ -98,6 +103,7 @@ class User {
             )
           : const SubscriptionInfo.none(),
       smsCaptureCount: (json['sms_capture_count'] as num?)?.toInt() ?? 0,
+      screenshotsAllowed: json['screenshots_allowed'] == true,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
   }

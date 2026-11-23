@@ -122,7 +122,16 @@ class ProfileScreen extends ConsumerWidget {
                   title: Text('profile2.blockScreenshots'.tr()),
                   subtitle: Text('profile2.blockScreenshotsSub'.tr()),
                   value: ref.watch(screenshotProtectionProvider),
-                  onChanged: (v) => ref.read(screenshotProtectionProvider.notifier).setProtected(v),
+                  onChanged: (v) async {
+                    try {
+                      await ref.read(screenshotProtectionProvider.notifier).setProtected(v);
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(e is ApiException ? e.displayMessage : 'admin.screenshotsFailed'.tr()),
+                      ));
+                    }
+                  },
                 ),
             ],
           ),

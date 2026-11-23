@@ -26,6 +26,11 @@ class AdminRepository {
     await _dio.put('/v1/admin/users/$userId', data: {'roles': roles});
   }
 
+  /// Allow or block screenshots in the app for a user. Super-admins only.
+  Future<void> setScreenshotsAllowed(String userId, {required bool allowed}) async {
+    await _dio.put('/v1/admin/users/$userId/screenshots', data: {'allowed': allowed});
+  }
+
   Future<void> deleteUser(String userId) async {
     await _dio.delete('/v1/admin/users/$userId');
   }
