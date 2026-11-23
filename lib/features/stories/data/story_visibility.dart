@@ -97,6 +97,13 @@ final yearReminderTappedProvider = FutureProvider.autoDispose.family<bool, int>(
   (ref, year) => YearReminderStore.isTapped(ref.watch(currentUserProvider.select((u) => u?.id)), year),
 );
 
+/// The "It's here" card for [year] was closed on this phone (or the story
+/// was put away), so Home stops offering it. "My stories" still has it.
+final yearReadyClosedProvider = FutureProvider.autoDispose.family<bool, int>(
+  (ref, year) =>
+      StoryOpenedStore.isOpened(ref.watch(currentUserProvider.select((u) => u?.id)), StoryKind.year, '$year'),
+);
+
 /// The month story Home offers, or null (outside the first days of the
 /// month, already opened, not available, or not loaded).
 final homeMonthStoryProvider = FutureProvider.autoDispose<MoneyStory?>((ref) async {

@@ -41,11 +41,15 @@ class StoryHomeCards extends ConsumerWidget {
     // flashes up and disappears.
     final tapped = status == null ? false : (ref.watch(yearReminderTappedProvider(status.year)).valueOrNull ?? true);
     final year = yearCardFor(now: now, status: status, reminderTapped: tapped);
+    // Closed with its X on this phone; "Your stories" still has it.
+    final readyClosed = status != null &&
+        year == YearCard.ready &&
+        (ref.watch(yearReadyClosedProvider(status.year)).valueOrNull ?? true);
 
     final cards = <Widget>[
       if (month != null) MonthReadyCard(story: month),
       if (year == YearCard.countdown) YearCountdownCard(status: status!),
-      if (year == YearCard.ready) YearReadyCard(status: status!),
+      if (year == YearCard.ready && !readyClosed) YearReadyCard(status: status!),
     ];
     if (cards.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -59,11 +63,20 @@ class StoryHomeCards extends ConsumerWidget {
 
 /// A brand card with a tap target over all of it.
 class _StoryCard extends StatelessWidget {
-  const _StoryCard({required this.color, required this.child, this.onTap, super.key});
+  const _StoryCard({
+    required this.color,
+    required this.child,
+    this.onTap,
+    this.onClose,
+    this.closeColor = AppColors.tealPale,
+    super.key,
+  });
 
   final Color color;
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onClose;
+  final Color closeColor;
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +84,46 @@ class _StoryCard extends StatelessWidget {
       color: color,
       borderRadius: BorderRadius.circular(AppRadius.xl + 4),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(padding: const EdgeInsets.all(AppSpacing.xl - 4), child: child),
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              // Room on the right for the close button.
+              padding: const EdgeInsets.fromLTRB(AppSpacing.xl - 4, AppSpacing.xl - 4, AppSpacing.xl + 20, AppSpacing.xl - 4),
+              child: child,
+            ),
+          ),
+          if (onClose != null)
+            Positioned(top: 4, right: 4, child: _CloseButton(onPressed: onClose!, color: closeColor)),
+        ],
       ),
     );
   }
+}
+
+/// The X that puts a story card away from Home.
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onPressed, required this.color});
+
+  final VoidCallback onPressed;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      key: const ValueKey('story-card-close'),
+      onPressed: onPressed,
+      tooltip: 'stories.home.close'.tr(),
+      icon: Icon(Icons.close_rounded, color: color, size: 22),
+    );
+  }
+}
+
+void _showClosedSnack(BuildContext context) {
+  ScaffoldMessenger.maybeOf(context)
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text('stories.home.closed'.tr())));
 }
 
 /// A pill that looks like a button inside a tappable card.
@@ -99,16 +146,22 @@ class _Pill extends StatelessWidget {
   }
 }
 
-class MonthReadyCard extends StatefulWidget {
+class MonthReadyCard extends ConsumerStatefulWidget {
   const MonthReadyCard({super.key, required this.story});
 
   final MoneyStory story;
 
   @override
-  State<MonthReadyCard> createState() => _MonthReadyCardState();
+  ConsumerState<MonthReadyCard> createState() => _MonthReadyCardState();
 }
 
-class _MonthReadyCardState extends State<MonthReadyCard> {
+class _MonthReadyCardState extends ConsumerState<MonthReadyCard> {
+  Future<void> _close() async {
+    _showClosedSnack(context);
+    await StoryOpenedStore.markOpened(ref.read(currentUserProvider)?.id, StoryKind.month, widget.story.period.key);
+    if (mounted) ref.invalidate(homeMonthStoryProvider);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +175,7 @@ class _MonthReadyCardState extends State<MonthReadyCard> {
       key: const ValueKey('story-month-ready'),
       color: AppColors.onTeal,
       onTap: () => context.push(Routes.storyFor(StoryKind.month, widget.story.period.key)),
+      onClose: _close,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,6 +268,13 @@ class _YearCountdownCardState extends ConsumerState<YearCountdownCard> {
     }
   }
 
+  /// Closed with its X: away until "It's here", like a set reminder.
+  Future<void> _close() async {
+    _showClosedSnack(context);
+    await YearReminderStore.markTapped(ref.read(currentUserProvider)?.id, widget.status.year);
+    if (mounted) ref.invalidate(yearReminderTappedProvider(widget.status.year));
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.status;
@@ -238,7 +299,7 @@ class _YearCountdownCardState extends ConsumerState<YearCountdownCard> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg + 4, AppSpacing.xl - 2, AppSpacing.lg + 4, AppSpacing.xl - 2),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg + 4, AppSpacing.xl - 2, AppSpacing.xl + 20, AppSpacing.xl - 2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -323,22 +384,30 @@ class _YearCountdownCardState extends ConsumerState<YearCountdownCard> {
               ],
             ),
           ),
+          Positioned(top: 4, right: 4, child: _CloseButton(onPressed: _close, color: AppColors.tealPale)),
         ],
       ),
     );
   }
 }
 
-class YearReadyCard extends StatefulWidget {
+class YearReadyCard extends ConsumerStatefulWidget {
   const YearReadyCard({super.key, required this.status});
 
   final YearStoryStatus status;
 
   @override
-  State<YearReadyCard> createState() => _YearReadyCardState();
+  ConsumerState<YearReadyCard> createState() => _YearReadyCardState();
 }
 
-class _YearReadyCardState extends State<YearReadyCard> {
+class _YearReadyCardState extends ConsumerState<YearReadyCard> {
+  Future<void> _close() async {
+    _showClosedSnack(context);
+    final year = widget.status.year;
+    await StoryOpenedStore.markOpened(ref.read(currentUserProvider)?.id, StoryKind.year, '$year');
+    if (mounted) ref.invalidate(yearReadyClosedProvider(year));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -352,6 +421,8 @@ class _YearReadyCardState extends State<YearReadyCard> {
       key: const ValueKey('story-year-ready'),
       color: AppColors.orange,
       onTap: () => context.push(Routes.storyFor(StoryKind.year, year)),
+      onClose: _close,
+      closeColor: AppColors.onOrange,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
