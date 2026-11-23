@@ -15,7 +15,9 @@ import 'package:mulinda_mobile/features/stories/widgets/story_player.dart';
 import 'package:mulinda_mobile/features/stories/widgets/story_share.dart';
 import 'package:mulinda_mobile/features/stories/widgets/story_slides.dart';
 import 'package:mulinda_mobile/shared/clock.dart';
+import 'package:mulinda_mobile/features/stories/widgets/home_stories_row.dart';
 import 'package:mulinda_mobile/features/stories/widgets/story_home_cards.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'stories_fixtures.dart';
@@ -422,6 +424,96 @@ void main() {
       SharedPreferences.setMockInitialValues({YearReminderStore.key(null, 2026): true});
       await pumpCards(tester, DateTime(2026, 11, 25, 10), status: {...statusJson, 'ready': true, 'days_left': 0});
       expect(find.byKey(const ValueKey('story-year-ready')), findsOneWidget);
+    });
+  });
+
+  group('Your stories row on Home', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    Future<List<String>> pumpRow(WidgetTester tester, DateTime now, {Map<String, dynamic>? status, bool dark = false}) async {
+      final opened = <String>[];
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(
+              body: SingleChildScrollView(child: Column(children: [StoryHomeCards(), HomeStoriesRow()])),
+            ),
+          ),
+          GoRoute(
+            path: '/stories/:story/:key',
+            builder: (_, state) {
+              opened.add(state.uri.path);
+              return const Scaffold(body: Text('story'));
+            },
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            clockProvider.overrideWithValue(() => now),
+            currentUserProvider.overrideWith((ref) => null),
+            storiesRepositoryProvider.overrideWithValue(_FakeStories(status: status)),
+          ],
+          child: MaterialApp.router(theme: dark ? AppTheme.dark : AppTheme.light, routerConfig: router),
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+      return opened;
+    }
+
+    for (final dark in [false, true]) {
+      testWidgets('after the 7th last month stays one tap away and opens its story (${dark ? 'dark' : 'light'})', (tester) async {
+        final opened = await pumpRow(tester, DateTime(2026, 11, 20), dark: dark);
+        expect(find.byKey(const ValueKey('story-month-ready')), findsNothing);
+        expect(find.byKey(const ValueKey('home-story-month')), findsOneWidget);
+        expect(find.text('stories.home.rowLabel'), findsOneWidget);
+        expect(tester.getSize(find.byKey(const ValueKey('home-story-month'))).height, greaterThanOrEqualTo(44));
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(const ValueKey('home-story-month')));
+        await tester.pumpAndSettle();
+        expect(opened, ['/stories/month/2026-10']);
+      });
+    }
+
+    testWidgets('no second entry while the big month card is up', (tester) async {
+      await pumpRow(tester, DateTime(2026, 11, 2));
+      expect(find.byKey(const ValueKey('story-month-ready')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home-stories')), findsNothing);
+    });
+
+    testWidgets('a watched year story is listed with the month', (tester) async {
+      final opened = await pumpRow(
+        tester,
+        DateTime(2026, 11, 26),
+        status: {...statusJson, 'ready': true, 'viewed': true, 'days_left': 0},
+      );
+      expect(find.byKey(const ValueKey('story-year-ready')), findsNothing);
+      expect(find.byKey(const ValueKey('home-story-year')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home-story-month')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('home-story-year')));
+      await tester.pumpAndSettle();
+      expect(opened, ['/stories/year/2026']);
+    });
+
+    test('entries leave out what a big card already offers', () {
+      final stories = MyStories(
+        month: MoneyStory.fromJson(monthJson()),
+        year: YearStoryStatus.fromJson({...statusJson, 'ready': true}),
+      );
+      expect(homeStoryEntries(stories: null, monthCardShown: false, yearCardShown: false), isEmpty);
+      expect(
+        homeStoryEntries(stories: stories, monthCardShown: false, yearCardShown: false).map((e) => e.kind),
+        [StoryKind.year, StoryKind.month],
+      );
+      expect(
+        homeStoryEntries(stories: stories, monthCardShown: true, yearCardShown: true),
+        isEmpty,
+      );
     });
   });
 }

@@ -1645,7 +1645,8 @@
       "remindSet": "Reminder set. We will let you know on {date}.",
       "remindSetNoDate": "Reminder set. We will let you know when it is out.",
       "remindOff": "Reminders off. Your story still arrives on {date}.",
-      "remindOffNoDate": "Reminders off. Your story still arrives when it is out."
+      "remindOffNoDate": "Reminders off. Your story still arrives when it is out.",
+      "rowLabel": "Your stories"
     },
     "mine": {
       "title": "My stories",

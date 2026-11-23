@@ -28,6 +28,7 @@ import '../../plan/data/plan_tools_gate.dart';
 import '../../plan/widgets/plan_tools_cards.dart';
 import '../../stories/data/stories_repository.dart';
 import '../../stories/data/story_visibility.dart';
+import '../../stories/widgets/home_stories_row.dart';
 import '../../stories/widgets/story_home_cards.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
@@ -80,6 +81,7 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(dashboardProvider);
           ref.invalidate(homeMonthStoryProvider);
           ref.invalidate(yearStoryStatusProvider);
+          ref.invalidate(myStoriesProvider);
           invalidateAnalytics(ref.invalidate);
           await ref.read(dashboardProvider.future);
         },
@@ -134,6 +136,8 @@ class _Dashboard extends ConsumerWidget {
 
         // Last month's story (first days of the month) and the year countdown.
         const StoryHomeCards(),
+        // "Your stories": any month or year story not offered by a card above.
+        const HomeStoriesRow(margin: EdgeInsets.only(bottom: AppSpacing.lg)),
 
         // Renders nothing unless a free trial is running.
         const TrialBanner(margin: EdgeInsets.only(bottom: AppSpacing.lg)),

@@ -1645,7 +1645,8 @@
       "remindSet": "Chikumbutso chakonzedwa. Tidzakudziwitsani pa {date}.",
       "remindSetNoDate": "Chikumbutso chakonzedwa. Tidzakudziwitsani ikatuluka.",
       "remindOff": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe pa {date}.",
-      "remindOffNoDate": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe ikatuluka."
+      "remindOffNoDate": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe ikatuluka.",
+      "rowLabel": "Nkhani zanu"
     },
     "mine": {
       "title": "Nkhani zanga",
