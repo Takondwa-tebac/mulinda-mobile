@@ -808,7 +808,106 @@
     "screenshotsBlock": "Block screenshots",
     "screenshotsAllowed": "Screenshots allowed for {}",
     "screenshotsBlocked": "Screenshots blocked for {}",
-    "screenshotsFailed": "Could not change screenshots. Try again."
+    "screenshotsFailed": "Could not change screenshots. Try again.",
+    "user": {
+      "title": "User details",
+      "refresh": "Refresh",
+      "loadError": "Could not load this user. Check your connection and try again.",
+      "tab": {
+        "overview": "Overview",
+        "plan": "Plan",
+        "access": "Access",
+        "activity": "Activity"
+      },
+      "qa": {
+        "gift": "Gift plan",
+        "roles": "Roles",
+        "notify": "Notify",
+        "activity": "Activity"
+      },
+      "joinedOn": "Joined {}",
+      "joined": "Joined",
+      "lastActive": "Last active",
+      "planEnds": "Plan ends",
+      "trialEnds": "Trial ends",
+      "freeCaptures": "Free captures",
+      "thisMonth": "This month",
+      "never": "Not yet",
+      "notSet": "Not set",
+      "justNow": "Just now",
+      "minutesAgo": "{} min ago",
+      "hoursAgo": "{} h ago",
+      "daysAgo": {
+        "one": "1 day ago",
+        "other": "{} days ago"
+      },
+      "monthsAgo": {
+        "one": "1 month ago",
+        "other": "{} months ago"
+      },
+      "endsToday": "Ends today",
+      "daysLeft": {
+        "one": "1 day left",
+        "other": "{} days left"
+      },
+      "freePlan": "Free plan",
+      "trialPlan": "Trial · {}",
+      "screenshotsChip": "Screenshots allowed",
+      "role": {
+        "user": "User",
+        "admin": "Admin",
+        "superAdmin": "Super-admin"
+      },
+      "roleHelp": {
+        "user": "Uses the app. Everyone has this.",
+        "admin": "Sees the admin area, users and audits.",
+        "superAdmin": "Everything, including app security."
+      },
+      "superWarn": "Super-admins can change any setting, including screenshots, and cannot be deleted from this screen.",
+      "account": "Account",
+      "phone": "Phone",
+      "email": "Email",
+      "username": "Username",
+      "income": "Income bracket",
+      "copyPhone": "Copy phone number",
+      "copyEmail": "Copy email",
+      "copied": "Copied",
+      "endsOn": "Ends {}",
+      "freeCapturesLine": "{} free captures used this month",
+      "details": "Details",
+      "shotsAllowedLine": "Screenshots allowed",
+      "shotsBlockedLine": "Screenshots blocked",
+      "securityHint": "App security, super-admins only",
+      "manage": "Manage",
+      "subscription": "Subscription",
+      "status": {
+        "label": "Status",
+        "active": "Active",
+        "trial": "Trial",
+        "free": "Free"
+      },
+      "plan": "Plan",
+      "source": {
+        "label": "How they got it",
+        "payment": "Paid",
+        "credit": "Gift from an admin",
+        "trial": "Free trial"
+      },
+      "ends": "Ends",
+      "freeCapturesMonth": "Free captures this month",
+      "roles": "Roles",
+      "noRoles": "No roles assigned",
+      "dangerZone": "Danger zone",
+      "deleteHint": "Removes the account and all of its data for good.",
+      "deleteSuper": "A super-admin account cannot be deleted here. Remove the super-admin role first.",
+      "deleteSelf": "You cannot delete your own account here.",
+      "doneBy": "Done by {}",
+      "doneByHint": "The latest changes this person made, from the audit trail.",
+      "activityEmpty": "Nothing yet",
+      "activityEmptyBody": "{} has not done anything that is audited yet.",
+      "activityError": "Could not load the activity.",
+      "openAudit": "Open in audit trail"
+    }
   },
   "budgetSpend": {
     "recordSpend": "Record spend",

@@ -9,7 +9,11 @@ import '../../../core/network/api_exception.dart';
 import '../data/admin_repository.dart';
 
 class PushNotificationScreen extends ConsumerStatefulWidget {
-  const PushNotificationScreen({super.key});
+  const PushNotificationScreen({super.key, this.initialRecipients});
+
+  /// Users to send to (id to name), e.g. from User details. When set, the
+  /// screen starts on specific users instead of everyone.
+  final Map<String, String>? initialRecipients;
 
   @override
   ConsumerState<PushNotificationScreen> createState() =>
@@ -27,6 +31,16 @@ class _PushNotificationScreenState
 
   /// Chosen recipients when targeting specific users: id → display label.
   final Map<String, String> _recipients = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialRecipients;
+    if (initial != null && initial.isNotEmpty) {
+      _recipients.addAll(initial);
+      _broadcastAll = false;
+    }
+  }
 
   @override
   void dispose() {

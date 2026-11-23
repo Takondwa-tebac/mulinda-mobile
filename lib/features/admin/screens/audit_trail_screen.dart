@@ -39,10 +39,13 @@ String auditTime(DateTime? at) => at == null ? '' : '${timeOfDay(at)} · ${dayHe
 /// The audit trail: search, filters, newest first with infinite scroll, a tap
 /// opens the detail, and an export (CSV or PDF) prepared on the server.
 class AuditTrailScreen extends ConsumerStatefulWidget {
-  const AuditTrailScreen({super.key, this.exportId});
+  const AuditTrailScreen({super.key, this.exportId, this.initialQuery});
 
   /// Opened from the "export ready" notification: show that export.
   final String? exportId;
+
+  /// Filters to start with (e.g. one person's activity from User details).
+  final AuditQuery? initialQuery;
 
   @override
   ConsumerState<AuditTrailScreen> createState() => _AuditTrailScreenState();
@@ -65,6 +68,7 @@ class _AuditTrailScreenState extends ConsumerState<AuditTrailScreen> {
   @override
   void initState() {
     super.initState();
+    _query = widget.initialQuery ?? AuditQuery.none;
     _scroll.addListener(() {
       if (_scroll.hasClients && _scroll.position.extentAfter < 400) _loadMore();
     });
