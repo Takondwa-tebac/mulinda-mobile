@@ -624,7 +624,8 @@
     "trialBanner": {
       "title": "Free trial: about {hours} h left",
       "body": "Premium features are on. Your records stay free after it ends.",
-      "titleDays": "Free trial: {days} days left"
+      "titleDays": "Free trial: {days} days left",
+      "close": "Hide the trial reminder"
     },
     "sms": {
       "remaining": "{remaining} of {limit} free SMS captures left this month",
@@ -1428,7 +1429,8 @@
     "topUp": {
       "title": "Make it a week for {amount} more",
       "body": "What you paid for today's Day pass counts toward the week.",
-      "cta": "Make it a week, {amount}"
+      "cta": "Make it a week, {amount}",
+      "close": "Hide this offer"
     },
     "done": {
       "title": "Premium is on until {date}",
@@ -1639,7 +1641,12 @@
       "remindFailed": "Could not change reminders. Please try again.",
       "itsHere": "IT'S HERE",
       "readyBody": "Your year, story by story. Takes a minute.",
-      "watch": "Watch my year"
+      "watch": "Watch my year",
+      "remindSet": "Reminder set. We will let you know on {date}.",
+      "remindSetNoDate": "Reminder set. We will let you know when it is out.",
+      "remindOff": "Reminders off. Your story still arrives on {date}.",
+      "remindOffNoDate": "Reminders off. Your story still arrives when it is out.",
+      "rowLabel": "Your stories"
     },
     "mine": {
       "title": "My stories",
@@ -1705,7 +1712,8 @@
       "week": "the previous week",
       "monthSameDays": "the same days of last month",
       "month": "the previous month",
-      "day": "the day before"
+      "day": "the day before",
+      "before": "the previous period"
     },
     "cmp": {
       "less": "{difference} less than {prev} ({previous}).",
@@ -1722,7 +1730,9 @@
       "heroLessPct": "You spent {pct}% less than {prev}.",
       "heroMorePct": "You spent {pct}% more than {prev}.",
       "notEnoughHistory": "Not enough history to compare with {prev} yet.",
-      "dayInProgress": "Today is not over yet, so we do not compare it with other days."
+      "dayInProgress": "Today is not over yet, so we do not compare it with other days.",
+      "fromNothing": "Nothing recorded in {prev} to compare with.",
+      "bothNothing": "Nothing recorded, and nothing in {prev} either."
     },
     "youSpent": "You spent",
     "youReceived": "You received",
@@ -1924,7 +1934,8 @@
       "aboveTypicalToday": {
         "title": "So far today you have spent more than on a typical day.",
         "body": "A typical day for you is {median}."
-      }
+      },
+      "bodyFromNothing": "{amount}, with nothing recorded in {prev}."
     }
   },
   "homeWidget": {

@@ -11,6 +11,7 @@ import 'package:mulinda_mobile/features/referral/data/referral_capture.dart';
 import 'package:mulinda_mobile/features/referral/data/referral_repository.dart';
 import 'package:mulinda_mobile/features/referral/screens/referral_screen.dart';
 import 'package:mulinda_mobile/features/subscription/checkout_flow.dart';
+import 'package:mulinda_mobile/features/subscription/data/home_alert_dismissals.dart';
 import 'package:mulinda_mobile/features/subscription/data/subscription_models.dart';
 import 'package:mulinda_mobile/features/subscription/upgrade_flow.dart';
 import 'package:mulinda_mobile/features/subscription/widgets/top_up_card.dart';
@@ -113,6 +114,33 @@ void main() {
       expect(find.byKey(const ValueKey('top-up-card')), findsOneWidget);
 
       await tester.pumpWidget(host(const SubscriptionInfo(active: true)));
+      expect(find.byKey(const ValueKey('top-up-card')), findsNothing);
+    });
+
+    testWidgets('the close button puts the offer away for this pass', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final ends = DateTime.now().add(const Duration(hours: 10));
+      final sub = SubscriptionInfo(active: true, endsAt: ends, topUp: offer);
+      Widget host() => ProviderScope(
+        overrides: [currentUserProvider.overrideWithValue(_user(sub))],
+        child: const MaterialApp(home: Scaffold(body: TopUpCard())),
+      );
+      await tester.pumpWidget(host());
+      await tester.pump();
+      final close = find.byKey(const ValueKey('top-up-close'));
+      expect(close, findsOneWidget);
+      expect(tester.getSize(close).height, greaterThanOrEqualTo(44));
+
+      await tester.tap(close);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('top-up-card')), findsNothing);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(topUpCardDismissedKey('u1', ends)), AlertDismissal.done.index);
+
+      // A fresh start remembers it.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(host());
+      await tester.pump();
       expect(find.byKey(const ValueKey('top-up-card')), findsNothing);
     });
   });

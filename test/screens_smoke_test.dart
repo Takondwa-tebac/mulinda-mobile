@@ -140,6 +140,7 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
         currentUserProvider.overrideWith((ref) => _user),
         homeMonthStoryProvider.overrideWith((ref) async => null),
         yearStoryStatusProvider.overrideWith((ref) async => null),
+        myStoriesProvider.overrideWith((ref) async => const MyStories()),
         ...analyticsOverrides(),
       ],
       child: MaterialApp(theme: AppTheme.light, home: screen),

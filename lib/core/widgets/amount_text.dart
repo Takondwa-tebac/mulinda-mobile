@@ -49,11 +49,20 @@ class AmountText extends StatelessWidget {
     return '${direction == MoneyDirection.income ? '+' : '-'}$raw';
   }
 
+  /// [label] with every space made non-breaking, so the line can never break
+  /// between the currency and the number (`MK` alone on the line).
+  static String unbreakable(String text) => text.replaceAll(' ', nbsp);
+
+  /// U+00A0, the no-break space.
+  static final nbsp = String.fromCharCode(0x00A0);
+
   @override
   Widget build(BuildContext context) {
     return Text(
-      label(money, direction, signed: signed, whole: whole),
+      unbreakable(label(money, direction, signed: signed, whole: whole)),
       maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
       textAlign: textAlign,
       style: const TextStyle(
         fontWeight: FontWeight.w700,

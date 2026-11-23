@@ -425,7 +425,13 @@ class MoneyInAccountsRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('analytics.home.moneyInAccounts'.tr(), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                      AmountText(amount, signed: false, style: TextStyle(fontSize: 16, color: scheme.onSurface)),
+                      // Whole kwacha, scaled down rather than cut, so a large
+                      // or negative balance always shows in full.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: AmountText(amount, signed: false, whole: true, style: TextStyle(fontSize: 16, color: scheme.onSurface)),
+                      ),
                     ],
                   ),
                 ),

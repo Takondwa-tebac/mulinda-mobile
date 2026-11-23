@@ -2,13 +2,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_controller.dart';
+import '../data/home_alert_dismissals.dart';
 import '../data/subscription_models.dart';
 import 'paywall_sheet.dart';
 
 /// "Free trial: N days (or about N hours) left", shown only while the trial is
 /// running (hidden otherwise). States the real time left; no countdown timer or
 /// pressure. Tapping shows what stays free and what the passes cost.
+///
+/// The close button puts it away for this trial; closed with more than two
+/// days left, it comes back once for the last 48 hours.
 class TrialBanner extends ConsumerWidget {
   const TrialBanner({super.key, this.margin = EdgeInsets.zero});
 
@@ -22,6 +27,12 @@ class TrialBanner extends ConsumerWidget {
         const SubscriptionInfo.none();
     final hours = trialHoursLeft(sub, DateTime.now());
     if (hours == null) return const SizedBox.shrink();
+    final key = alertKeyFor(ref, sub, trialBannerDismissedKey);
+    final dismissal = key == null ? AlertDismissal.none : ref.watch(alertDismissalProvider(key));
+    // Hidden until the stored choice is known, so it never flashes away.
+    if (dismissal == null || !trialBannerVisible(hoursLeft: hours, dismissal: dismissal)) {
+      return const SizedBox.shrink();
+    }
 
     final scheme = Theme.of(context).colorScheme;
     final banner = Material(
@@ -32,7 +43,7 @@ class TrialBanner extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: () => showPaywall(context, surface: 'trial_banner'),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 0, 4),
           child: Row(
             children: [
               Icon(
@@ -69,7 +80,16 @@ class TrialBanner extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: scheme.onSecondaryContainer),
+              IconButton(
+                key: const ValueKey('trial-banner-close'),
+                tooltip: 'subscription.trialBanner.close'.tr(),
+                constraints: const BoxConstraints(minWidth: AppSpacing.minTouch, minHeight: AppSpacing.minTouch),
+                color: scheme.onSecondaryContainer,
+                icon: const Icon(Icons.close_rounded),
+                onPressed: key == null
+                    ? null
+                    : () => ref.read(alertDismissalProvider(key).notifier).set(trialDismissalFor(hours, dismissal)),
+              ),
             ],
           ),
         ),

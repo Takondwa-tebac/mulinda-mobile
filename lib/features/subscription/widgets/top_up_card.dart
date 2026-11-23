@@ -7,12 +7,13 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/bottom_action_bar.dart';
 import '../../auth/providers/auth_controller.dart';
 import '../checkout_flow.dart';
+import '../data/home_alert_dismissals.dart';
 import '../data/subscription_models.dart';
 import '../upgrade_flow.dart';
 
 /// "Make it a week for MK 1,000 more": while a paid Day pass runs, pay only
 /// the difference to turn it into a Week. The amount comes from the API.
-/// Renders nothing when there is no offer.
+/// Renders nothing when there is no offer, or once closed for this pass.
 class TopUpCard extends ConsumerStatefulWidget {
   const TopUpCard({super.key, this.surface = 'unknown', this.margin = EdgeInsets.zero});
 
@@ -52,6 +53,9 @@ class _TopUpCardState extends ConsumerState<TopUpCard> {
     final sub = ref.watch(currentUserProvider)?.subscription ?? const SubscriptionInfo.none();
     if (!showTopUp(sub)) return const SizedBox.shrink();
     final offer = sub.topUp!;
+    final dismissKey = alertKeyFor(ref, sub, topUpCardDismissedKey);
+    final dismissal = dismissKey == null ? AlertDismissal.none : ref.watch(alertDismissalProvider(dismissKey));
+    if (dismissal != AlertDismissal.none) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final amount = formatMinorShort(offer.amountMinor, offer.currency);
@@ -69,9 +73,32 @@ class _TopUpCardState extends ConsumerState<TopUpCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'upgrade.topUp.title'.tr(namedArgs: {'amount': amount}),
-              style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: Text(
+                      'upgrade.topUp.title'.tr(namedArgs: {'amount': amount}),
+                      style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+                if (dismissKey != null)
+                  // Pulled into the card padding so the title keeps its line.
+                  Transform.translate(
+                    offset: const Offset(AppSpacing.sm, -AppSpacing.sm),
+                    child: IconButton(
+                      key: const ValueKey('top-up-close'),
+                      tooltip: 'upgrade.topUp.close'.tr(),
+                      constraints: const BoxConstraints(minWidth: AppSpacing.minTouch, minHeight: AppSpacing.minTouch),
+                      color: scheme.onSurfaceVariant,
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => ref.read(alertDismissalProvider(dismissKey).notifier).set(AlertDismissal.done),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(

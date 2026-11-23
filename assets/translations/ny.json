@@ -624,7 +624,8 @@
     "trialBanner": {
       "title": "Nthawi yoyesa yaulere: yatsala pafupifupi maola {hours}",
       "body": "Zinthu za premium zatsegulidwa. Zolemba zanu zimakhalabe zaulere ikatha.",
-      "titleDays": "Kuyesa kwaulere: masiku {days} atsala"
+      "titleDays": "Kuyesa kwaulere: masiku {days} atsala",
+      "close": "Bisani chikumbutso cha kuyesa"
     },
     "sms": {
       "remaining": "Ma SMS aulere {remaining} mwa {limit} atsala mwezi uno",
@@ -1428,7 +1429,8 @@
     "topUp": {
       "title": "Isandutseni sabata ndi {amount} yokha",
       "body": "Zomwe mwalipira pa pasi ya lero zikuwerengedwa ku sabata.",
-      "cta": "Isandutseni sabata, {amount}"
+      "cta": "Isandutseni sabata, {amount}",
+      "close": "Bisani mwayi uwu"
     },
     "done": {
       "title": "Premium ili yoyaka mpaka {date}",
@@ -1639,7 +1641,12 @@
       "remindFailed": "Sitinathe kusintha zikumbutso. Yesaninso.",
       "itsHere": "CHAFIKA",
       "readyBody": "Chaka chanu, nkhani ndi nkhani. Zimatenga mphindi imodzi.",
-      "watch": "Onerani chaka changa"
+      "watch": "Onerani chaka changa",
+      "remindSet": "Chikumbutso chakonzedwa. Tidzakudziwitsani pa {date}.",
+      "remindSetNoDate": "Chikumbutso chakonzedwa. Tidzakudziwitsani ikatuluka.",
+      "remindOff": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe pa {date}.",
+      "remindOffNoDate": "Zikumbutso zazimitsidwa. Nkhani yanu idzafikabe ikatuluka.",
+      "rowLabel": "Nkhani zanu"
     },
     "mine": {
       "title": "Nkhani zanga",
@@ -1705,7 +1712,8 @@
       "week": "sabata yatha",
       "monthSameDays": "masiku omwewo a mwezi watha",
       "month": "mwezi watha",
-      "day": "dzulo lake"
+      "day": "dzulo lake",
+      "before": "nthawi yapitayo"
     },
     "cmp": {
       "less": "{difference} zochepa kuposa {prev} ({previous}).",
@@ -1722,7 +1730,9 @@
       "heroLessPct": "Mwagwiritsa {pct}% zochepa kuposa {prev}.",
       "heroMorePct": "Mwagwiritsa {pct}% zochuluka kuposa {prev}.",
       "notEnoughHistory": "Palibe mbiri yokwanira yoyerekeza ndi {prev} pakadali pano.",
-      "dayInProgress": "Lero silinathe, choncho sitiliyerekeza ndi masiku ena."
+      "dayInProgress": "Lero silinathe, choncho sitiliyerekeza ndi masiku ena.",
+      "fromNothing": "Palibe chomwe chinalembedwa {prev} choti tiyerekeze nacho.",
+      "bothNothing": "Palibe chomwe chalembedwa, ndipo {prev} panalibenso."
     },
     "youSpent": "Mwagwiritsa",
     "youReceived": "Mwalandira",
@@ -1924,7 +1934,8 @@
       "aboveTypicalToday": {
         "title": "Lero mpaka pano mwagwiritsa zoposa tsiku lofala.",
         "body": "Tsiku lofala kwa inu ndi {median}."
-      }
+      },
+      "bodyFromNothing": "{amount}, pomwe {prev} palibe chomwe chinalembedwa."
     }
   },
   "homeWidget": {

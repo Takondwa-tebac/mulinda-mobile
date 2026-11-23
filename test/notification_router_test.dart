@@ -12,6 +12,7 @@ import 'package:mulinda_mobile/features/activity/data/activity_feed.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_models.dart';
 import 'package:mulinda_mobile/features/activity/data/activity_repository.dart';
 import 'package:mulinda_mobile/features/activity/screens/activity_screen.dart';
+import 'package:mulinda_mobile/features/auth/providers/auth_controller.dart';
 import 'package:mulinda_mobile/features/capture/data/inbox_repository.dart';
 import 'package:mulinda_mobile/features/dashboard/data/dashboard_repository.dart';
 import 'package:mulinda_mobile/features/insights/data/insights_repository.dart';
@@ -75,6 +76,7 @@ class _Harness {
           Routes.review,
           Routes.inbox,
           Routes.insights,
+          Routes.storyPath,
         ])
           GoRoute(path: p, builder: (_, s) => screen(s.uri.toString())),
       ],
@@ -225,6 +227,52 @@ void main() {
       expect(a.labelKey, 'notifications2.action.spending');
       expect(a.destination.activityFilter?.categoryId, 'c1');
       expect(a.destination.activityFilter?.from, DateTime(2026, 11, 2));
+    });
+  });
+
+  group('story pushes', () {
+    // Exactly what stories:send-notifications sends (PushTarget adds target: home).
+    const monthPush = {'type': 'story', 'story': 'month', 'key': '2026-10', 'target': 'home'};
+    const yearPush = {'type': 'story', 'story': 'year', 'key': '2026', 'target': 'home'};
+
+    test('a month push opens that month and a year push the year, not Home', () {
+      expect(_to(monthPush), '/stories/month/2026-10');
+      expect(destinationFor(monthPush).tab, isFalse);
+      expect(_to(yearPush), '/stories/year/2026');
+      // Bad data falls back to Insights (My stories).
+      expect(_to({'type': 'story', 'story': 'month', 'key': '2026-13', 'target': 'home'}), Routes.insights);
+      expect(_to({'type': 'story', 'story': 'week', 'key': '2026', 'target': 'home'}), Routes.insights);
+    });
+
+    test('a signed-in user without an income bracket can open a push', () {
+      expect(notificationsCanOpen(status: AuthStatus.authenticated, signedIn: true, firstRunStepPending: false), isTrue);
+      expect(notificationsCanOpen(status: AuthStatus.authenticated, signedIn: true, firstRunStepPending: true), isFalse);
+      expect(notificationsCanOpen(status: AuthStatus.unknown, signedIn: false, firstRunStepPending: false), isFalse);
+      expect(notificationsCanOpen(status: AuthStatus.unauthenticated, signedIn: false, firstRunStepPending: false), isFalse);
+    });
+
+    testWidgets('background tap: the month story opens on top of the app', (tester) async {
+      final h = _Harness();
+      await h.pump(tester);
+      NotificationRouter.instance.isReady = (_) => true;
+      NotificationRouter.instance.open(h.ref, Map<String, dynamic>.of(monthPush));
+      await tester.pumpAndSettle();
+      expect(h.location, '/stories/month/2026-10');
+    });
+
+    testWidgets('cold start: the year story opens once the app is ready', (tester) async {
+      final h = _Harness();
+      await h.pump(tester);
+      var ready = false;
+      NotificationRouter.instance.isReady = (_) => ready;
+      NotificationRouter.instance.open(h.ref, Map<String, dynamic>.of(yearPush));
+      await tester.pumpAndSettle();
+      expect(h.location, Routes.home);
+
+      ready = true;
+      NotificationRouter.instance.flushPending(h.ref);
+      await tester.pumpAndSettle();
+      expect(h.location, '/stories/year/2026');
     });
   });
 

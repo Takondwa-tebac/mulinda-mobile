@@ -50,13 +50,16 @@ List<String> _rowKeys(WidgetTester tester, String prefix) => tester
     .map((w) => (w.key! as ValueKey<String>).value.substring(prefix.length))
     .toList();
 
+/// The no-break space AmountText puts between the currency and the number.
+final _nb = String.fromCharCode(0x00A0);
+
 void main() {
   group('Where your money is going', () {
     for (final dark in [false, true]) {
       testWidgets('renders headline, rows, others and insights (${dark ? 'dark' : 'light'})', (tester) async {
         await _pump(tester, const WhereMoneyGoesScreen(), dark: dark);
         expect(tester.takeException(), isNull);
-        expect(find.text('MK 285,400'), findsWidgets);
+        expect(find.text('MK${_nb}285,400'), findsWidgets);
         expect(find.byKey(const ValueKey('comparison-line')), findsOneWidget);
         expect(find.byKey(const ValueKey('breakdown-donut')), findsOneWidget);
         await _scrollTo(tester, find.byKey(const ValueKey('insight-categoryUp')));
@@ -69,7 +72,7 @@ void main() {
       await _pump(tester, const WhereMoneyGoesScreen());
       final chartRows = _rowKeys(tester, 'category-row-');
       expect(chartRows, ['c-food', 'c-rent', 'c-transport', 'uncategorised', 'others']);
-      expect(find.text('MK 98,600'), findsOneWidget);
+      expect(find.text('MK${_nb}98,600'), findsOneWidget);
 
       await tester.tap(find.text('analytics.tableView'));
       await _settle(tester);
@@ -190,7 +193,7 @@ void main() {
     await _pump(tester, const MoneyReceivedScreen(), dark: true);
     expect(tester.takeException(), isNull);
     expect(find.byKey(const ValueKey('coverage-note')), findsOneWidget);
-    expect(find.text('MK 407,000'), findsWidgets);
+    expect(find.text('MK${_nb}407,000'), findsWidgets);
     await _scrollTo(tester, find.byKey(const ValueKey('not-counted')));
     await _scrollTo(tester, find.byKey(const ValueKey('need-more-history')));
     await _scrollTo(tester, find.byKey(const ValueKey('party-FDH Bank')));
@@ -246,7 +249,7 @@ void main() {
       await pumpHome(tester);
       expect(tester.takeException(), isNull);
       expect(find.text('analytics.home.leftOver'), findsOneWidget);
-      expect(find.text('MK 407,000'), findsOneWidget);
+      expect(find.text('MK${_nb}407,000'), findsOneWidget);
       expect(find.text('84'), findsOneWidget);
       expect(find.byKey(const ValueKey('home-where-row-c-food')), findsOneWidget);
       expect(find.byKey(const ValueKey('home-where-more')), findsOneWidget);

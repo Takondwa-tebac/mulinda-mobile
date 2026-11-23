@@ -30,9 +30,14 @@ enum YearCard { none, countdown, ready }
 /// The year card for [status] on [now]: the countdown from `countdown_from`
 /// until release, then "It's here" until the story is watched (and only in
 /// that year).
-YearCard yearCardFor({required DateTime now, required YearStoryStatus? status}) {
+///
+/// [reminderTapped]: the person already used the reminder button on the
+/// countdown, so it is put away until release day. (Reminders are on by
+/// default on the server, so `reminders_enabled` alone says nothing.)
+YearCard yearCardFor({required DateTime now, required YearStoryStatus? status, bool reminderTapped = false}) {
   if (status == null || status.year != now.year) return YearCard.none;
   if (status.ready) return status.viewed ? YearCard.none : YearCard.ready;
+  if (reminderTapped) return YearCard.none;
   final from = status.countdownFrom;
   if (from == null) return YearCard.none;
   final today = DateTime(now.year, now.month, now.day);
@@ -62,6 +67,35 @@ abstract class StoryOpenedStore {
     }
   }
 }
+
+/// The year countdown's reminder button was used on this phone, per account
+/// and year, so Home stops showing the countdown until the story is out.
+abstract class YearReminderStore {
+  static String key(String? userId, int year) => 'story_year_reminder_tapped_${userId ?? '-'}_$year';
+
+  static Future<bool> isTapped(String? userId, int year) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(key(userId, year)) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> markTapped(String? userId, int year) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key(userId, year), true);
+    } catch (_) {
+      // Best effort: the countdown may show once more.
+    }
+  }
+}
+
+/// Whether the countdown's reminder button was used for [year].
+final yearReminderTappedProvider = FutureProvider.autoDispose.family<bool, int>(
+  (ref, year) => YearReminderStore.isTapped(ref.watch(currentUserProvider.select((u) => u?.id)), year),
+);
 
 /// The month story Home offers, or null (outside the first days of the
 /// month, already opened, not available, or not loaded).

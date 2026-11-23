@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/clock.dart';
 import '../../../shared/plural.dart';
+import '../../auth/providers/auth_controller.dart';
 import '../data/stories_repository.dart';
 import '../data/story_models.dart';
 import '../data/story_visibility.dart';
@@ -36,7 +37,10 @@ class StoryHomeCards extends ConsumerWidget {
     final month = ref.watch(homeMonthStoryProvider).valueOrNull;
     final status = ref.watch(yearStoryStatusProvider).valueOrNull;
     final now = ref.watch(clockProvider)();
-    final year = yearCardFor(now: now, status: status);
+    // Until the stored choice is known the countdown waits, so it never
+    // flashes up and disappears.
+    final tapped = status == null ? false : (ref.watch(yearReminderTappedProvider(status.year)).valueOrNull ?? true);
+    final year = yearCardFor(now: now, status: status, reminderTapped: tapped);
 
     final cards = <Widget>[
       if (month != null) MonthReadyCard(story: month),
@@ -176,9 +180,30 @@ class _YearCountdownCardState extends ConsumerState<YearCountdownCard> {
       _saving = true;
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final release = widget.status.releaseAt;
+    final date = release == null ? null : '${release.day} ${monthName(release.month)}';
+    final userId = ref.read(currentUserProvider)?.id;
     try {
       await ref.read(storiesRepositoryProvider).setReminders(next);
       unawaited(Analytics.track('story_reminders_toggled', {'story': 'year', 'key': _key, 'enabled': next}));
+      // Reminder set: the countdown steps aside until "It's here". Turning
+      // reminders off keeps the card, so they can be turned back on here.
+      if (next) await YearReminderStore.markTapped(userId, widget.status.year);
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              date == null
+                  ? (next ? 'stories.home.remindSetNoDate' : 'stories.home.remindOffNoDate').tr()
+                  : (next ? 'stories.home.remindSet' : 'stories.home.remindOff').tr(namedArgs: {'date': date}),
+            ),
+          ),
+        );
+      if (!mounted) return;
+      ref
+        ..invalidate(yearReminderTappedProvider(widget.status.year))
+        ..invalidate(yearStoryStatusProvider);
     } catch (_) {
       if (mounted) setState(() => _remind = !next);
       messenger

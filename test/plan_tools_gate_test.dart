@@ -144,6 +144,7 @@ void main() {
             unreadInsightsCountProvider.overrideWith((ref) async => 0),
             homeMonthStoryProvider.overrideWith((ref) async => null),
             yearStoryStatusProvider.overrideWith((ref) async => null),
+            myStoriesProvider.overrideWith((ref) async => const MyStories()),
             accountsProvider.overrideWith((ref) async => const <Account>[]),
             ...analyticsOverrides(),
           ],

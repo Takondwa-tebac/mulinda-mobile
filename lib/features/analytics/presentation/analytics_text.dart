@@ -179,6 +179,16 @@ ComparisonWords? comparisonWords(Comparison c, AnalyticsPeriod p, {bool hero = f
     return null;
   }
   final direction = c.direction ?? ComparisonDirection.same;
+  // Nothing recorded before: say so rather than "(MK 0)" or a percentage.
+  if (c.previousAmount != null && c.previousAmount!.minorUnits == 0) {
+    if (direction == ComparisonDirection.same) {
+      return hero ? null : ComparisonWords(ComparisonIcon.same, _tr('analytics.cmp.bothNothing', {'prev': prev}));
+    }
+    return ComparisonWords(
+      ComparisonIcon.info,
+      _tr('analytics.cmp.fromNothing', {'prev': prev}),
+    );
+  }
   final previous = moneyWords(c.previousAmount);
   final difference = moneyWords(c.difference);
   final pct = c.pct?.abs().round();
@@ -229,6 +239,27 @@ String _param(Insight i, String key) {
   return v?.toString() ?? '';
 }
 
+bool _isZeroMoney(Object? v) => v is Map && Money.parse(v).minorUnits == 0;
+
+/// What a category insight compares with. Calendar periods are named
+/// ("the previous month", "the previous week", "the day before") whatever
+/// day count the insight carries; only the last 30 days and a custom range
+/// say "the previous N days".
+String insightPreviousPhrase(AnalyticsPeriod? period, int? days) {
+  switch (period?.key) {
+    case PeriodKey.today:
+    case PeriodKey.thisWeek:
+    case PeriodKey.thisMonth:
+    case PeriodKey.lastMonth:
+      return previousPhrase(period!);
+    case PeriodKey.last30Days:
+    case PeriodKey.custom:
+    case null:
+      final n = days ?? period?.days;
+      return n == null ? 'analytics.prev.before'.tr() : _tr('analytics.prev.days', {'days': '$n'});
+  }
+}
+
 bool _has(Insight i, String key) => i.params[key] != null && '${i.params[key]}'.isNotEmpty;
 
 /// The wording of a server insight (`analytics.insight.<key>`). Null for a
@@ -256,19 +287,20 @@ InsightWords? insightWords(Insight i, {AnalyticsPeriod? period, ReportKind kind 
     case 'categoryUp':
     case 'categoryDown':
       final up = i.key == 'categoryUp';
-      final days = int.tryParse(_param(i, 'days'));
-      final prev = period != null && period.days == (days ?? period.days)
-          ? previousPhrase(period)
-          : _tr('analytics.prev.days', {'days': '${days ?? ''}'});
-      final showPct = i.params['show_pct'] == true && _has(i, 'pct');
+      final prev = insightPreviousPhrase(period, int.tryParse(_param(i, 'days')));
+      // Nothing before: a percentage means nothing and "(MK 0)" reads badly.
+      final fromNothing = _isZeroMoney(i.params['previous']);
+      final showPct = i.params['show_pct'] == true && _has(i, 'pct') && !fromNothing;
       final income = kind == ReportKind.income ? 'Income' : '';
       final args = {'category': category, 'pct': '${(num.tryParse(_param(i, 'pct')) ?? 0).abs().round()}', 'prev': prev};
       return InsightWords(
         icon: up ? Icons.trending_up : Icons.trending_down,
         title: t(showPct ? 'title${income}Pct' : 'title$income', args),
-        body: _has(i, 'amount') && _has(i, 'previous')
-            ? t('body', {'amount': _param(i, 'amount'), 'previous': _param(i, 'previous')})
-            : null,
+        body: !_has(i, 'amount') || !_has(i, 'previous')
+            ? null
+            : fromNothing
+                ? _tr('analytics.insight.bodyFromNothing', {'amount': _param(i, 'amount'), 'prev': prev})
+                : t('body', {'amount': _param(i, 'amount'), 'previous': _param(i, 'previous')}),
         actionLabel: hasTarget ? _tr('analytics.insight.seeCategory', {'category': category}) : null,
       );
     case 'biggestDay':

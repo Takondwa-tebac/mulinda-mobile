@@ -7,6 +7,7 @@ import '../../features/activity/data/activity_feed.dart';
 import '../../features/activity/data/activity_models.dart';
 import '../../features/auth/providers/auth_controller.dart';
 import '../../features/insights/data/insights_repository.dart';
+import '../../features/onboarding/first_run.dart';
 import '../../features/stories/data/story_models.dart';
 import '../router/app_router.dart';
 import '../router/routes.dart';
@@ -158,10 +159,17 @@ NotificationDestination _byType(Map<String, dynamic> data) {
   return NotificationDestination(insightId == null ? Routes.insights : Routes.notificationDetailFor(insightId));
 }
 
+/// Whether a tapped notification can open its screen now: signed in, and
+/// past the first-run SMS step (after which the app shell appears and opens
+/// anything waiting). Income is no longer asked up front, so it is not
+/// required here: a user who never gave it must still get their story.
+bool notificationsCanOpen({required AuthStatus status, required bool signedIn, required bool firstRunStepPending}) =>
+    status == AuthStatus.authenticated && signedIn && !firstRunStepPending;
+
 /// Opens the screen a notification points at — from a push tap (foreground
 /// banner, background or cold start) or a notification-centre action — and
 /// marks the notification read. When nobody is signed in yet (or onboarding /
-/// income setup is still open) the destination waits until the app shell
+/// the first-run SMS step is still open) the destination waits until the app shell
 /// appears.
 class NotificationRouter {
   NotificationRouter._();
@@ -175,8 +183,11 @@ class NotificationRouter {
 
   static bool _signedInAndSetUp(WidgetRef ref) {
     final auth = ref.read(authControllerProvider);
-    final user = auth.user;
-    return auth.status == AuthStatus.authenticated && user != null && user.declaredIncomeBracket != null;
+    return notificationsCanOpen(
+      status: auth.status,
+      signedIn: auth.user != null,
+      firstRunStepPending: ref.read(firstRunProvider).smsStepPending,
+    );
   }
 
   /// Open [data]'s destination now, or remember it until [flushPending].
