@@ -186,8 +186,9 @@ class _YearCountdownCardState extends ConsumerState<YearCountdownCard> {
     try {
       await ref.read(storiesRepositoryProvider).setReminders(next);
       unawaited(Analytics.track('story_reminders_toggled', {'story': 'year', 'key': _key, 'enabled': next}));
-      // Choice made: the countdown steps aside until "It's here".
-      await YearReminderStore.markTapped(userId, widget.status.year);
+      // Reminder set: the countdown steps aside until "It's here". Turning
+      // reminders off keeps the card, so they can be turned back on here.
+      if (next) await YearReminderStore.markTapped(userId, widget.status.year);
       messenger
         ?..hideCurrentSnackBar()
         ..showSnackBar(

@@ -403,7 +403,7 @@ void main() {
       expect(prefs.getBool(YearReminderStore.key(null, 2026)), isTrue);
     });
 
-    testWidgets('"Reminders on" (the server default) also puts the countdown away', (tester) async {
+    testWidgets('turning reminders off keeps the countdown so they can be turned back on', (tester) async {
       final repo = await pumpCards(tester, DateTime(2026, 11, 20));
       expect(find.text('stories.home.remindersOn'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('story-remind')));
@@ -411,7 +411,9 @@ void main() {
         await tester.pump();
       }
       expect(repo.reminders, [false]);
-      expect(find.byKey(const ValueKey('story-year-countdown')), findsNothing);
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsOneWidget);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(YearReminderStore.key(null, 2026)), isNull);
     });
 
     testWidgets('a used reminder button keeps the countdown away', (tester) async {
