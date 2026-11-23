@@ -118,6 +118,59 @@ void main() {
     expect(_plain(comparisonWords(up(19), october)!.text), '19% more than the previous month (MK 35,900).');
   });
 
+  testWidgets('category insights name calendar periods, not a day count', (tester) async {
+    await _english(tester);
+    Insight change(int days, {Map<String, dynamic>? previous}) => Insight.fromJson({
+      'key': 'categoryUp',
+      'params': {
+        'category': 'Food',
+        'pct': 12,
+        'show_pct': true,
+        'days': days,
+        'amount': {'minor_units': 4130000, 'formatted_whole': 'MK 41,300'},
+        'previous': previous ?? {'minor_units': 3470000, 'formatted_whole': 'MK 34,700'},
+      },
+    });
+    String title(AnalyticsPeriod p, [int days = 30]) => _plain(insightWords(change(days), period: p)!.title);
+
+    const monthSoFar = AnalyticsPeriod(key: PeriodKey.thisMonth, days: 30, elapsedDays: 23, inProgress: true);
+    const october = AnalyticsPeriod(key: PeriodKey.lastMonth, days: 31, elapsedDays: 31);
+    const week = AnalyticsPeriod(key: PeriodKey.thisWeek, days: 7, elapsedDays: 7);
+    const day = AnalyticsPeriod(key: PeriodKey.today, days: 1, elapsedDays: 1);
+    const last30 = AnalyticsPeriod(key: PeriodKey.last30Days, days: 30, elapsedDays: 30);
+    const custom = AnalyticsPeriod(key: PeriodKey.custom, days: 12, elapsedDays: 12);
+
+    // The insight's days (30) differ from the period's: still the period's words.
+    expect(title(monthSoFar), 'You spent 12% more on Food than in the same days of last month.');
+    expect(title(october), 'You spent 12% more on Food than in the previous month.');
+    expect(title(week), 'You spent 12% more on Food than in the previous week.');
+    expect(title(day), 'You spent 12% more on Food than in the day before.');
+    expect(title(last30), 'You spent 12% more on Food than in the previous 30 days.');
+    expect(title(custom, 12), 'You spent 12% more on Food than in the previous 12 days.');
+
+    // Nothing recorded before: no percentage and no "(MK 0)".
+    final fromZero = insightWords(change(31, previous: {'minor_units': 0, 'formatted_whole': 'MK 0'}), period: october)!;
+    expect(_plain(fromZero.title), 'You spent more on Food than in the previous month.');
+    expect(_plain(fromZero.body!), 'MK 41,300, with nothing recorded in the previous month.');
+  });
+
+  testWidgets('a previous amount of zero is said in words', (tester) async {
+    await _english(tester);
+    const october = AnalyticsPeriod(key: PeriodKey.lastMonth, days: 31, elapsedDays: 31);
+    Comparison fromZero(String direction) => Comparison.fromJson({
+      'comparable': true,
+      'previous': {'from': '2026-09-01', 'to': '2026-09-30', 'amount': {'minor_units': 0, 'formatted_whole': 'MK 0'}},
+      'difference': {'minor_units': 3480000, 'formatted_whole': 'MK 34,800'},
+      'direction': direction,
+      'show_pct': false,
+    });
+    expect(comparisonWords(fromZero('up'), october)!.text, 'Nothing recorded in the previous month to compare with.');
+    expect(comparisonWords(fromZero('up'), october, hero: true)!.text, 'Nothing recorded in the previous month to compare with.');
+    expect(comparisonWords(fromZero('up'), october)!.text, isNot(contains('MK 0')));
+    expect(comparisonWords(fromZero('same'), october)!.text, 'Nothing recorded, and nothing in the previous month either.');
+    expect(comparisonWords(fromZero('same'), october, hero: true), isNull);
+  });
+
   testWidgets('period labels', (tester) async {
     await _english(tester);
     final s = fixtureSummary();

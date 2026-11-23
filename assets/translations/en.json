@@ -1711,7 +1711,8 @@
       "week": "the previous week",
       "monthSameDays": "the same days of last month",
       "month": "the previous month",
-      "day": "the day before"
+      "day": "the day before",
+      "before": "the previous period"
     },
     "cmp": {
       "less": "{difference} less than {prev} ({previous}).",
@@ -1728,7 +1729,9 @@
       "heroLessPct": "You spent {pct}% less than {prev}.",
       "heroMorePct": "You spent {pct}% more than {prev}.",
       "notEnoughHistory": "Not enough history to compare with {prev} yet.",
-      "dayInProgress": "Today is not over yet, so we do not compare it with other days."
+      "dayInProgress": "Today is not over yet, so we do not compare it with other days.",
+      "fromNothing": "Nothing recorded in {prev} to compare with.",
+      "bothNothing": "Nothing recorded, and nothing in {prev} either."
     },
     "youSpent": "You spent",
     "youReceived": "You received",
@@ -1930,7 +1933,8 @@
       "aboveTypicalToday": {
         "title": "So far today you have spent more than on a typical day.",
         "body": "A typical day for you is {median}."
-      }
+      },
+      "bodyFromNothing": "{amount}, with nothing recorded in {prev}."
     }
   },
   "homeWidget": {

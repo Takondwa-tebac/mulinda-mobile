@@ -1711,7 +1711,8 @@
       "week": "sabata yatha",
       "monthSameDays": "masiku omwewo a mwezi watha",
       "month": "mwezi watha",
-      "day": "dzulo lake"
+      "day": "dzulo lake",
+      "before": "nthawi yapitayo"
     },
     "cmp": {
       "less": "{difference} zochepa kuposa {prev} ({previous}).",
@@ -1728,7 +1729,9 @@
       "heroLessPct": "Mwagwiritsa {pct}% zochepa kuposa {prev}.",
       "heroMorePct": "Mwagwiritsa {pct}% zochuluka kuposa {prev}.",
       "notEnoughHistory": "Palibe mbiri yokwanira yoyerekeza ndi {prev} pakadali pano.",
-      "dayInProgress": "Lero silinathe, choncho sitiliyerekeza ndi masiku ena."
+      "dayInProgress": "Lero silinathe, choncho sitiliyerekeza ndi masiku ena.",
+      "fromNothing": "Palibe chomwe chinalembedwa {prev} choti tiyerekeze nacho.",
+      "bothNothing": "Palibe chomwe chalembedwa, ndipo {prev} panalibenso."
     },
     "youSpent": "Mwagwiritsa",
     "youReceived": "Mwalandira",
@@ -1930,7 +1933,8 @@
       "aboveTypicalToday": {
         "title": "Lero mpaka pano mwagwiritsa zoposa tsiku lofala.",
         "body": "Tsiku lofala kwa inu ndi {median}."
-      }
+      },
+      "bodyFromNothing": "{amount}, pomwe {prev} palibe chomwe chinalembedwa."
     }
   },
   "homeWidget": {
