@@ -416,6 +416,52 @@ void main() {
       expect(prefs.getBool(YearReminderStore.key(null, 2026)), isNull);
     });
 
+    testWidgets('the month card closes with its X', (tester) async {
+      await pumpCards(tester, DateTime(2026, 11, 2, 9));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('story-month-ready')),
+          matching: find.byKey(const ValueKey('story-card-close')),
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+      expect(find.byKey(const ValueKey('story-month-ready')), findsNothing);
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsOneWidget);
+    });
+
+    testWidgets('the countdown closes with its X and stays closed', (tester) async {
+      await pumpCards(tester, DateTime(2026, 11, 20));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('story-year-countdown')),
+          matching: find.byKey(const ValueKey('story-card-close')),
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+      expect(find.byKey(const ValueKey('story-year-countdown')), findsNothing);
+      expect(find.text('stories.home.closed'), findsOneWidget);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(YearReminderStore.key(null, 2026)), isTrue);
+    });
+
+    testWidgets('the ready card closes with its X', (tester) async {
+      await pumpCards(tester, DateTime(2026, 11, 25, 10), status: {...statusJson, 'ready': true, 'days_left': 0});
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('story-year-ready')),
+          matching: find.byKey(const ValueKey('story-card-close')),
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+      expect(find.byKey(const ValueKey('story-year-ready')), findsNothing);
+    });
+
     testWidgets('a used reminder button keeps the countdown away', (tester) async {
       SharedPreferences.setMockInitialValues({YearReminderStore.key(null, 2026): true});
       await pumpCards(tester, DateTime(2026, 11, 21));
