@@ -35,6 +35,9 @@ Widget _wrap(Widget child) => MaterialApp(
 Text _amountText(WidgetTester tester) =>
     tester.widget<Text>(find.descendant(of: find.byType(AmountText), matching: find.byType(Text)));
 
+/// The no-break space AmountText puts between the currency and the number.
+final _nb = String.fromCharCode(0x00A0);
+
 void main() {
   group('TransactionTile', () {
     testWidgets('shows merchant, "category · time" and a signed amount', (tester) async {
@@ -43,7 +46,7 @@ void main() {
       expect(find.text('Shoprite'), findsOneWidget);
       expect(find.text('Food'), findsOneWidget);
       expect(find.text(' · 14:05'), findsOneWidget);
-      expect(find.text('-MK 2,500.00'), findsOneWidget);
+      expect(find.text('-MK${_nb}2,500.00'), findsOneWidget);
     });
 
     testWidgets('hides the confirm-category chip when the category is settled', (tester) async {
@@ -70,11 +73,11 @@ void main() {
       final s = SemanticColors.light;
 
       await tester.pumpWidget(_wrap(TransactionTile(data: _data(type: 'income'))));
-      expect(_amountText(tester).data, '+MK 2,500.00');
+      expect(_amountText(tester).data, '+MK${_nb}2,500.00');
       expect(_amountText(tester).style?.color, s.income);
 
       await tester.pumpWidget(_wrap(TransactionTile(data: _data(type: 'expense'))));
-      expect(_amountText(tester).data, '-MK 2,500.00');
+      expect(_amountText(tester).data, '-MK${_nb}2,500.00');
       expect(_amountText(tester).style?.color, s.expense);
       expect(s.income, isNot(s.expense));
     });
@@ -93,7 +96,7 @@ void main() {
 
       expect(find.byKey(const ValueKey('not-spending-label')), findsOneWidget);
       expect(find.text('activity2.notSpending'), findsOneWidget);
-      expect(_amountText(tester).data, 'MK 2,500.00'); // no minus sign
+      expect(_amountText(tester).data, 'MK${_nb}2,500.00'); // no minus sign
       final color = _amountText(tester).style?.color;
       expect(color, isNot(SemanticColors.light.expense));
       expect(color, AppTheme.light.colorScheme.onSurfaceVariant);
@@ -113,7 +116,7 @@ void main() {
       await tester.pumpWidget(_wrap(const TransactionTile(data: data)));
 
       expect(find.text('activity2.notIncome'), findsOneWidget);
-      expect(_amountText(tester).data, 'MK 2,500.00'); // no plus sign
+      expect(_amountText(tester).data, 'MK${_nb}2,500.00'); // no plus sign
       expect(_amountText(tester).style?.color, AppTheme.light.colorScheme.onSurfaceVariant);
       expect(find.byIcon(Icons.u_turn_left), findsWidgets);
     });
