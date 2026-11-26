@@ -72,8 +72,11 @@ Future<PeriodSelection?> showPeriodSheet(
   return showModalBottomSheet<PeriodSelection>(
     context: context,
     showDragHandle: true,
+    // Taller than the default 9/16 cap and scrollable, so "Pick dates" (the
+    // last row) is always reachable on small phones and with large text.
+    isScrollControlled: true,
     builder: (sheet) => SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
